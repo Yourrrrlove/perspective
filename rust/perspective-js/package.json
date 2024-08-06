@@ -1,6 +1,6 @@
 {
     "name": "@finos/perspective",
-    "version": "2.10.1",
+    "version": "3.0.0-rc.2",
     "description": "",
     "repository": {
         "type": "git",
@@ -37,7 +37,8 @@
     "types": "./dist/esm/perspective.d.ts",
     "scripts": {
         "build": "node ./build.js",
-        "clean": "rimraf dist && rimraf build"
+        "clean": "rimraf dist && rimraf build",
+        "docs": "cargo doc"
     },
     "publishConfig": {
         "access": "public"

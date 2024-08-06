@@ -10,13 +10,14 @@
 #  ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 #  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-__version__ = "2.10.1"
+__version__ = "3.0.0-rc.2"
 __all__ = [
     "_jupyter_labextension_paths",
     "PerspectiveError",
     "PerspectiveWidget",
     "PerspectiveViewer",
     "PerspectiveTornadoHandler",
+    "ProxySession",
     "Table",
     "View",
 ]
@@ -73,6 +74,6 @@ class Client(PySyncClient):
         return client
 
 
-# read by `jupyter labextension develop`
+# Read by `jupyter labextension develop`
 def _jupyter_labextension_paths():
     return [{"src": "labextension", "dest": "@finos/perspective-jupyterlab"}]

@@ -4,7 +4,7 @@
         "type": "git",
         "url": "https://github.com/finos/perspective"
     },
-    "version": "2.10.1",
+    "version": "3.0.0-rc.2",
     "changelog": {
         "labels": {
             "enhancement": "Added",
@@ -108,7 +108,7 @@
         "_wheel_python": "node tools/perspective-scripts/_wheel_python.mjs",
         "_requires_python": "node tools/perspective-scripts/_requires_python.mjs",
         "setup": "node tools/perspective-scripts/setup.mjs",
-        "docs": "node tools/perspective-scripts/docs.mjs",
+        "docs": "cargo doc --no-deps",
         "test": "node tools/perspective-scripts/test.mjs",
         "test:jupyter": "pnpm run --recursive --filter @finos/perspective-jupyterlab test:jupyter",
         "test_js": "node tools/perspective-scripts/test_js.mjs",
@@ -119,6 +119,14 @@
         "prepare": "husky install",
         "lint": "node tools/perspective-scripts/lint.mjs",
         "fix": "node tools/perspective-scripts/fix.mjs",
-        "version": "node tools/perspective-scripts/version.mjs"
+        "version": "node tools/perspective-scripts/version.mjs",
+        "jlab_link": "pip3 install ./python/perspective --no-build-isolation"
+    },
+    "dependencies": {
+        "canvas": "^2.11.2",
+        "fast-xml-parser": "^4.4.0",
+        "gif-encoder-2": "^1.0.5",
+        "gifencoder": "^2.0.1",
+        "svg-parser": "^2.0.4"
     }
 }

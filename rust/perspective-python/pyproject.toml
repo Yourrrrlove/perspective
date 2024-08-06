@@ -21,11 +21,11 @@ dynamic = ["version"]
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
 [tool.maturin]
-data = "perspective.data"
+module-name = "perspective"
+data = "perspective_python-3.0.0rc2.data"
 features = ["pyo3/extension-module"]
 
 [tool.pytest.ini_options]
