@@ -54,6 +54,7 @@
 
 #[cfg(feature = "axum-ws")]
 pub mod axum;
+#[cfg(feature = "axum-ws")]
 pub mod virtual_server;
 
 pub use perspective_client::proto;

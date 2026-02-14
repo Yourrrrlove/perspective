@@ -52,7 +52,7 @@ catalog:
     "@jupyterlab/builder": "^4"
     "@playwright/experimental-ct-react": "=1.52.0"
     "@playwright/test": "=1.52.0"
-    "@prospective.co/procss": "0.1.17"
+    "@prospective.co/procss": "0.1.18"
     "@types/d3": "^7.4.3"
     "@types/lodash": "^4.17.20"
     "@types/node": ">=22"

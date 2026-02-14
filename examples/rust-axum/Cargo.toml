@@ -16,8 +16,20 @@ version = "4.1.1"
 edition = "2024"
 publish = false
 
+[features]
+default = []
+
+# TODO(texodus): Due to feature unification and `wasm_bindgen_futures`
+# requirements for `Send` bounds interacting poorly with `rust-analyzer`,
+# this cannot require the "axum-ws" feature by defualt without impacting
+# developer sanity. In a stand-alone project outside the perspective repo, this
+# hack is not necessary.
+#
+# This feature flag is passed on the CLI by `package.json` instead.
+_hack = ["perspective/axum-ws"]
+
 [dependencies]
-perspective = { version = "4.1.1" }
+perspective = { version = "4.1.1", default-features = false }
 axum = { version = ">=0.8,<0.9", features = ["ws"] }
 futures = "0.3"
 tokio = { version = "1.0", features = ["full"] }

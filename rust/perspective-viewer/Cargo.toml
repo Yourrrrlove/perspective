@@ -40,7 +40,7 @@ trace-allocator = ["perspective-js/trace-allocator"]
 
 [build-dependencies]
 serde_json = { version = "1.0.59", features = ["raw_value"] }
-procss = { version = "0.1.17" }
+procss = { version = "0.1.18" }
 glob = "0.3.0"
 anyhow = "1.0.66"
 
@@ -55,7 +55,7 @@ perspective-js = { version = "4.1.1" }
 async-lock = "2.5.0"
 
 # Encode HTML export
-base64 = "0.13.0"
+base64 = "0.22.1"
 
 console_error_panic_hook = "0.1.6"
 
@@ -72,10 +72,10 @@ extend = "1.1.2"
 futures = "0.3.31"
 
 # General iterator improvements
-itertools = "0.10.1"
+itertools = "0.14.0"
 
 # JavaScript stdlib bindings
-js-sys = "0.3.82"
+js-sys = "0.3.85"
 
 macro_rules_attribute = "0.2.2"
 
@@ -106,7 +106,7 @@ tracing = { version = ">=0.1.36" }
 tracing-subscriber = "0.3.15"
 
 # Browser API bindings
-wasm-bindgen = { version = "=0.2.106", features = [
+wasm-bindgen = { version = "=0.2.108", features = [
   "serde-serialize",
   "enable-interning",
 ] }
@@ -121,7 +121,7 @@ wasm-bindgen-futures = "0.4.41"
 yew = { version = "0.22.0", features = ["csr"] }
 
 # Browser stdlib bindings
-web-sys.version = "0.3.77"
+web-sys.version = "0.3.85"
 
 # Browser stdlib bindings
 web-sys.features = [
