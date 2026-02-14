@@ -4,10 +4,12 @@
     "version": "4.1.1",
     "description": "An example of a Rust/Axum virtual Perspective server",
     "scripts": {
-        "start": "cargo run --target=$(rustc -vV | sed -n 's|host: ||p')"
+        "start": "cargo run --target=$(rustc -vV | sed -n 's|host: ||p') --features=_hack"
     },
     "keywords": [],
     "license": "Apache-2.0",
-    "dependencies": {},
+    "dependencies": {
+        "superstore-arrow": "catalog:"
+    },
     "devDependencies": {}
 }

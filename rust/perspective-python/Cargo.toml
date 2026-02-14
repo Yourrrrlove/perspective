@@ -53,7 +53,7 @@ crate-type = ["cdylib"]
 [build-dependencies]
 cmake = "0.1.50"
 num_cpus = "^1.16.0"
-pyo3-build-config = "0.22.6"
+pyo3-build-config = "0.25.1"
 python-config-rs = "0.1.2"
 
 [dependencies]
@@ -65,7 +65,7 @@ macro_rules_attribute = "0.2.2"
 async-lock = "2.5.0"
 pollster = "0.3.0"
 extend = "1.1.2"
-indexmap = "2.2.6"
+indexmap = "2.12.1"
 futures = "0.3.28"
 serde = { version = "1.0" }
 pyo3 = { version = "0.25.1", features = [

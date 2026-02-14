@@ -66,7 +66,6 @@ where
                                             ConnectInfo(addr): ConnectInfo<SocketAddr>|
            -> axum::response::Response {
         tracing::info!("{addr} Connected.");
-
         ws.on_upgrade(move |mut socket| async move {
             if let Err(msg) = process_message_loop(&mut socket, handler).await {
                 tracing::error!("Internal error {}", msg);

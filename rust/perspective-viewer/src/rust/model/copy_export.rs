@@ -12,6 +12,7 @@
 
 use std::collections::HashSet;
 
+use base64::prelude::*;
 use futures::join;
 use itertools::Itertools;
 use perspective_client::ViewWindow;
@@ -59,7 +60,7 @@ pub trait CopyExportModel:
         let mut config = config?;
         config.settings = false;
         let js_config = serde_json::to_string(&config)?;
-        let html = export_app::render(&base64::encode(arrow), &js_config, &plugins);
+        let html = export_app::render(&BASE64_STANDARD.encode(arrow), &js_config, &plugins);
         Ok(js_sys::JsString::from(html.trim()).into())
     }
 

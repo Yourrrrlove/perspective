@@ -14,6 +14,7 @@
 
 mod clone;
 mod logging;
+mod rand_sequence;
 
 #[cfg(feature = "talc-allocator")]
 mod talc_allocator;
@@ -24,14 +25,14 @@ mod tests;
 use std::sync::Arc;
 use std::time::SystemTimeError;
 
+use rand::prelude::*;
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
-use rand_unique::{RandomSequence, RandomSequenceBuilder};
 #[cfg(feature = "talc-allocator")]
 pub(crate) use talc_allocator::get_used;
 use thiserror::*;
 
 use crate::proto;
+use crate::utils::rand_sequence::RandomSequence;
 
 #[derive(Clone, Error, Debug)]
 pub enum ClientError {
@@ -142,7 +143,7 @@ where
 
 /// Generate a sequence of IDs
 #[derive(Clone)]
-pub struct IDGen(Arc<std::sync::Mutex<RandomSequence<u32>>>);
+pub struct IDGen(Arc<std::sync::Mutex<RandomSequence>>);
 
 impl Default for IDGen {
     fn default() -> Self {
@@ -151,9 +152,9 @@ impl Default for IDGen {
 }
 
 impl IDGen {
-    fn new_seq() -> RandomSequence<u32> {
+    fn new_seq() -> RandomSequence {
         let mut rng = rand::rngs::ThreadRng::default();
-        let config = RandomSequenceBuilder::<u32>::rand(&mut rng);
+        let config = RandomSequence::new(rng.next_u32(), rng.next_u32());
         config.into_iter()
     }
 
@@ -182,7 +183,8 @@ pub fn randid() -> String {
     let step: usize = 8 * SIZE / 5;
     let mut id = String::with_capacity(SIZE);
     loop {
-        let mut random = StdRng::from_os_rng();
+        let mut rng = rand::rngs::ThreadRng::default();
+        let mut random = StdRng::from_rng(&mut rng);
         let mut bytes: Vec<u8> = vec![0; step];
         random.fill(&mut bytes[..]);
         for &byte in &bytes {
