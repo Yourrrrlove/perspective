@@ -1,3 +1,24 @@
+# [v4.2.0](https://github.com/perspective-dev/perspective/releases/tag/v4.2.0)
+
+_15 February 2026_ ([Full changelog](https://github.com/finos/perspective/compare/v4.2.0...v4.2.0))
+
+**Breaking**
+
+- Upgrade toolchain [#3118](https://github.com/finos/perspective/pull/3118)
+
+Features
+
+- Clickhouse Virtual Server [#3119](https://github.com/finos/perspective/pull/3119)
+
+Fixes
+
+- Fix `null` equality bug [#3115](https://github.com/finos/perspective/pull/3115)
+
+Misc
+
+- Fix compatibility with recent crates [#3122](https://github.com/finos/perspective/pull/3122)
+- Better TypeScript types for `viewer-datagrid` [#3116](https://github.com/finos/perspective/pull/3116)
+
 # [v4.1.1](https://github.com/perspective-dev/perspective/releases/tag/v4.1.1)
 
 _2 February 2026_ ([Full changelog](https://github.com/finos/perspective/compare/v4.1.0...v4.1.1))
