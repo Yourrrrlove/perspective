@@ -55,8 +55,8 @@ fn build(pkg: Option<&str>, is_release: bool, features: Vec<String>) {
         .args(["build"])
         .args(["--lib"])
         .args(["--features", &features])
-        .args(["--target", "wasm32-unknown-unknown"]);
-    // .args(["-Z", "build-std=std"]);
+        .args(["--target", "wasm32-unknown-unknown"])
+        .args(["-Z", "build-std=std,panic_abort"]);
 
     if is_release {
         cmd.args(["--release"]);

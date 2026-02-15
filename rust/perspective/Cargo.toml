@@ -28,7 +28,7 @@ path = "src/lib.rs"
 
 
 [features]
-default = ["axum-ws"]
+default = []
 axum-ws = ["tokio", "axum", "futures"]
 external-cpp = [
     "perspective-server/external-cpp",
