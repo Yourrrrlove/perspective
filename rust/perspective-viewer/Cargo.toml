@@ -107,7 +107,6 @@ tracing-subscriber = "0.3.15"
 
 # Browser API bindings
 wasm-bindgen = { version = "=0.2.108", features = [
-  "serde-serialize",
   "enable-interning",
 ] }
 

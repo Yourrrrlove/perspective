@@ -2065,7 +2065,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "22505a5c94da8e3b7c2996394d1c933236c4d743e81a410bcca4e6989fc066a4"
 dependencies = [
  "bytes",
- "heck 0.4.1",
+ "heck 0.5.0",
  "itertools 0.12.1",
  "log",
  "multimap",
@@ -2103,9 +2103,8 @@ dependencies = [
 
 [[package]]
 name = "protobuf-src"
-version = "2.0.1+26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8ba1cfa4b9dc098926b8cce388bf434b93516db3ecf6e8b1a37eb643d733ee7"
+version = "2.1.1+27.1"
+source = "git+https://github.com/carlocorradini/rust-protobuf-native.git?rev=1aba500e469f8bdc384a0fe9e69c189fda72e059#1aba500e469f8bdc384a0fe9e69c189fda72e059"
 dependencies = [
  "cmake",
 ]
@@ -3456,7 +3455,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

@@ -11,10 +11,10 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import sh from "./sh.mjs";
-import { execSync } from "child_process";
+// import { execSync } from "child_process";
 
 function lint(dir) {
-    execSync(`clang-format -i -style=file ${dir}`, { stdio: "inherit" });
+    // execSync(`clang-format -i -style=file ${dir}`, { stdio: "inherit" });
 }
 
 lint(sh.path`./rust/perspective-server/cpp/perspective/src/cpp/*.cpp`);
