@@ -251,17 +251,8 @@
 
     .noselect {
         -webkit-touch-callout: none;
-        /* iOS Safari */
         -webkit-user-select: none;
-        /* Safari */
-        -khtml-user-select: none;
-        /* Konqueror HTML */
-        -moz-user-select: none;
-        /* Firefox */
-        -ms-user-select: none;
-        /* Internet Explorer/Edge */
         user-select: none;
-        /* Non-prefixed version, currently supported by Chrome and Opera */
     }
 
     .sidebar_column {
@@ -297,10 +288,6 @@
         padding: 0;
     }
 
-    // #settings_button.titled {
-    //     opacity: 0.2;
-    // }
-
     #close_button {
         background-color: var(--plugin--background);
         padding: 0px;
@@ -325,14 +312,12 @@
         }
 
         &:before {
-            // font-feature-settings: "liga";
-            // content: var(--config-button-icon--content, "Configure");
             display: inline-block;
             height: 20px;
             width: 20px;
             content: "";
             mask-size: cover;
-            -webkit-mask-size: cover; //40px 35px;
+            -webkit-mask-size: cover;
             background-repeat: no-repeat;
             background-color: var(--icon--color);
             mask-image: var(--close-icon--mask-image);
@@ -347,12 +332,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        z-index: 10000;
+        z-index: 3;
         border: 1px solid var(--inactive--color);
         border-radius: 5px;
         font-size: 10px;
         font-weight: normal;
-        z-index: 3;
 
         &:hover {
             color: var(--plugin--background, inherit);
@@ -365,14 +349,12 @@
         }
 
         &:before {
-            // font-feature-settings: "liga";
-            // content: var(--config-button-icon--content, "Configure");
             display: inline-block;
             height: 20px;
             width: 20px;
             content: "";
             mask-size: cover;
-            -webkit-mask-size: cover; //40px 35px;
+            -webkit-mask-size: cover;
             background-repeat: no-repeat;
             background-color: var(--icon--color);
             mask-image: var(--drawer-tab-inverted-icon--mask-image);
@@ -380,34 +362,11 @@
         }
     }
 
-    // #settings_button.floating {
-    //     border: none;
-    //     opacity: 1;
-    //     background-color: transparent;
-    //     margin-right: 0px;
-    //     padding: 0;
-    //     border-radius: 0px;
-
-    //     &:before {
-    //         display: inline-block;
-    //         height: 18px;
-    //         width: 26px;
-    //         content: "";
-    //         mask-size: cover;
-    //         -webkit-mask-size: cover; //40px 35px;
-    //         background-repeat: no-repeat;
-    //         background-color: var(--icon--color);
-    //         mask-image: var(--drawer-tab-icon--mask-image);
-    //         -webkit-mask-image: var(--drawer-tab-icon--mask-image);
-    //     }
-    // }
-
     .split-panel.orient-reverse
         > .split-panel-child:not(:last-child):not(.is-width-override) {
         max-width: 300px;
     }
 
-    #expr_panel_header,
     .sidebar_header {
         min-height: var(
             --plugin-selector--height,
@@ -420,7 +379,6 @@
         border-bottom: 1px solid var(--inactive--color, #6e6e6e);
     }
 
-    #expr_panel_header_title,
     .sidebar_header_title {
         padding-left: 9px;
         overflow: hidden;
@@ -429,7 +387,6 @@
         margin-right: 30px;
     }
 
-    #expr_panel_border,
     .sidebar_border {
         height: 2px;
         width: 100%;
@@ -437,14 +394,5 @@
         margin-top: 1px;
         flex-shrink: 0;
         flex-grow: 0;
-    }
-
-    .expr_editor_column {
-        z-index: 2;
-        width: 100%;
-    }
-
-    .is-width-override > .expr_editor_column {
-        min-width: unset;
     }
 }

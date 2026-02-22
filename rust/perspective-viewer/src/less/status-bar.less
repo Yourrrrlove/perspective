@@ -21,8 +21,6 @@
     // When settings open ...
     #main_column #status_bar,
     #main_column #status_bar.titled {
-        // padding-right: 10px;
-
         input::placeholder {
             color: var(--inactive--color);
         }
@@ -95,7 +93,6 @@
 
             input,
             textarea {
-                // grid-area: 1 / 1;
                 position: absolute;
                 left: 0;
                 right: 0;
@@ -121,11 +118,6 @@
                     outline: none;
                 }
             }
-        }
-
-        .app-title {
-            margin-left: 12px;
-            font-size: 16px;
         }
 
         .section {
@@ -171,31 +163,15 @@
             align-self: stretch;
         }
 
-        #counter-arrow:before {
-            content: var(--status-bar-counter--content, "arrow_back");
-        }
-
         span {
             white-space: nowrap;
-
-            // font-size: var(--label--font-size, 0.75em);
             margin: 0px 14px;
             user-select: none;
-            // height: 100%;
-            // line-height: 36px;
-
-            // &:before {
-            //     position: relative;
-            // }
 
             &:hover {
                 color: inherit;
             }
         }
-
-        // span#rows {
-        //     margin-left: 2px;
-        // }
 
         span.icon {
             height: 100%;
@@ -279,7 +255,7 @@
             align-items: center;
             border-radius: 3px;
             margin: 0;
-            height: auto; //var(--status-bar--height, 48px);
+            height: auto;
             border: 1px solid var(--status-ok-icon--border-color, transparent);
             cursor: var(--status-ok-icon--cursor);
             pointer-events: var(--status-indicator--pointer-events, none);
@@ -298,7 +274,6 @@
                         var(--icon--color)
                     );
                 }
-                // color: var(--status-ok-icon--hover--background-color);
             }
 
             &.errored {
@@ -317,12 +292,8 @@
                 align-items: center;
                 justify-content: center;
                 height: 20px;
-                height: 20px;
                 border-radius: 10px;
                 color: var(--plugin--background);
-                // pointer-events: all;
-                // mask-image: url(../svg/status_error.svg);
-                // -webkit-mask-image: url(../svg/status_error.svg);
                 &:before {
                     content: "!";
                 }
@@ -353,10 +324,6 @@
             mask-image: var(--updating-icon--mask-image);
             -webkit-mask-image: var(--updating-icon--mask-image);
         }
-
-        // span#status.uninitialized {
-
-        // }
 
         span#status.updating {
             animation-name: status-bar-updating-inverse;
