@@ -102,7 +102,14 @@ pub impl LocalKey<Rc<RefCell<Vec<PluginRecord>>>> {
                     .unwrap_or_else(|| "Custom".to_owned()),
                 priority: plugin_inst.priority().unwrap_or_default(),
             };
+
             let mut plugins = plugin.borrow_mut();
+            if let Some(first) = plugins.first()
+                && first.tag_name.as_str() == "perspective-viewer-plugin"
+            {
+                plugins.clear();
+            }
+
             plugins.push(record);
             plugins.sort_by(|a, b| Ord::cmp(&b.priority, &a.priority));
         });
@@ -121,7 +128,7 @@ fn register_default() {
                 name: "Debug".to_owned(),
                 category: "Custom".to_owned(),
                 tag_name: "perspective-viewer-plugin".to_owned(),
-                priority: 0,
+                priority: -1,
             })
         }
     })

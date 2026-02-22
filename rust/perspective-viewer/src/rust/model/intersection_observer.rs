@@ -38,8 +38,9 @@ impl IntersectionObserverHandle {
     ) -> Self {
         clone!(session, renderer, presentation);
         let _callback = Closure::new(move |xs: js_sys::Array| {
+            // https://stackoverflow.com/questions/53862160/intersectionobserver-multiple-entries
             let intersect = xs
-                .get(0)
+                .pop()
                 .unchecked_into::<IntersectionObserverEntry>()
                 .is_intersecting();
 
@@ -49,6 +50,7 @@ impl IntersectionObserverHandle {
                 session,
                 renderer,
             };
+
             ApiFuture::spawn(state.set_pause(intersect));
         });
 
