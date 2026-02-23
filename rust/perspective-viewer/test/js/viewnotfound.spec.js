@@ -13,7 +13,10 @@
 import { test, expect } from "@perspective-dev/test";
 
 test("View conflation is silenced", async ({ page }) => {
-    await page.goto("/rust/perspective-viewer/test/html/superstore.html");
+    await page.goto(
+        "/rust/perspective-viewer/test/html/superstore_lazy_viewer.html",
+    );
+
     await page.evaluate(async () => {
         while (!window["__TEST_PERSPECTIVE_READY__"]) {
             await new Promise((x) => setTimeout(x, 10));
@@ -53,30 +56,31 @@ test("View conflation is silenced", async ({ page }) => {
 
         customElements.define("pause-plugin", PausePlugin);
         const Viewer = customElements.get("perspective-viewer");
-        await Viewer.registerPlugin("pause-plugin");
+        Viewer.registerPlugin("pause-plugin");
 
         // use a new viewer because only new viewers get loaded with the registered plugin
         const viewer = document.createElement("perspective-viewer");
         document.body.append(viewer);
-        const table = worker.table("a,b,c\n1,2,3", { name: "A" });
+        worker.table("a,b,c\n1,2,3", { name: "A" });
 
-        await viewer.load(table);
-        await viewer.restore({ plugin: "pause-plugin" });
+        await viewer.load(worker);
+        await viewer.restore({ table: "A", plugin: "pause-plugin" });
         is_paused = true;
 
         // Change in 4.1.0 - empty restore now does not render
-        const restore_task = viewer.restore({ plugin: "pause-plugin" });
+        const restore_task = viewer.restore({
+            plugin: "pause-plugin",
+        });
+
         while (!resolve) {
             await new Promise((x) => setTimeout(x, 0));
         }
 
-        const load_task = viewer.load(table);
         await new Promise((x) => setTimeout(x, 0));
         resolve();
         resolve = undefined;
         is_paused = false;
         await restore_task;
-        await load_task;
     });
 
     expect(vnf).toBeFalsy();
