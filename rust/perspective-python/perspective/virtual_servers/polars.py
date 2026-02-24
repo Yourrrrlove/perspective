@@ -278,7 +278,12 @@ class PolarsVirtualServerHandler(VirtualServerHandler):
                 push_col = col.replace("_", "|")
 
             for ridx, value in enumerate(values):
-                grouping_id = grouping_ids[ridx] if grouping_ids else None
+                if grouping_ids:
+                    grouping_id = grouping_ids[ridx]
+                elif has_group_by:
+                    grouping_id = 0
+                else:
+                    grouping_id = None
 
                 if value is not None and isinstance(value, float) and value != value:
                     value = None

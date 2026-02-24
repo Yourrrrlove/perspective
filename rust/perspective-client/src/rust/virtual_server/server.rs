@@ -308,7 +308,7 @@ impl<T: VirtualServerHandler> VirtualServer<T> {
                     .await?;
 
                 let arrow = cols
-                    .to_arrow_ipc()
+                    .render_to_arrow_ipc()
                     .map_err(|e| VirtualServerError::Other(e.to_string()))?;
 
                 respond!(msg, ViewToArrowResp { arrow })
@@ -322,7 +322,7 @@ impl<T: VirtualServerHandler> VirtualServer<T> {
                     .view_get_data(msg.entity_id.as_str(), config, &schema, &viewport)
                     .await?;
 
-                let rows = cols.to_rows();
+                let rows = cols.render_to_rows();
                 let mut csv = String::new();
                 if let Some(first_row) = rows.first() {
                     let headers: Vec<&str> = first_row.keys().map(|k| k.as_str()).collect();
@@ -350,7 +350,7 @@ impl<T: VirtualServerHandler> VirtualServer<T> {
                     .view_get_data(msg.entity_id.as_str(), config, &schema, &viewport)
                     .await?;
 
-                let rows = cols.to_rows();
+                let rows = cols.render_to_rows();
                 let ndjson_string = rows
                     .iter()
                     .map(serde_json::to_string)
@@ -369,7 +369,7 @@ impl<T: VirtualServerHandler> VirtualServer<T> {
                     .view_get_data(msg.entity_id.as_str(), config, &schema, &viewport)
                     .await?;
 
-                let rows = cols.to_rows();
+                let rows = cols.render_to_rows();
                 let json_string = serde_json::to_string(&rows)
                     .map_err(|e| VirtualServerError::InvalidJSON(std::sync::Arc::new(e)))?;
 
@@ -385,7 +385,7 @@ impl<T: VirtualServerHandler> VirtualServer<T> {
                     .await?;
 
                 let json_string = cols
-                    .to_columns_json()
+                    .render_to_columns_json()
                     .map_err(|e| VirtualServerError::Other(e.to_string()))?;
 
                 respond!(msg, ViewToColumnsStringResp { json_string })

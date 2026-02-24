@@ -171,25 +171,12 @@ class ClickhouseVirtualServerHandler(VirtualServerHandler):
 
     def view_get_data(self, view_name, config, schema, viewport, data):
         group_by = config["group_by"]
-        split_by = config["split_by"]
         query = self.sql_builder.view_get_data(view_name, config, viewport, schema)
         results, columns, dtypes = run_query(self.db, query, columns=True)
         for cidx, col in enumerate(columns):
-            if cidx == 0 and len(group_by) > 0 and len(split_by) == 0:
-                continue
-
-            if len(split_by) > 0 and not col.startswith("__ROW_PATH_"):
-                col = col.replace("_", "|")
-
-            # print(
-            #     dtypes[cidx], type(dtypes[cidx]), dir(dtypes[cidx]), dtypes[cidx].name
-            # )
-
             dtype = clickhouse_type_to_psp(str(dtypes[cidx]))
             for ridx, row in enumerate(results):
-                grouping_id = (
-                    row[0] if len(group_by) > 0 and len(split_by) == 0 else None
-                )
+                grouping_id = row[0] if len(group_by) > 0 else None
 
                 value = row[cidx]
                 if dtype == "string" and not isinstance(value, str):

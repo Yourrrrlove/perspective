@@ -309,8 +309,6 @@ export class ClickhouseHandler implements perspective.VirtualServerHandler {
         viewport: ViewWindow,
         dataSlice: perspective.VirtualDataSlice,
     ) {
-        const is_group_by = config.group_by?.length > 0;
-        const is_split_by = config.split_by?.length > 0;
         const query = this.sqlBuilder.viewGetData(
             viewId,
             config,
@@ -323,23 +321,14 @@ export class ClickhouseHandler implements perspective.VirtualServerHandler {
         });
 
         for (let cidx = 0; cidx < columns.length; cidx++) {
-            if (cidx === 0 && is_group_by && !is_split_by) {
-                // This is the grouping_id column, skip it
-                continue;
-            }
-
-            let col = columns[cidx];
-            if (is_split_by && !col.startsWith("__ROW_PATH_")) {
-                col = col.replaceAll("_", "|");
-            }
-
+            const col = columns[cidx];
             const dtype = duckdbTypeToPsp(dtypes[cidx]) as ColumnType;
 
             const isDecimal = dtypes[cidx].startsWith("Decimal");
             for (let ridx = 0; ridx < rows.length; ridx++) {
                 const row = rows[ridx];
                 const grouping_id = row["__GROUPING_ID__"];
-                let value = row[columns[cidx]];
+                let value = row[col];
                 if (isDecimal) {
                     value = convertDecimalToNumber(value, dtypes[cidx]);
                 }
