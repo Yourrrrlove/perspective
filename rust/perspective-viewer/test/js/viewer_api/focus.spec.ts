@@ -10,51 +10,38 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test } from "@perspective-dev/test";
-import { compareContentsToSnapshot } from "@perspective-dev/test";
-import * as prettier from "prettier";
+import { test, expect } from "../helpers.ts";
 
-async function get_contents(page) {
-    const raw = await page.evaluate(async () => {
-        const viewer = document.querySelector("perspective-viewer").shadowRoot;
-        return viewer.innerHTML;
-    });
+test.describe("Focus", async () => {
+    test.beforeEach(async function init({ page }) {
+        await page.goto(
+            "/node_modules/@perspective-dev/viewer/test/html/superstore_with_input.html",
+        );
 
-    return await prettier.format(raw, {
-        parser: "html",
-    });
-}
-
-test.beforeEach(async ({ page }) => {
-    await page.goto("/rust/perspective-viewer/test/html/plugin-resize.html");
-    await page.evaluate(async () => {
-        while (!window["__TEST_PERSPECTIVE_READY__"]) {
-            await new Promise((x) => setTimeout(x, 10));
-        }
-    });
-});
-
-test.describe("Cancellable methods", () => {
-    test("Cancellable view methods do not error", async ({ page }) => {
         await page.evaluate(async () => {
-            const viewer = document.querySelector("perspective-viewer");
-            await viewer.restore({
-                group_by: ["State"],
-                columns: ["Sales"],
-                settings: true,
-                filter: [
-                    ["State", "not in", ["California", "Texas", "New York"]],
-                ],
-            });
-
-            const view = await viewer.getView();
-            await view.delete();
-            await viewer.resize(true);
+            while (!window["__TEST_PERSPECTIVE_READY__"]) {
+                await new Promise((x) => setTimeout(x, 10));
+            }
         });
 
-        const contents = await get_contents(page);
-        await compareContentsToSnapshot(contents, [
-            "regressions-not_in-filter-works-correctly.txt",
-        ]);
+        await page.evaluate(async () => {
+            await document.querySelector("perspective-viewer").restore({
+                plugin: "Debug",
+            });
+        });
+    });
+
+    test("focus > preserves external widget focus during restore", async ({
+        page,
+    }) => {
+        const viewer = page.locator("perspective-viewer");
+        const tagName = await viewer.evaluate(async (viewer) => {
+            const input = document.querySelector("input");
+            input.focus();
+            await viewer.restore({ group_by: ["State"] });
+            return document.activeElement.tagName;
+        });
+
+        expect(tagName).toEqual("INPUT");
     });
 });

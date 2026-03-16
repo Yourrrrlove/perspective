@@ -10,8 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { PageView as PspViewer } from "@perspective-dev/test";
-import { expect, test } from "@perspective-dev/test";
+import { PageView as PspViewer, expect, test } from "../helpers.ts";
 import fs from "node:fs";
 import { fileURLToPath } from "url";
 import path from "path";
@@ -28,7 +27,7 @@ test.describe("Localization", function () {
         });
     });
 
-    test("All label tags are empty", async function ({ page }) {
+    test("labels > renders no visible label text", async function ({ page }) {
         const view = new PspViewer(page);
         await view.openSettingsPanel();
         const editBtn = view.dataGrid.regularTable.editBtnRow
@@ -48,15 +47,17 @@ test.describe("Localization", function () {
     });
 
     const intl = fs
-        .readFileSync(`${__dirname}/../../src/themes/intl.less`)
+        .readFileSync(`${__dirname}/../../../src/themes/intl.less`)
         .toString();
 
     const keys = Array.from(intl.matchAll(/--[a-zA-Z0-9\-]+/g)).flat();
-    const langfiles = fs.readdirSync(`${__dirname}/../../src/themes/intl`);
+    const langfiles = fs.readdirSync(`${__dirname}/../../../src/themes/intl`);
     for (const file of langfiles) {
-        test(`${file} has all intl keys present`, async function ({ page }) {
+        test(`${file} > contains all required intl keys`, async function ({
+            page,
+        }) {
             const langfile = fs
-                .readFileSync(`${__dirname}/../../src/themes/intl/${file}`)
+                .readFileSync(`${__dirname}/../../../src/themes/intl/${file}`)
                 .toString();
             for (const key of keys) {
                 const re = new RegExp(key, "g");

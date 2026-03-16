@@ -10,21 +10,15 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect, shadow_type } from "@perspective-dev/test";
-import { compareContentsToSnapshot, API_VERSION } from "@perspective-dev/test";
-import * as prettier from "prettier";
+import {
+    test,
+    expect,
+    compareContentsToSnapshot,
+    API_VERSION,
+    getShadowContents,
+} from "../helpers.ts";
 
-async function get_contents(page) {
-    const raw = await page.evaluate(async () => {
-        // @ts-ignore
-        const viewer = document.querySelector("perspective-viewer").shadowRoot;
-        return viewer ? viewer.innerHTML : "MISSING";
-    });
-
-    return await prettier.format(raw, {
-        parser: "html",
-    });
-}
+const get_contents = getShadowContents;
 
 test.beforeEach(async ({ page }) => {
     await page.goto("/rust/perspective-viewer/test/html/superstore.html");
@@ -42,9 +36,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Events", () => {
-    test("restore fires the 'perspective-config-update' event", async ({
-        page,
-    }) => {
+    test("config-update event > fires on restore", async ({ page }) => {
         const config = await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
 
@@ -90,14 +82,10 @@ test.describe("Events", () => {
 
         const contents = await get_contents(page);
 
-        await compareContentsToSnapshot(contents, [
-            "restore-fires-the-perspective-config-update-event.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Editing the title fires the 'perspective-config-update' event", async ({
-        page,
-    }) => {
+    test("config-update event > fires on title edit", async ({ page }) => {
         await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             window["acc"] = [];
@@ -111,14 +99,10 @@ test.describe("Events", () => {
             });
         });
 
-        await shadow_type(
-            page,
-            "New Title",
-            true,
-            "perspective-viewer",
-            "#status_bar",
-            "input",
-        );
+        const titleInput = page.locator("perspective-viewer #status_bar input");
+        await titleInput.focus();
+        await titleInput.pressSequentially("New Title");
+        await titleInput.blur();
 
         const result = await page.evaluate(async () => {
             return window["acc"];
@@ -133,29 +117,4 @@ test.describe("Events", () => {
 
         expect(config.title).toEqual("New Title");
     });
-
-    // NOTE: Previously skipped, kept for future reference
-    // test.skip("restore with a 'plugin' field fires the 'perspective-plugin-update' event", async ({
-    //     page,
-    // }) => {
-    //     const config = await page.evaluate(async () => {
-    //         const viewer = document.querySelector("perspective-viewer");
-    //         await viewer.getTable();
-    //         let config;
-    //         viewer.addEventListener("perspective-plugin-update", (event) => {
-    //             config = "DID NOT FAIL";
-    //         });
-
-    //         await viewer.restore({
-    //             settings: true,
-    //             plugin: "Debug",
-    //             group_by: ["State"],
-    //         });
-    //         return config;
-    //     });
-
-    //     expect(config).toEqual("Debug");
-
-    //     return await get_contents(page);
-    // });
 });

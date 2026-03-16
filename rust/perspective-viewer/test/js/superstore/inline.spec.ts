@@ -10,12 +10,24 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@perspective-dev/test";
+import { test } from "../helpers.ts";
+import { run_standard_tests } from "../helpers/standard_tests.ts";
 
-test.describe("browser focus", async () => {
+async function get_contents(page) {
+    return await page.evaluate(async () => {
+        const viewer = document.querySelector(
+            "perspective-viewer perspective-viewer-plugin",
+        );
+
+        // Don't format - light DOM is CSV in a <pre> tag.
+        return viewer.innerHTML;
+    });
+}
+
+test.describe("Superstore Inline", () => {
     test.beforeEach(async function init({ page }) {
         await page.goto(
-            "/node_modules/@perspective-dev/viewer/test/html/superstore_with_input.html",
+            "/node_modules/@perspective-dev/viewer/test/html/superstore-inline.html",
         );
 
         await page.evaluate(async () => {
@@ -31,17 +43,5 @@ test.describe("browser focus", async () => {
         });
     });
 
-    test("Focus is not lost on external widgets when a restore call takes place", async ({
-        page,
-    }) => {
-        const viewer = page.locator("perspective-viewer");
-        const tagName = await viewer.evaluate(async (viewer) => {
-            const input = document.querySelector("input");
-            input.focus();
-            await viewer.restore({ group_by: ["State"] });
-            return document.activeElement.tagName;
-        });
-
-        expect(tagName).toEqual("INPUT");
-    });
+    run_standard_tests("superstore inline", get_contents);
 });

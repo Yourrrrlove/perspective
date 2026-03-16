@@ -10,53 +10,42 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@perspective-dev/test";
+import {
+    test,
+    compareContentsToSnapshot,
+    getShadowContents,
+} from "../helpers.ts";
+
+const get_contents = getShadowContents;
 
 test.beforeEach(async ({ page }) => {
-    await page.goto("/rust/perspective-viewer/test/html/blank.html");
-    await page.waitForFunction(() => "WORKER" in window);
+    await page.goto("/rust/perspective-viewer/test/html/plugin-resize.html");
+    await page.evaluate(async () => {
+        while (!window["__TEST_PERSPECTIVE_READY__"]) {
+            await new Promise((x) => setTimeout(x, 10));
+        }
+    });
 });
 
-test.describe("viewer.load() method", async () => {
-    test("does load a resolved Table promise", async ({ page }) => {
-        const viewer = page.locator("perspective-viewer");
-        await viewer.evaluate(async (viewer) => {
-            const goodTable = (await window.WORKER).table("a,b,c\n1,2,3");
-            return viewer.load(goodTable);
+test.describe("Cancellable Views", () => {
+    test("resize > does not throw after view deletion", async ({ page }) => {
+        await page.evaluate(async () => {
+            const viewer = document.querySelector("perspective-viewer");
+            await viewer.restore({
+                group_by: ["State"],
+                columns: ["Sales"],
+                settings: true,
+                filter: [
+                    ["State", "not in", ["California", "Texas", "New York"]],
+                ],
+            });
+
+            const view = await viewer.getView();
+            await view.delete();
+            await viewer.resize(true);
         });
-        await expect(viewer).toHaveText(/"a","b","c"/); // column titles
-    });
 
-    test("is rejected by a rejected Table promise", async ({ page }) => {
-        const viewer = page.locator("perspective-viewer");
-        await expect(
-            viewer.evaluate((viewer) => {
-                const errorTable = Promise.reject(new Error("blimpy"));
-                return viewer.load(errorTable);
-            }),
-        ).rejects.toThrow("blimpy");
-    });
-
-    test("after a load error, same viewer can load a resolved Table promise", async ({
-        page,
-    }) => {
-        const viewer = page.locator("perspective-viewer");
-        const didError = await viewer.evaluate(async (viewer) => {
-            const errorTable = Promise.reject(new Error("blimpy"));
-            const worker = await window.WORKER;
-            let didError = false;
-            try {
-                await viewer.load(errorTable);
-            } catch (e) {
-                if (e.message.includes("blimpy")) {
-                    didError = true;
-                }
-            }
-
-            const goodTable = worker.table("a,b,c\n1,2,3");
-            await viewer.load(goodTable);
-            return didError;
-        });
-        expect(didError).toBe(true);
+        const contents = await get_contents(page);
+        await compareContentsToSnapshot(contents);
     });
 });

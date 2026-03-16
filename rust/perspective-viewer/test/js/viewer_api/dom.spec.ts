@@ -10,37 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@perspective-dev/test";
-import {
-    PageView,
-    compareContentsToSnapshot,
-    shadow_click,
-    shadow_type,
-} from "@perspective-dev/test";
-
-async function checkSaveDisabled(page, expr) {
-    let view = new PageView(page);
-    let settingsPanel = await view.openSettingsPanel();
-    await settingsPanel.createNewExpression("", expr, false);
-}
-
-test.beforeEach(async ({ page }) => {
-    await page.goto(
-        "/node_modules/@perspective-dev/viewer/test/html/superstore.html",
-    );
-
-    await page.evaluate(async () => {
-        while (!window["__TEST_PERSPECTIVE_READY__"]) {
-            await new Promise((x) => setTimeout(x, 10));
-        }
-    });
-
-    await page.evaluate(async () => {
-        await document.querySelector("perspective-viewer").restore({
-            plugin: "Debug",
-        });
-    });
-});
+import { test, expect, compareContentsToSnapshot } from "../helpers.ts";
 
 const RESULT = {
     aggregates: {},
@@ -80,14 +50,32 @@ const RESULT = {
     group_rollup_mode: "rollup",
 };
 
+test.beforeEach(async ({ page }) => {
+    await page.goto(
+        "/node_modules/@perspective-dev/viewer/test/html/superstore.html",
+    );
+    await page.evaluate(async () => {
+        while (!window["__TEST_PERSPECTIVE_READY__"]) {
+            await new Promise((x) => setTimeout(x, 10));
+        }
+    });
+    await page.evaluate(async () => {
+        await document.querySelector("perspective-viewer")!.restore({
+            plugin: "Debug",
+        });
+    });
+});
+
 test.describe("DOM API", () => {
-    test.describe("Calling restore() with a table name immediately sets default plugin and columns", () => {
-        test("Proper await order", async ({ page }) => {
+    test.describe("restore with table name > sets default plugin and columns", () => {
+        test("await order > resolves correctly when fully awaited", async ({
+            page,
+        }) => {
             const x = await page.evaluate(async () => {
-                const old = document.querySelector("perspective-viewer");
-                old.parentElement.removeChild(old);
+                const old = document.querySelector("perspective-viewer")!;
+                old.parentElement!.removeChild(old);
                 const viewer = document.createElement("perspective-viewer");
-                await viewer.load(window.__TEST_WORKER__);
+                await viewer.load((window as any).__TEST_WORKER__);
                 await viewer.restore({ table: "load-viewer-csv" });
                 return await viewer.save();
             });
@@ -96,12 +84,14 @@ test.describe("DOM API", () => {
             expect(x).toEqual(RESULT);
         });
 
-        test("Missing await on load()", async ({ page }) => {
+        test("await order > resolves correctly when load is not awaited", async ({
+            page,
+        }) => {
             const x = await page.evaluate(async () => {
-                const old = document.querySelector("perspective-viewer");
-                old.parentElement.removeChild(old);
+                const old = document.querySelector("perspective-viewer")!;
+                old.parentElement!.removeChild(old);
                 const viewer = document.createElement("perspective-viewer");
-                viewer.load(window.__TEST_WORKER__);
+                viewer.load((window as any).__TEST_WORKER__);
                 await viewer.restore({ table: "load-viewer-csv" });
                 return await viewer.save();
             });
@@ -110,12 +100,14 @@ test.describe("DOM API", () => {
             expect(x).toEqual(RESULT);
         });
 
-        test("Missing await on restore()", async ({ page }) => {
+        test("await order > resolves correctly when restore is not awaited", async ({
+            page,
+        }) => {
             const x = await page.evaluate(async () => {
-                const old = document.querySelector("perspective-viewer");
-                old.parentElement.removeChild(old);
+                const old = document.querySelector("perspective-viewer")!;
+                old.parentElement!.removeChild(old);
                 const viewer = document.createElement("perspective-viewer");
-                await viewer.load(window.__TEST_WORKER__);
+                await viewer.load((window as any).__TEST_WORKER__);
                 viewer.restore({ table: "load-viewer-csv" });
                 return await viewer.save();
             });
@@ -124,12 +116,14 @@ test.describe("DOM API", () => {
             expect(x).toEqual(RESULT);
         });
 
-        test("Missing await on both", async ({ page }) => {
+        test("await order > resolves correctly when neither load nor restore is awaited", async ({
+            page,
+        }) => {
             const x = await page.evaluate(async () => {
-                const old = document.querySelector("perspective-viewer");
-                old.parentElement.removeChild(old);
+                const old = document.querySelector("perspective-viewer")!;
+                old.parentElement!.removeChild(old);
                 const viewer = document.createElement("perspective-viewer");
-                viewer.load(window.__TEST_WORKER__);
+                viewer.load((window as any).__TEST_WORKER__);
                 viewer.restore({ table: "load-viewer-csv" });
                 return await viewer.save();
             });
@@ -139,39 +133,39 @@ test.describe("DOM API", () => {
         });
     });
 
-    test.describe("Calling load() and restore() before appending to the DOM", () => {
-        test("Proper await order", async ({ page }) => {
+    test.describe("load and restore before DOM append", () => {
+        test("append > renders correctly when fully awaited", async ({
+            page,
+        }) => {
             const contents = await page.evaluate(async () => {
-                const old = document.querySelector("perspective-viewer");
-                old.parentElement.removeChild(old);
+                const old = document.querySelector("perspective-viewer")!;
+                old.parentElement!.removeChild(old);
                 const viewer = document.createElement("perspective-viewer");
-                await viewer.load(window.__TEST_WORKER__);
+                await viewer.load((window as any).__TEST_WORKER__);
                 await viewer.restore({ table: "load-viewer-csv" });
                 document.body.appendChild(viewer);
                 await viewer.flush();
                 return document.body.innerHTML;
             });
 
-            await compareContentsToSnapshot(contents, [
-                "load-restore-before-append.txt",
-            ]);
+            await compareContentsToSnapshot(contents);
         });
 
-        test("Missing await on restore()", async ({ page }) => {
+        test("append > renders correctly when restore is not awaited", async ({
+            page,
+        }) => {
             const contents = await page.evaluate(async () => {
-                const old = document.querySelector("perspective-viewer");
-                old.parentElement.removeChild(old);
+                const old = document.querySelector("perspective-viewer")!;
+                old.parentElement!.removeChild(old);
                 const viewer = document.createElement("perspective-viewer");
-                await viewer.load(window.__TEST_WORKER__);
+                await viewer.load((window as any).__TEST_WORKER__);
                 viewer.restore({ table: "load-viewer-csv" });
                 document.body.appendChild(viewer);
                 await viewer.flush();
                 return document.body.innerHTML;
             });
 
-            await compareContentsToSnapshot(contents, [
-                "load-restore-before-append.txt",
-            ]);
+            await compareContentsToSnapshot(contents);
         });
     });
 });

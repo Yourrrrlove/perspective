@@ -10,9 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { PageView } from "@perspective-dev/test";
-import { ColumnSelector } from "@perspective-dev/test/src/js/models/settings_panel";
-import { test, expect } from "@perspective-dev/test";
+import { PageView, ColumnSelector, test, expect } from "../helpers.ts";
 
 test.describe.configure({ mode: "parallel" });
 

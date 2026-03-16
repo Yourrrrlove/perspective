@@ -60,7 +60,7 @@ function confirmDataIsNotEpochForm(dateValues: any[]) {
 test.describe("Axis Values With Grouped Data With A Date Field In The Group", () => {
     test("X Bar y-axis label with grouped data", async ({ page }) => {
         await page.click('div[data-plugin="X Bar"]');
-        await page.waitForSelector("perspective-viewer");
+        await page.waitForSelector("perspective-viewer-d3fc-xbar");
 
         const dateValues = await page.evaluate(async () => {
             let viewer = document.querySelector("perspective-viewer");
@@ -93,7 +93,7 @@ test.describe("Axis Values With Grouped Data With A Date Field In The Group", ()
 
     test("Y Bar x-axis label with grouped data", async ({ page }) => {
         await page.click('div[data-plugin="Y Bar"]');
-        await page.waitForSelector("perspective-viewer");
+        await page.waitForSelector("perspective-viewer-d3fc-ybar");
 
         const dateValues = await page.evaluate(async () => {
             let viewer = document.querySelector("perspective-viewer");
@@ -126,7 +126,7 @@ test.describe("Axis Values With Grouped Data With A Date Field In The Group", ()
 
     test("OHLC x-axis label with grouped data", async ({ page }) => {
         await page.click('div[data-plugin="OHLC"]');
-        await page.waitForSelector("perspective-viewer");
+        await page.waitForSelector("perspective-viewer-d3fc-ohlc");
 
         const dateValues = await page.evaluate(async () => {
             let viewer = document.querySelector("perspective-viewer");
@@ -159,40 +159,44 @@ test.describe("Axis Values With Grouped Data With A Date Field In The Group", ()
 
     test("Heatmap x-axis label with grouped data", async ({ page }) => {
         await page.click('div[data-plugin="Heatmap"]');
-        await page.waitForSelector("perspective-viewer");
+        await page.waitForSelector("perspective-viewer-d3fc-heatmap");
 
-        const dateValues = await page.evaluate(async () => {
-            let viewer = document.querySelector("perspective-viewer");
+        const dateValues = await page
+            .evaluate(async () => {
+                let viewer = document.querySelector("perspective-viewer");
 
-            if (!viewer) {
-                return Error("Invalid Viewer");
-            }
+                if (!viewer) {
+                    return Error("Invalid Viewer");
+                }
 
-            const plugin_element = viewer.querySelector(
-                `perspective-viewer-d3fc-heatmap`,
-            );
+                const plugin_element = viewer.querySelector(
+                    `perspective-viewer-d3fc-heatmap`,
+                );
 
-            if (!plugin_element) {
-                throw Error("Invalid Plugin Element");
-            }
+                if (!plugin_element) {
+                    throw Error("Invalid Plugin Element");
+                }
 
-            const shadowRoot = plugin_element.shadowRoot;
-            const dateTextElements = shadowRoot.querySelectorAll(
-                "div d3fc-group d3fc-svg.x-axis.bottom-axis svg g.group:last-child g.tick text",
-            );
+                const shadowRoot = plugin_element.shadowRoot;
+                const dateTextElements = shadowRoot.querySelectorAll(
+                    "div d3fc-group d3fc-svg.x-axis.bottom-axis svg g.group:last-child g.tick text",
+                );
 
-            // collect and return the actual date data to be used.
-            return Array.from(dateTextElements).map((el) =>
-                el.textContent?.trim(),
-            );
-        });
+                // collect and return the actual date data to be used.
+                return Array.from(dateTextElements).map((el) =>
+                    el.textContent?.trim(),
+                );
+            })
+            .catch((e) => e);
+
+        await page.pause();
 
         confirmDataIsNotEpochForm(dateValues);
     });
 
     test("Y Line x-axis label with grouped data", async ({ page }) => {
         await page.click('div[data-plugin="Y Line"]');
-        await page.waitForSelector("perspective-viewer");
+        await page.waitForSelector("perspective-viewer-d3fc-yline");
 
         const dateValues = await page.evaluate(async () => {
             let viewer = document.querySelector("perspective-viewer");
@@ -225,7 +229,7 @@ test.describe("Axis Values With Grouped Data With A Date Field In The Group", ()
 
     test("Y Area x-axis label with grouped data", async ({ page }) => {
         await page.click('div[data-plugin="Y Area"]');
-        await page.waitForSelector("perspective-viewer");
+        await page.waitForSelector("perspective-viewer-d3fc-yarea");
 
         const dateValues = await page.evaluate(async () => {
             let viewer = document.querySelector("perspective-viewer");
@@ -258,7 +262,7 @@ test.describe("Axis Values With Grouped Data With A Date Field In The Group", ()
 
     test("Y Scatter x-axis label with grouped data", async ({ page }) => {
         await page.click('div[data-plugin="Y Scatter"]');
-        await page.waitForSelector("perspective-viewer");
+        await page.waitForSelector("perspective-viewer-d3fc-yscatter");
 
         const dateValues = await page.evaluate(async () => {
             let viewer = document.querySelector("perspective-viewer");
@@ -291,7 +295,7 @@ test.describe("Axis Values With Grouped Data With A Date Field In The Group", ()
 
     test("CandleStick x-axis label with grouped data", async ({ page }) => {
         await page.click('div[data-plugin="Candlestick"]');
-        await page.waitForSelector("perspective-viewer");
+        await page.waitForSelector("perspective-viewer-d3fc-candlestick");
 
         const dateValues = await page.evaluate(async () => {
             let viewer = document.querySelector("perspective-viewer");

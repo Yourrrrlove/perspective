@@ -10,57 +10,38 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect, DEFAULT_CONFIG } from "@perspective-dev/test";
-import { API_VERSION } from "@perspective-dev/test";
+import { test } from "../helpers.ts";
+import { run_standard_tests } from "../helpers/standard_tests.ts";
 
-test.beforeEach(async ({ page }) => {
-    await page.goto(
-        "/node_modules/@perspective-dev/viewer/test/html/plugin-priority-order.html",
-    );
-    await page.evaluate(async () => {
-        while (!window["__TEST_PERSPECTIVE_READY__"]) {
-            await new Promise((x) => setTimeout(x, 10));
-        }
+async function get_contents(page) {
+    return await page.evaluate(async () => {
+        const viewer = document.querySelector(
+            "perspective-viewer perspective-viewer-plugin",
+        );
+
+        // Don't format - light DOM is CSV in a <pre> tag.
+        return viewer.innerHTML;
     });
-});
+}
 
-test.describe("Plugin Priority Order", () => {
-    test("Elements are loaded in priority Order", async ({ page }) => {
-        let saved = await page.evaluate(async () => {
-            const viewer = document.querySelector("perspective-viewer");
-            window.__TABLE__ = await viewer.getTable();
-            await viewer.reset();
+test.describe("Superstore", () => {
+    test.beforeEach(async function init({ page }) {
+        await page.goto(
+            "/node_modules/@perspective-dev/viewer/test/html/superstore.html",
+        );
 
-            return await viewer.save();
+        await page.evaluate(async () => {
+            while (!window["__TEST_PERSPECTIVE_READY__"]) {
+                await new Promise((x) => setTimeout(x, 10));
+            }
         });
 
-        const expected = {
-            ...DEFAULT_CONFIG,
-            version: API_VERSION,
-            columns: [
-                "Row ID",
-                "Order ID",
-                "Order Date",
-                "Ship Date",
-                "Ship Mode",
-                "Customer ID",
-                "Segment",
-                "Country",
-                "City",
-                "State",
-                "Postal Code",
-                "Region",
-                "Product ID",
-                "Category",
-                "Sub-Category",
-                "Sales",
-                "Quantity",
-                "Discount",
-                "Profit",
-            ],
-            plugin: "HighPriority",
-        };
-
-        expect(saved).toEqual(expected);
+        await page.evaluate(async () => {
+            await document.querySelector("perspective-viewer").restore({
+                plugin: "Debug",
+            });
+        });
     });
+
+    run_standard_tests("superstore", get_contents);
 });

@@ -10,15 +10,12 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@perspective-dev/test";
 import {
+    test,
+    expect,
     PageView,
     compareContentsToSnapshot,
-    shadow_click,
-    shadow_type,
-} from "@perspective-dev/test";
-
-// NOTE: Change this file to be a .ts file.
+} from "../helpers.ts";
 
 async function openSidebarAndScrollToBottom() {
     const elem = document.querySelector("perspective-viewer");
@@ -51,9 +48,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Expressions", () => {
-    test("Click on add column button opens the expression UI.", async ({
-        page,
-    }) => {
+    test("editor > opens on add-column button click", async ({ page }) => {
         await page.evaluate(openSidebarAndScrollToBottom);
 
         await page.waitForFunction(
@@ -63,7 +58,7 @@ test.describe("Expressions", () => {
                     .shadowRoot.querySelector("#add-expression"),
         );
 
-        await shadow_click(page, "perspective-viewer", "#add-expression");
+        await page.locator("perspective-viewer #add-expression").click();
 
         await page.waitForFunction(() => {
             const root = document
@@ -84,12 +79,10 @@ test.describe("Expressions", () => {
 
         await page.evaluate(() => document.activeElement.blur());
 
-        await compareContentsToSnapshot(contents, [
-            "click-on-add-column-button-opens-the-expression-ui.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Close expression editor with button", async ({ page }) => {
+    test("editor > closes on close button click", async ({ page }) => {
         await page.evaluate(openSidebarAndScrollToBottom);
         await page.waitForFunction(
             () =>
@@ -98,7 +91,7 @@ test.describe("Expressions", () => {
                     .shadowRoot.querySelector("#add-expression"),
         );
 
-        await shadow_click(page, "perspective-viewer", "#add-expression");
+        await page.locator("perspective-viewer #add-expression").click();
         await page.waitForSelector("#editor-container");
         await page.evaluate(async () => {
             let root = document.querySelector("perspective-viewer").shadowRoot;
@@ -116,30 +109,26 @@ test.describe("Expressions", () => {
             );
         });
 
-        await compareContentsToSnapshot(contents, [
-            "close-expression-editor-with-button.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("An expression with unknown symbols should disable the save button", async ({
-        page,
-    }) => {
+    test("validation > disables save for unknown symbols", async ({ page }) => {
         await checkSaveDisabled(page, "abc");
     });
 
-    test("A type-invalid expression should disable the save button", async ({
+    test("validation > disables save for type-invalid expression", async ({
         page,
     }) => {
         await checkSaveDisabled(page, '"Sales" + "Category";');
     });
 
-    test("An expression with invalid input columns should disable the save button", async ({
+    test("validation > disables save for invalid column references", async ({
         page,
     }) => {
         await checkSaveDisabled(page, '"aaaa" + "Sales";');
     });
 
-    test("Should show both aliased and non-aliased expressions in columns", async ({
+    test("columns > shows both aliased and non-aliased expressions", async ({
         page,
     }) => {
         const contents = await page.evaluate(async () => {
@@ -152,13 +141,11 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "should-show-both-aliased-and-non-aliased-expressions-in-columns.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
     // No longer relevant as we cannot save a duplicate identifier
-    test.skip("Should overwrite a duplicate expression alias", async ({
+    test.skip("columns > overwrites a duplicate expression alias", async ({
         page,
     }) => {
         let view = new PageView(page);
@@ -171,13 +158,13 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "should-overwrite-a-duplicate-expression-alias.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
     // No longer relevant as we cannot save a duplicate identifier
-    test.skip("Should overwrite a duplicate expression", async ({ page }) => {
+    test.skip("columns > overwrites a duplicate expression", async ({
+        page,
+    }) => {
         let view = new PageView(page);
         view.restore({ expressions: { "3 + 4": "3 + 4" } });
         await view.settingsPanel.createNewExpression("", "3 + 4", true);
@@ -187,14 +174,10 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "should-overwrite-a-duplicate-expression.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Resetting the viewer should delete all expressions", async ({
-        page,
-    }) => {
+    test("reset > deletes all expressions on full reset", async ({ page }) => {
         await page.evaluate(async () => {
             const elem = document.querySelector("perspective-viewer");
             await elem.toggleConfig(true);
@@ -212,14 +195,10 @@ test.describe("Expressions", () => {
             );
         });
 
-        await compareContentsToSnapshot(contents, [
-            "resetting-the-viewer-should-delete-all-expressions.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Resetting the viewer partially should not delete all expressions", async ({
-        page,
-    }) => {
+    test("reset > preserves expressions on partial reset", async ({ page }) => {
         await page.evaluate(async () => {
             const elem = document.querySelector("perspective-viewer");
             await elem.toggleConfig(true);
@@ -234,12 +213,10 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(content, [
-            "resetting-the-viewer-partially-should-not-delete-all-expressions.txt",
-        ]);
+        await compareContentsToSnapshot(content);
     });
 
-    test("Resetting the viewer when expression as in columns field, should delete all expressions", async ({
+    test("reset > deletes expressions used in columns on full reset", async ({
         page,
     }) => {
         await page.evaluate(async () => {
@@ -260,12 +237,10 @@ test.describe("Expressions", () => {
             );
         });
 
-        await compareContentsToSnapshot(contents, [
-            "resetting-the-viewer-when-expression-as-in-columns-field-should-delete-all-expressions.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Resetting the viewer partially when expression as in columns field, should not delete all expressions", async ({
+    test("reset > preserves expressions used in columns on partial reset", async ({
         page,
     }) => {
         await page.evaluate(async () => {
@@ -283,12 +258,10 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "resetting-the-viewer-partially-when-expression-as-in-columns-field-should-not-delete-all-expressions.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Resetting the viewer when expression as in group_by or other field, should delete all expressions", async ({
+    test("reset > deletes expressions used in group_by/sort/filter on full reset", async ({
         page,
     }) => {
         await page.evaluate(async () => {
@@ -312,12 +285,10 @@ test.describe("Expressions", () => {
             );
         });
 
-        await compareContentsToSnapshot(contents, [
-            "resetting-the-viewer-when-expression-as-in-group_by-or-other-field-should-delete-all-expressions.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Expressions should persist when new views are created which don't use them", async ({
+    test("persistence > survives views that don't reference them", async ({
         page,
     }) => {
         await page.evaluate(async () => {
@@ -336,12 +307,10 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "expressions-should-persist-when-new-views-are-created-which-dont-use-them.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Hovering over New Expression Button marks it.", async ({ page }) => {
+    test("add button > marks on hover", async ({ page }) => {
         await page.evaluate(openSidebarAndScrollToBottom);
         let addExprButton = await page.waitForSelector("#add-expression");
         let notHovered = await addExprButton.getAttribute("class");
@@ -353,7 +322,7 @@ test.describe("Expressions", () => {
     });
 
     // Currently does not work in Firefox!
-    test("Clicking on New Expression Button marks it.", async ({ page }) => {
+    test("add button > marks on click", async ({ page }) => {
         await page.evaluate(openSidebarAndScrollToBottom);
         let addExprButton = await page.waitForSelector("#add-expression");
         let unclicked = await addExprButton.getAttribute("class");
@@ -364,7 +333,7 @@ test.describe("Expressions", () => {
         expect(clicked).toBe("dragdrop-hover");
     });
 
-    test("Expressions should persist when new views are created using them", async ({
+    test("persistence > survives views that reference them", async ({
         page,
     }) => {
         await page.evaluate(async () => {
@@ -383,12 +352,12 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "expressions-should-persist-when-new-views-are-created-using-them.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Aggregates for expressions should apply", async ({ page }) => {
+    test("aggregates > applies aggregate to expression column", async ({
+        page,
+    }) => {
         await page.evaluate(async () => {
             const elem = document.querySelector("perspective-viewer");
             await elem.toggleConfig(true);
@@ -405,12 +374,10 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "aggregates-for-expressions-should-apply.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Should sort by hidden expressions", async ({ page }) => {
+    test("sort > sorts by a hidden expression column", async ({ page }) => {
         await page.evaluate(async () => {
             const elem = document.querySelector("perspective-viewer");
             await elem.toggleConfig(true);
@@ -426,12 +393,10 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "should-sort-by-hidden-expressions.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Should filter by an expression", async ({ page }) => {
+    test("filter > filters by an expression column", async ({ page }) => {
         await page.evaluate(async () => {
             const elem = document.querySelector("perspective-viewer");
             await elem.toggleConfig(true);
@@ -447,8 +412,6 @@ test.describe("Expressions", () => {
             return elem.shadowRoot.querySelector("#sub-columns").innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, [
-            "should-filter-by-an-expression.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 });

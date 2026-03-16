@@ -9,6 +9,7 @@ __pycache__/
 .clangd
 .DS_Store
 .emsdk
+.pnpm-store
 .ipynb_checkpoints
 .perspectiverc
 .vscode/*

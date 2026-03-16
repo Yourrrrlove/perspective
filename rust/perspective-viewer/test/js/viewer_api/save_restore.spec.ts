@@ -10,20 +10,16 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect, DEFAULT_CONFIG } from "@perspective-dev/test";
-import { compareContentsToSnapshot, API_VERSION } from "@perspective-dev/test";
-import * as prettier from "prettier";
+import {
+    test,
+    expect,
+    DEFAULT_CONFIG,
+    compareContentsToSnapshot,
+    API_VERSION,
+    getShadowContents,
+} from "../helpers.ts";
 
-async function get_contents(page) {
-    const raw = await page.evaluate(async () => {
-        const viewer = document.querySelector("perspective-viewer").shadowRoot;
-        return viewer.innerHTML;
-    });
-
-    return await prettier.format(raw.trim(), {
-        parser: "html",
-    });
-}
+const get_contents = getShadowContents;
 
 test.beforeEach(async ({ page }) => {
     await page.goto("/rust/perspective-viewer/test/html/superstore.html");
@@ -41,7 +37,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Save/Restore", async () => {
-    test("save returns the current config", async ({ page }) => {
+    test("save > returns the current viewer config", async ({ page }) => {
         const config = await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             await viewer.getTable();
@@ -62,12 +58,10 @@ test.describe("Save/Restore", async () => {
         });
 
         const contents = await get_contents(page);
-        await compareContentsToSnapshot(contents, [
-            "save-returns-current-config.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("restore restores a config from save", async ({ page }) => {
+    test("restore > roundtrips a saved config", async ({ page }) => {
         const config = await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             await viewer.getTable();
@@ -138,12 +132,10 @@ test.describe("Save/Restore", async () => {
 
         const contents = await get_contents(page);
 
-        await compareContentsToSnapshot(contents, [
-            "restore-restores-config-from-save.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("save/restore works in string format", async ({ page }) => {
+    test("save > roundtrips in string format", async ({ page }) => {
         const config = await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             await viewer.getTable();
@@ -172,12 +164,10 @@ test.describe("Save/Restore", async () => {
         });
 
         const contents = await get_contents(page);
-        await compareContentsToSnapshot(contents, [
-            "save-restore-works-in-string-format.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("save/restore works in arraybuffer format", async ({ page }) => {
+    test("save > roundtrips in arraybuffer format", async ({ page }) => {
         const config3 = await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             await viewer.getTable();
@@ -203,8 +193,6 @@ test.describe("Save/Restore", async () => {
         });
 
         const contents = await get_contents(page);
-        await compareContentsToSnapshot(contents, [
-            "save-restore-works-in-arraybuffer-format.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 });

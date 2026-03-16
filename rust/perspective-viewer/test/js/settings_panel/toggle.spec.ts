@@ -10,34 +10,50 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-const fs = require("fs");
-const path = require("path");
+import {
+    test,
+    expect,
+    compareContentsToSnapshot,
+    getShadowContents,
+} from "../helpers.ts";
 
-/**
- * Returns an `ArrayBuffer` containing the contents of a `.arrow` file
- * located at `arrow_path`.
- *
- * Because `fs.readFileSync` shares its underlying buffer
- * between calls to `readFileSync`, we need to get a slice
- * of the `ArrayBuffer` specifically at its byte offset.
- *
- * See https://github.com/nodejs/node/issues/11132 for more details.
- *
- * @param arrow_path {String} a path to an arrow file.
- * @returns {ArrayBuffer} an ArrayBuffer containing the arrow-serialized data.
- */
-function load_arrow(arrow_path) {
-    const data = fs.readFileSync(arrow_path);
-    return data.buffer.slice(
-        data.byteOffset,
-        data.byteOffset + data.byteLength,
-    );
-}
+const get_contents = getShadowContents;
 
-const int_float_str_arrow = load_arrow(
-    path.join(__dirname, "..", "arrow", "int_float_str.arrow"),
-);
+test.describe("Settings Panel", () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto("/rust/perspective-viewer/test/html/superstore.html");
+        await page.evaluate(async () => {
+            while (!window["__TEST_PERSPECTIVE_READY__"]) {
+                await new Promise((x) => setTimeout(x, 10));
+            }
+        });
 
-module.exports = {
-    int_float_str_arrow,
-};
+        await page.evaluate(async () => {
+            await document.querySelector("perspective-viewer").restore({
+                plugin: "Debug",
+            });
+        });
+    });
+
+    test("toggle > opens when settings is true", async ({ page }) => {
+        await page.evaluate(async () => {
+            const viewer = document.querySelector("perspective-viewer");
+            await viewer.getTable();
+            await viewer.restore({ settings: true });
+        });
+
+        const contents = await get_contents(page);
+        await compareContentsToSnapshot(contents);
+    });
+
+    test("toggle > stays closed when settings is false", async ({ page }) => {
+        await page.evaluate(async () => {
+            const viewer = document.querySelector("perspective-viewer");
+            await viewer.getTable();
+            await viewer.restore({ settings: false });
+        });
+
+        const contents = await get_contents(page);
+        await compareContentsToSnapshot(contents);
+    });
+});

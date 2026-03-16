@@ -10,7 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@perspective-dev/test";
+import { test, expect } from "../helpers.ts";
 
 test.beforeEach(async ({ page }) => {
     await page.goto("/rust/perspective-viewer/test/html/superstore.html");
@@ -28,7 +28,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("Flush method", async () => {
-    test("flush awaits settings view config field", async ({ page }) => {
+    test("flush > awaits settings field update", async ({ page }) => {
         const old_config = await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             return await viewer.save();
@@ -52,7 +52,7 @@ test.describe("Flush method", async () => {
         });
     });
 
-    test("flush awaits view query fields", async ({ page }) => {
+    test("flush > awaits view query field updates", async ({ page }) => {
         const old_config = await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             return await viewer.save();
@@ -80,7 +80,7 @@ test.describe("Flush method", async () => {
         });
     });
 
-    test("flush awaits perspective-config-update events trigger by restore", async ({
+    test("flush > awaits config-update event triggered by restore", async ({
         page,
     }) => {
         const result = await page.evaluate(async () => {
@@ -106,7 +106,7 @@ test.describe("Flush method", async () => {
         expect(result).toEqual([0, 1]);
     });
 
-    test("flush awaits perspective-config-update events trigger by load, and does not repeat when connected", async ({
+    test("flush > awaits config-update event on load and does not repeat on DOM connect", async ({
         page,
     }) => {
         const result = await page.evaluate(async () => {

@@ -10,8 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@perspective-dev/test";
-import { compareContentsToSnapshot } from "@perspective-dev/test";
+import { test, expect, compareContentsToSnapshot } from "../helpers.ts";
 
 test.beforeEach(async ({ page }) => {
     await page.goto("/rust/perspective-viewer/test/html/superstore.html");
@@ -27,9 +26,11 @@ test.beforeEach(async ({ page }) => {
     });
 });
 
-test.describe("leaks", () => {
+test.describe("Memory Leaks", () => {
     // This originally has a timeout of 120000
-    test("doesn't leak elements", async ({ page }) => {
+    test("elements > no leak on repeated element recreation", async ({
+        page,
+    }) => {
         let viewer = await page.$("perspective-viewer");
         await page.evaluate(async (viewer) => {
             window.__TABLE__ = await viewer.getTable();
@@ -73,10 +74,10 @@ test.describe("leaks", () => {
             return element.innerHTML;
         });
 
-        await compareContentsToSnapshot(contents, ["does-not-leak.txt"]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("doesn't leak views when setting group by", async ({ page }) => {
+    test("views > no leak on repeated group_by changes", async ({ page }) => {
         let viewer = await page.$("perspective-viewer");
         await page.evaluate(async (viewer) => {
             window.__TABLE__ = await viewer.getTable();
@@ -119,12 +120,10 @@ test.describe("leaks", () => {
             return viewer.innerHTML;
         }, viewer);
 
-        await compareContentsToSnapshot(contents, [
-            "does-not-leak-when-setting-groupby.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("doesn't leak views when setting filters", async ({ page }) => {
+    test("views > no leak on repeated filter changes", async ({ page }) => {
         let viewer = await page.$("perspective-viewer");
         await page.evaluate(async (viewer) => {
             window.__TABLE__ = await viewer.getTable();
@@ -159,8 +158,6 @@ test.describe("leaks", () => {
             return viewer.innerHTML;
         }, viewer);
 
-        await compareContentsToSnapshot(contents, [
-            "does-not-leak-when-setting-filters.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 });

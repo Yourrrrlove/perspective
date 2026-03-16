@@ -11,7 +11,7 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import type { ViewerConfigUpdate } from "@perspective-dev/viewer";
-import { expect, Locator, Page } from "@playwright/test";
+import test, { expect, Locator, Page } from "@playwright/test";
 import * as fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
@@ -159,7 +159,6 @@ export const getSvgContentString = (selector: string) => async (page: Page) => {
  */
 export async function compareContentsToSnapshot(
     contents: string,
-    snapshotPath: string[],
 ): Promise<void> {
     const cleanedContents = contents
         .replace(/style=""/g, "")
@@ -169,16 +168,28 @@ export async function compareContentsToSnapshot(
         parser: "html",
     });
 
+    const titlePath = test.info().titlePath;
+    const snapshotPath = [
+        titlePath
+            .slice(1)
+            .map((s) =>
+                s
+                    .trim()
+                    .replace(/[^a-z0-9]+/gi, "-")
+                    .toLowerCase(),
+            )
+            .join("-") + ".txt",
+    ];
+
     await expect(formatted).toMatchSnapshot(snapshotPath);
 }
 
 export async function compareSVGContentsToSnapshot(
     page: Page,
     selector: string,
-    snapshotPath: string[],
 ): Promise<void> {
     const svgContent = await getSvgContentString(selector)(page);
-    await compareContentsToSnapshot(svgContent, snapshotPath);
+    await compareContentsToSnapshot(svgContent);
 }
 
 export function getWorkspaceLightDOMContents(page: Page): Promise<string> {
@@ -195,14 +206,14 @@ export function getWorkspaceShadowDOMContents(page: Page): Promise<string> {
     });
 }
 
-export async function compareLightDOMContents(page, snapshotFileName) {
+export async function compareLightDOMContents(page) {
     const contents = await getWorkspaceLightDOMContents(page);
-    await compareContentsToSnapshot(contents, [snapshotFileName]);
+    await compareContentsToSnapshot(contents);
 }
 
-export async function compareShadowDOMContents(page, snapshotFileName) {
+export async function compareShadowDOMContents(page) {
     const contents = await getWorkspaceShadowDOMContents(page);
-    await compareContentsToSnapshot(contents, [snapshotFileName]);
+    await compareContentsToSnapshot(contents);
 }
 
 /**

@@ -10,60 +10,47 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test } from "@perspective-dev/test";
-import { run_standard_tests } from "@perspective-dev/test";
+import { test, expect } from "../helpers.ts";
+import * as path from "node:path";
 
-async function get_contents(page) {
-    return await page.evaluate(async () => {
-        const viewer = document.querySelector(
-            "perspective-viewer perspective-viewer-plugin",
-        );
+test.beforeEach(async ({ page }) => {
+    const p = path.resolve(
+        "rust/perspective-viewer/test/html/superstore-single-threaded.html",
+    );
 
-        // Don't format - light DOM is CSV in a <pre> tag.
-        return viewer.innerHTML;
-    });
-}
-
-test.describe("Superstore", () => {
-    test.beforeEach(async function init({ page }) {
-        await page.goto(
-            "/node_modules/@perspective-dev/viewer/test/html/superstore.html",
-        );
-
-        await page.evaluate(async () => {
-            while (!window["__TEST_PERSPECTIVE_READY__"]) {
-                await new Promise((x) => setTimeout(x, 10));
-            }
-        });
-
-        await page.evaluate(async () => {
-            await document.querySelector("perspective-viewer").restore({
-                plugin: "Debug",
-            });
-        });
+    await page.goto(`file://${p}`);
+    await page.evaluate(async () => {
+        while (!window["__TEST_PERSPECTIVE_READY__"]) {
+            await new Promise((x) => setTimeout(x, 10));
+        }
     });
 
-    run_standard_tests("superstore", get_contents);
+    await page.evaluate(async () => {
+        await document.querySelector("perspective-viewer")!.restore({
+            plugin: "Debug",
+        });
+    });
 });
 
-test.describe("Superstore inline", () => {
-    test.beforeEach(async function init({ page }) {
-        await page.goto(
-            "/node_modules/@perspective-dev/viewer/test/html/superstore-inline.html",
-        );
-
+test.describe("Single-Threaded Engine", () => {
+    test("render > produces correct output in single-threaded mode", async ({
+        page,
+    }) => {
         await page.evaluate(async () => {
-            while (!window["__TEST_PERSPECTIVE_READY__"]) {
-                await new Promise((x) => setTimeout(x, 10));
-            }
-        });
-
-        await page.evaluate(async () => {
-            await document.querySelector("perspective-viewer").restore({
-                plugin: "Debug",
+            const viewer = document.querySelector("perspective-viewer")!;
+            await viewer.restore({
+                group_by: ["State"],
+                columns: ["Sales", "Profit"],
+                settings: true,
             });
         });
-    });
 
-    run_standard_tests("superstore inline", get_contents);
+        const value = await page.evaluate(async () => {
+            return document.querySelector("perspective-viewer")!.innerText
+                .length;
+        });
+
+        // Superstore as a CSV
+        expect(value).toEqual(836);
+    });
 });

@@ -10,24 +10,15 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect, DEFAULT_CONFIG } from "@perspective-dev/test";
 import {
-    API_VERSION,
+    test,
+    expect,
+    DEFAULT_CONFIG,
     compareContentsToSnapshot,
-    shadow_type,
-} from "@perspective-dev/test";
-import * as prettier from "prettier";
+    getShadowContents,
+} from "../helpers.ts";
 
-async function get_contents(page) {
-    const raw = await page.evaluate(async () => {
-        const viewer = document.querySelector("perspective-viewer").shadowRoot;
-        return viewer.innerHTML;
-    });
-
-    return await prettier.format(raw, {
-        parser: "html",
-    });
-}
+const get_contents = getShadowContents;
 
 test.beforeEach(async ({ page }) => {
     await page.goto("/rust/perspective-viewer/test/html/superstore.html");
@@ -44,21 +35,8 @@ test.beforeEach(async ({ page }) => {
     });
 });
 
-test.describe("Regression tests", () => {
-    test("copy and export custom elements are registered", async ({ page }) => {
-        const export_exists = await page.evaluate(async () => {
-            return !!window.customElements.get("perspective-export-menu");
-        });
-
-        const copy_exists = await page.evaluate(async () => {
-            return !!window.customElements.get("perspective-copy-menu");
-        });
-
-        expect(export_exists).toBeTruthy();
-        expect(copy_exists).toBeTruthy();
-    });
-
-    test("not_in filter works correctly", async ({ page }) => {
+test.describe("Filter Config", () => {
+    test("not_in > renders filtered results correctly", async ({ page }) => {
         await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             await viewer.restore({
@@ -73,12 +51,10 @@ test.describe("Regression tests", () => {
 
         const contents = await get_contents(page);
 
-        await compareContentsToSnapshot(contents, [
-            "regressions-not_in-filter-works-correctly.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("in filter generates correct array-encoded config", async ({
+    test("in > generates correct config from dropdown selection", async ({
         page,
     }) => {
         await page.evaluate(async () => {
@@ -126,12 +102,10 @@ test.describe("Regression tests", () => {
         });
 
         const contents = await get_contents(page);
-        await compareContentsToSnapshot(contents, [
-            "regressions-in-filter-generates-correct-config.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 
-    test("Numeric filter input does not trigger render on trailing zeroes", async ({
+    test("numeric input > appends digits without re-rendering on trailing zeroes", async ({
         page,
     }) => {
         await page.evaluate(async () => {
@@ -142,15 +116,10 @@ test.describe("Regression tests", () => {
             });
         });
 
-        // await new Promise((x) => setTimeout(x, 10000));
-
-        await shadow_type(
-            page,
-            "0001",
-            true,
-            "perspective-viewer",
-            "input.num-filter",
-        );
+        const numFilter = page.locator("perspective-viewer input.num-filter");
+        await numFilter.focus();
+        await numFilter.pressSequentially("0001");
+        await numFilter.blur();
 
         const value = await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
@@ -160,8 +129,6 @@ test.describe("Regression tests", () => {
 
         expect(value).toEqual("1.10001");
         const contents = await get_contents(page);
-        await compareContentsToSnapshot(contents, [
-            "numeric-filter-input-does-not-trigger-render-on-trailing-zeroes.txt",
-        ]);
+        await compareContentsToSnapshot(contents);
     });
 });

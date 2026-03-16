@@ -10,27 +10,23 @@
             import perspective from "/node_modules/@perspective-dev/client/dist/cdn/perspective.js";
             import "/node_modules/@perspective-dev/viewer/dist/cdn/perspective-viewer.js";
 
-            class TestChartPlugin extends customElements.get("perspective-viewer-plugin") {
+            class TestColumnSettingsPlugin extends customElements.get("perspective-viewer-plugin") {
                 get name() {
-                    return "test chart";
+                    return "test column settings";
                 }
 
-                get select_mode() {
-                    return "toggle";
+                can_render_column_styles(type, _group) {
+                    return type !== "boolean";
                 }
 
-                get config_column_names() {
-                    return ["X Axis", "Y Axis", "Color", "Size", "Tooltip"];
-                }
-
-                get min_config_columns() {
-                    return 2;
+                column_style_controls(type, group) {
+                    return {};
                 }
             }
 
-            customElements.define("test-chart-plugin", TestChartPlugin);
+            customElements.define("test-column-settings-plugin", TestColumnSettingsPlugin);
             const Viewer = customElements.get("perspective-viewer");
-            Viewer.registerPlugin("test-chart-plugin");
+            Viewer.registerPlugin("test-column-settings-plugin");
 
             const viewer = document.createElement("perspective-viewer");
             document.body.appendChild(viewer);

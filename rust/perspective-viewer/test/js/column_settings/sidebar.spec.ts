@@ -10,9 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@perspective-dev/test";
-import { PageView } from "@perspective-dev/test";
-import { ColumnSettingsSidebar } from "@perspective-dev/test/src/js/models/column_settings";
+import { test, expect, PageView, ColumnSettingsSidebar } from "../helpers.ts";
 
 test.beforeEach(async ({ page }) => {
     await page.goto("/tools/test/src/html/basic-test.html");
@@ -56,8 +54,10 @@ export async function checkTab(
     }
 }
 
-test.describe("Plugin Styles", () => {
-    test("Active column edit buttons open sidebar", async ({ page }) => {
+test.describe("Column Settings Sidebar", () => {
+    test("edit button > opens sidebar for active table and expression columns", async ({
+        page,
+    }) => {
         let view = new PageView(page);
         let settingsPanel = await view.openSettingsPanel();
         let inactiveColumns = settingsPanel.inactiveColumns;
@@ -79,7 +79,9 @@ test.describe("Plugin Styles", () => {
         await exprCol.editBtn.click();
         await checkTab(view.columnSettingsSidebar, true, true, false);
     });
-    test("Inactive column edit buttons open sidebar", async ({ page }) => {
+    test("edit button > opens sidebar for inactive expression columns", async ({
+        page,
+    }) => {
         let view = new PageView(page);
         let settingsPanel = await view.openSettingsPanel();
         let inactiveColumns = settingsPanel.inactiveColumns;
@@ -99,7 +101,9 @@ test.describe("Plugin Styles", () => {
         await exprCol.editBtn.click();
         await checkTab(view.columnSettingsSidebar, false, true);
     });
-    test("Click to change tabs", async ({ page }) => {
+    test("tabs > switches between style and attributes tabs", async ({
+        page,
+    }) => {
         let view = new PageView(page);
         let settingsPanel = await view.openSettingsPanel();
         let sidebar = view.columnSettingsSidebar;
@@ -120,7 +124,9 @@ test.describe("Plugin Styles", () => {
         await sidebar.styleTab.container.waitFor();
     });
 
-    test("View updates don't re-render sidebar", async ({ page }) => {
+    test("state > persists sidebar when table data updates", async ({
+        page,
+    }) => {
         await page.evaluate(async () => {
             // @ts-ignore
             let table = await window.__TEST_WORKER__.table({ x: [0] });
@@ -151,7 +157,9 @@ test.describe("Plugin Styles", () => {
         await expect(view.columnSettingsSidebar.container).toBeVisible();
     });
 
-    test("Column settings should not expand", async ({ page }) => {
+    test("layout > constrains width with long expression text", async ({
+        page,
+    }) => {
         let view = new PageView(page);
 
         const MAX_WIDTH = 350;
@@ -177,7 +185,7 @@ test.describe("Plugin Styles", () => {
         await checkWidth();
     });
 
-    test("Selected tab stays selected when manipulating column", async ({
+    test("tabs > preserves selected tab when toggling and saving expression", async ({
         page,
     }) => {
         const view = new PageView(page);
@@ -211,7 +219,7 @@ test.describe("Plugin Styles", () => {
         expect(await selectedTab()).toBe("Attributes");
     });
 
-    test("Color range component updates when switching columns to edit different number column without closing sidebar", async ({
+    test("color range > resets to default when switching to a different number column", async ({
         page,
     }) => {
         const view = new PageView(page);

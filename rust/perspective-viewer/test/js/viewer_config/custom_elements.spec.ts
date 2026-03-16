@@ -10,15 +10,10 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@perspective-dev/test";
-import * as path from "node:path";
+import { test, expect } from "../helpers.ts";
 
 test.beforeEach(async ({ page }) => {
-    const p = path.resolve(
-        "rust/perspective-viewer/test/html/superstore-single-threaded.html",
-    );
-
-    await page.goto(`file://${p}`);
+    await page.goto("/rust/perspective-viewer/test/html/superstore.html");
     await page.evaluate(async () => {
         while (!window["__TEST_PERSPECTIVE_READY__"]) {
             await new Promise((x) => setTimeout(x, 10));
@@ -26,29 +21,25 @@ test.beforeEach(async ({ page }) => {
     });
 
     await page.evaluate(async () => {
-        await document.querySelector("perspective-viewer")!.restore({
+        await document.querySelector("perspective-viewer").restore({
             plugin: "Debug",
         });
     });
 });
 
-test.describe("Export button", () => {
-    test("Single threaded engine mode works", async ({ page }) => {
-        await page.evaluate(async () => {
-            const viewer = document.querySelector("perspective-viewer")!;
-            await viewer.restore({
-                group_by: ["State"],
-                columns: ["Sales", "Profit"],
-                settings: true,
-            });
+test.describe("Custom Elements", () => {
+    test("registration > registers copy and export menu elements", async ({
+        page,
+    }) => {
+        const export_exists = await page.evaluate(async () => {
+            return !!window.customElements.get("perspective-export-menu");
         });
 
-        const value = await page.evaluate(async () => {
-            return document.querySelector("perspective-viewer")!.innerText
-                .length;
+        const copy_exists = await page.evaluate(async () => {
+            return !!window.customElements.get("perspective-copy-menu");
         });
 
-        // Superstore as a CSV
-        expect(value).toEqual(836);
+        expect(export_exists).toBeTruthy();
+        expect(copy_exists).toBeTruthy();
     });
 });

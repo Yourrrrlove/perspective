@@ -10,19 +10,13 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import {
-    compareContentsToSnapshot,
-    getSvgContentString,
-    shadow_click,
-} from "./utils.ts";
-import { test, expect } from "./index.js";
 import type { ViewerConfigUpdate } from "@perspective-dev/viewer";
-import { ViewConfigUpdate } from "@perspective-dev/client";
+import { test, compareContentsToSnapshot } from "../helpers.ts";
 
 export type ContentExtractor = (page: any) => Promise<string>;
 
-async function restoreViewer(page, viewerConfig: ViewerConfigUpdate) {
-    return await page.evaluate(async (viewerConfig) => {
+async function restoreViewer(page: any, viewerConfig: ViewerConfigUpdate) {
+    return await page.evaluate(async (viewerConfig: ViewerConfigUpdate) => {
         const viewer = document.querySelector("perspective-viewer")!;
         await viewer.restore(viewerConfig);
     }, viewerConfig);
@@ -33,41 +27,10 @@ function runSimpleCompareTest(
     extractContent: ContentExtractor,
     snapshotPath: string[],
 ) {
-    return async ({ page }) => {
+    return async ({ page }: { page: any }) => {
         await restoreViewer(page, viewerConfig);
         const content = await extractContent(page);
-        await compareContentsToSnapshot(content, snapshotPath);
-    };
-}
-
-export function runPerspectiveEventClickTest() {
-    return async ({ page }) => {
-        const viewerConfig: ViewConfigUpdate = {
-            filter: [["date", "<", "2025-01-01"]],
-        };
-
-        await restoreViewer(page, viewerConfig);
-        const viewer = await page.$("perspective-viewer")!;
-        const perspectiveClick = viewer.evaluate(
-            (element) =>
-                new Promise((resolve) =>
-                    element.addEventListener("perspective-click", (event) => {
-                        // extract the detail
-                        resolve(event.detail);
-                    }),
-                ),
-        );
-
-        await shadow_click(
-            page,
-            "perspective-viewer-datagrid",
-            "regular-table > table > tbody > tr:nth-child(1) > td:nth-child(2)",
-        );
-
-        const detail = await perspectiveClick;
-        const expectedFilter = [["date", "<", "2025-01-01"]];
-        const resultFilter = detail["config"]["filter"];
-        expect(resultFilter).toEqual(expectedFilter);
+        await compareContentsToSnapshot(content);
     };
 }
 
@@ -75,47 +38,38 @@ export function run_standard_tests(
     context: string,
     extractContent: ContentExtractor,
 ) {
-    test("Show grid no settings", async ({ page }) => {
+    test("grid > renders without settings panel", async ({ page }) => {
         await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer")!;
-            await viewer.getTable(); // Not sure why this is needed...
+            await viewer.getTable();
             await viewer.restore({ settings: true });
         });
 
-        const content = await getSvgContentString("perspective-viewer")(page);
-        await compareContentsToSnapshot(content, [
-            context,
-            `show-grid-no-settings.txt`,
-        ]);
+        const content = await extractContent(page);
+        await compareContentsToSnapshot(content);
     });
 
-    test("Displays visible columns", async ({ page }) => {
+    test("columns > displays only visible columns", async ({ page }) => {
         await restoreViewer(page, {
             columns: ["Discount", "Profit", "Sales", "Quantity"],
         });
 
         const visibleColumnContent = await extractContent(page);
-        await compareContentsToSnapshot(visibleColumnContent, [
-            context,
-            `displays-visible-columns.txt`,
-        ]);
+        await compareContentsToSnapshot(visibleColumnContent);
     });
 
     test.describe("Pivot tests", () => {
         test(
-            `Pivot by a row`,
+            "group_by > pivots by a single row",
             runSimpleCompareTest(
-                {
-                    group_by: ["State"],
-                    settings: true,
-                },
+                { group_by: ["State"], settings: true },
                 extractContent,
                 [context, `pivot-by-row.txt`],
             ),
         );
 
         test(
-            `Pivot by two rows`,
+            "group_by > pivots by two rows",
             runSimpleCompareTest(
                 {
                     group_by: ["Category", "Sub-Category"],
@@ -127,19 +81,16 @@ export function run_standard_tests(
         );
 
         test(
-            `Pivot by a column`,
+            "split_by > pivots by a single column",
             runSimpleCompareTest(
-                {
-                    split_by: ["Category"],
-                    settings: true,
-                },
+                { split_by: ["Category"], settings: true },
                 extractContent,
                 [context, `pivot-by-column.txt`],
             ),
         );
 
         test(
-            `Pivot by a row and a column`,
+            "pivot > pivots by a row and a column",
             runSimpleCompareTest(
                 {
                     group_by: ["State"],
@@ -152,7 +103,7 @@ export function run_standard_tests(
         );
 
         test(
-            `Pivot by two rows and two columns`,
+            "pivot > pivots by two rows and two columns",
             runSimpleCompareTest(
                 {
                     group_by: ["Region", "State"],
@@ -167,7 +118,7 @@ export function run_standard_tests(
 
     test.describe("Sort tests", () => {
         test(
-            `Sort by a hidden column`,
+            "sort > sorts by a hidden column",
             runSimpleCompareTest(
                 {
                     columns: ["Row ID", "Quantity"],
@@ -180,7 +131,7 @@ export function run_standard_tests(
         );
 
         test(
-            `Sort by a numeric column`,
+            "sort > sorts by a numeric column",
             runSimpleCompareTest(
                 {
                     columns: ["Row ID", "Sales"],
@@ -193,7 +144,7 @@ export function run_standard_tests(
         );
 
         test(
-            `Sort by an alpha column`,
+            "sort > sorts by an alpha column",
             runSimpleCompareTest(
                 {
                     columns: ["Row ID", "State", "Sales"],
@@ -208,7 +159,7 @@ export function run_standard_tests(
 
     test.describe("Filter tests", () => {
         test(
-            `Filter by a numeric column`,
+            "filter > filters by a numeric column",
             runSimpleCompareTest(
                 {
                     columns: ["Row ID", "State", "Sales"],
@@ -221,7 +172,7 @@ export function run_standard_tests(
         );
 
         test(
-            `Filter by an alpha column`,
+            "filter > filters by an alpha column",
             runSimpleCompareTest(
                 {
                     columns: ["Row ID", "State", "Sales"],
@@ -234,7 +185,7 @@ export function run_standard_tests(
         );
 
         test(
-            `Filter with 'in' comparator`,
+            "filter > filters with 'in' comparator",
             runSimpleCompareTest(
                 {
                     columns: ["Row ID", "State", "Sales"],

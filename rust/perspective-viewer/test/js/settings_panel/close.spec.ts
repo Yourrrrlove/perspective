@@ -10,39 +10,78 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { compareContentsToSnapshot, test } from "@perspective-dev/test";
+import { test, expect, DEFAULT_CONFIG, API_VERSION } from "../helpers.ts";
 
 test.beforeEach(async ({ page }) => {
-    await page.goto("/rust/perspective-viewer/test/html/superstore.html");
+    await page.goto(
+        "/node_modules/@perspective-dev/viewer/test/html/plugin-priority-order.html",
+    );
     await page.evaluate(async () => {
         while (!window["__TEST_PERSPECTIVE_READY__"]) {
             await new Promise((x) => setTimeout(x, 10));
         }
     });
-
-    await page.evaluate(async () => {
-        await document.querySelector("perspective-viewer").restore({
-            plugin: "Debug",
-        });
-    });
 });
 
-test.describe("Load", async () => {
-    test("Load called twice with the same `Table` should be inert", async ({
-        page,
-    }) => {
-        const contents = await page.evaluate(async () => {
-            const viewer = document.querySelector("perspective-viewer");
-            await viewer.restore({ settings: true });
-            const table = await viewer.getTable();
-            await viewer.load(table);
-            await viewer.flush();
-            return viewer.shadowRoot.innerHTML;
+test.describe("Close button", () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto("/rust/perspective-viewer/test/html/superstore.html");
+        await page.evaluate(async () => {
+            while (!window["__TEST_PERSPECTIVE_READY__"]) {
+                await new Promise((x) => setTimeout(x, 10));
+            }
         });
 
-        await compareContentsToSnapshot(
-            contents,
-            "load-called-twice-with-the-same-table.txt",
+        await page.evaluate(async () => {
+            const viewer = document.querySelector("perspective-viewer");
+            await viewer.restore({ plugin: "Debug" });
+            await viewer.getTable();
+            await viewer.restore({ settings: true });
+        });
+    });
+
+    test("close button hides the settings panel", async ({ page }) => {
+        const shadowRoot = page.locator("perspective-viewer");
+        await shadowRoot.locator("#settings_close_button").first().click();
+
+        const saved = await page.evaluate(async () =>
+            document.querySelector("perspective-viewer").save(),
         );
+
+        expect(saved.settings).toBe(false);
+    });
+
+    test("settings panel round-trips open/close via save()", async ({
+        page,
+    }) => {
+        // Open → close via API → open again.  save() must reflect each state.
+        const saved1 = await page.evaluate(async () =>
+            document.querySelector("perspective-viewer").save(),
+        );
+        expect(saved1.settings).toBe(true);
+
+        await page.evaluate(async () =>
+            document.querySelector("perspective-viewer").restore({
+                settings: false,
+            }),
+        );
+
+        const saved2 = await page.evaluate(async () =>
+            document.querySelector("perspective-viewer").save(),
+        );
+
+        expect(saved2.settings).toBe(false);
+
+        await page.evaluate(async () =>
+            document.querySelector("perspective-viewer").restore({
+                settings: true,
+            }),
+        );
+
+        const saved3 = await page.evaluate(async () =>
+            document.querySelector("perspective-viewer").save(),
+        );
+
+        expect(saved3.settings).toBe(true);
     });
 });
