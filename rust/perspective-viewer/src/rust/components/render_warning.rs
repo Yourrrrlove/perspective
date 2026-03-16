@@ -13,144 +13,93 @@
 use yew::prelude::*;
 
 use super::style::LocalStyle;
-use crate::model::*;
-use crate::renderer::*;
-use crate::session::*;
-use crate::*;
+use crate::css;
+use crate::renderer::limits::RenderLimits;
 
-#[derive(Properties, PerspectiveProperties!)]
+#[derive(Properties, PartialEq)]
 pub struct RenderWarningProps {
-    // Current dimensions
-    pub dimensions: Option<(usize, usize, Option<usize>, Option<usize>)>,
+    pub dimensions: Option<RenderLimits>,
 
-    // State
-    pub renderer: Renderer,
-    pub session: Session,
+    /// Called when the user clicks "Render all points".  The parent disables
+    /// the render warning on the active plugin and re-draws.
+    pub on_dismiss: Callback<()>,
 }
 
-impl PartialEq for RenderWarningProps {
-    fn eq(&self, other: &Self) -> bool {
-        self.dimensions == other.dimensions
-    }
-}
-
-pub enum RenderWarningMsg {
-    DismissWarning,
-}
-
-pub struct RenderWarning {
-    col_warn: Option<(usize, usize)>,
-    row_warn: Option<(usize, usize)>,
-}
-
-impl RenderWarning {
-    fn update_warnings(&mut self, ctx: &Context<Self>) {
-        if let Some((num_cols, num_rows, max_cols, max_rows)) = ctx.props().dimensions {
-            let count = num_cols * num_rows;
-            if max_cols.is_some_and(|x| x < num_cols) {
-                self.col_warn = Some((max_cols.unwrap(), num_cols));
-            } else {
-                self.col_warn = None;
-            }
-
-            if max_rows.is_some_and(|x| x < num_rows) {
-                self.row_warn = Some((num_cols * max_rows.unwrap(), count));
-            } else {
-                self.row_warn = None;
-            }
+#[function_component(RenderWarning)]
+pub fn render_warning(props: &RenderWarningProps) -> Html {
+    let dimensions = props.dimensions;
+    let (col_warn, row_warn) = if let Some(limits) = dimensions {
+        let col_warn = if limits.max_cols.is_some_and(|x| x < limits.num_cols) {
+            Some((limits.max_cols.unwrap(), limits.num_cols))
         } else {
-            self.col_warn = None;
-            self.row_warn = None;
-        }
-    }
-}
-
-impl Component for RenderWarning {
-    type Message = RenderWarningMsg;
-    type Properties = RenderWarningProps;
-
-    fn create(ctx: &Context<Self>) -> Self {
-        let mut elem = Self {
-            col_warn: None,
-            row_warn: None,
+            None
         };
 
-        elem.update_warnings(ctx);
-        elem
-    }
+        let row_warn = if limits.max_rows.is_some_and(|x| x < limits.num_rows) {
+            Some((
+                limits.num_cols * limits.max_rows.unwrap(),
+                limits.num_cols * limits.num_rows,
+            ))
+        } else {
+            None
+        };
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            RenderWarningMsg::DismissWarning => {
-                let state = ctx.props().clone_state();
-                ApiFuture::spawn(async move {
-                    state.renderer().disable_active_plugin_render_warning();
-                    let view_task = state.session().get_view();
-                    state.renderer().update(view_task).await
-                });
+        (col_warn, row_warn)
+    } else {
+        (None, None)
+    };
+
+    if col_warn.is_some() || row_warn.is_some() {
+        let warning = match (col_warn, row_warn) {
+            (Some((x, y)), Some((a, b))) => html! {
+                <span style="white-space: nowrap">
+                    { "Rendering" }
+                    { render_pair(x, y) }
+                    { "of columns and" }
+                    { render_pair(a, b) }
+                    { "of points." }
+                </span>
             },
+            (Some((x, y)), None) => html! {
+                <span style="white-space: nowrap">
+                    { "Rendering" }
+                    { render_pair(x, y) }
+                    { "of columns." }
+                </span>
+            },
+            (None, Some((x, y))) => html! {
+                <span style="white-space: nowrap">
+                    { "Rendering" }
+                    { render_pair(x, y) }
+                    { "of points." }
+                </span>
+            },
+            _ => html! { <div /> },
         };
-        true
-    }
 
-    fn changed(&mut self, ctx: &Context<Self>, _old: &Self::Properties) -> bool {
-        self.update_warnings(ctx);
-        true
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        if self.col_warn.is_some() || self.row_warn.is_some() {
-            let warning = match (self.col_warn, self.row_warn) {
-                (Some((x, y)), Some((a, b))) => html! {
-                    <span style="white-space: nowrap">
-                        { "Rendering" }
-                        { render_pair(x, y) }
-                        { "of columns and" }
-                        { render_pair(a, b) }
-                        { "of points." }
+        let on_dismiss = props.on_dismiss.clone();
+        let onclick = Callback::from(move |_: MouseEvent| on_dismiss.emit(()));
+        html! {
+            <>
+                <LocalStyle href={css!("render-warning")} />
+                <div
+                    class="plugin_information plugin_information--warning"
+                    id="plugin_information--size"
+                >
+                    <span class="plugin_information__icon" />
+                    <span class="plugin_information__text" id="plugin_information_count">
+                        { warning }
                     </span>
-                },
-                (Some((x, y)), None) => html! {
-                    <span style="white-space: nowrap">
-                        { "Rendering" }
-                        { render_pair(x, y) }
-                        { "of columns." }
-                    </span>
-                },
-                (None, Some((x, y))) => html! {
-                    <span style="white-space: nowrap">
-                        { "Rendering" }
-                        { render_pair(x, y) }
-                        { "of points." }
-                    </span>
-                },
-                _ => html! { <div /> },
-            };
-
-            let onclick = ctx.link().callback(|_| RenderWarningMsg::DismissWarning);
-
-            html! {
-                <>
-                    <LocalStyle href={css!("render-warning")} />
-                    <div
-                        class="plugin_information plugin_information--warning"
-                        id="plugin_information--size"
-                    >
-                        <span class="plugin_information__icon" />
-                        <span class="plugin_information__text" id="plugin_information_count">
-                            { warning }
+                    <span class="plugin_information__actions">
+                        <span class="plugin_information__action" onmousedown={onclick}>
+                            { "Render all points" }
                         </span>
-                        <span class="plugin_information__actions">
-                            <span class="plugin_information__action" onmousedown={onclick}>
-                                { "Render all points" }
-                            </span>
-                        </span>
-                    </div>
-                </>
-            }
-        } else {
-            html! {}
+                    </span>
+                </div>
+            </>
         }
+    } else {
+        html! {}
     }
 }
 

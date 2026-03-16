@@ -10,10 +10,11 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-mod column_defaults_update;
-mod drag_drop_update;
+pub(crate) mod column_defaults_update;
+pub(crate) mod drag_drop_update;
 mod metadata;
-mod replace_expression_update;
+mod props;
+pub(crate) mod replace_expression_update;
 mod view_subscription;
 
 use std::cell::{Ref, RefCell};
@@ -30,9 +31,9 @@ use wasm_bindgen::prelude::*;
 use yew::html::ImplicitClone;
 use yew::prelude::*;
 
-pub use self::metadata::MetadataRef;
 use self::metadata::*;
-use self::replace_expression_update::*;
+pub use self::metadata::{MetadataRef, SessionMetadata};
+pub use self::props::SessionProps;
 pub use self::view_subscription::ViewStats;
 use self::view_subscription::*;
 use crate::js::plugin::*;
@@ -44,12 +45,19 @@ pub struct SessionHandle {
     session_data: RefCell<SessionData>,
     pub table_updated: PubSub<()>,
     pub table_loaded: PubSub<()>,
-    pub table_errored: PubSub<ApiError>,
     pub table_unloaded: PubSub<bool>,
     pub view_created: PubSub<()>,
     pub view_config_changed: PubSub<()>,
-    pub stats_changed: PubSub<Option<ViewStats>>,
     pub title_changed: PubSub<Option<String>>,
+
+    /// Injected callback from the root component, replacing the former
+    /// `stats_changed: PubSub` field.  Fires when view stats are updated.
+    pub on_stats_changed: RefCell<Option<Callback<()>>>,
+
+    /// Injected callback from the root component, replacing the former
+    /// `table_errored: PubSub` field.  Fires when an error is set on the
+    /// session (table load failure, client disconnect, invalid config, etc.).
+    pub on_table_errored: RefCell<Option<Callback<()>>>,
 }
 
 impl Deref for SessionHandle {
@@ -78,6 +86,38 @@ pub struct SessionData {
 
 #[derive(Clone)]
 pub struct TableErrorState(ApiError, Option<ReconnectCallback>);
+
+impl PartialEq for TableErrorState {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.to_string() == other.0.to_string()
+    }
+}
+
+impl std::fmt::Debug for TableErrorState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("TableErrorState")
+            .field(&self.0.to_string())
+            .finish()
+    }
+}
+
+impl TableErrorState {
+    pub fn message(&self) -> String {
+        self.0.message()
+    }
+
+    pub fn stacktrace(&self) -> String {
+        self.0.stacktrace()
+    }
+
+    pub fn kind(&self) -> &'static str {
+        self.0.kind()
+    }
+
+    pub fn is_reconnect(&self) -> bool {
+        self.1.is_some()
+    }
+}
 
 /// Options for [`Session::reset`]
 #[derive(Default)]
@@ -125,15 +165,15 @@ impl Session {
         Self(Rc::default())
     }
 
-    pub fn metadata(&self) -> MetadataRef<'_> {
+    pub(crate) fn metadata(&self) -> MetadataRef<'_> {
         std::cell::Ref::map(self.borrow(), |x| &x.metadata)
     }
 
-    pub fn metadata_mut(&self) -> MetadataMutRef<'_> {
+    pub(crate) fn metadata_mut(&self) -> MetadataMutRef<'_> {
         std::cell::RefMut::map(self.borrow_mut(), |x| &mut x.metadata)
     }
 
-    pub fn get_title(&self) -> Option<String> {
+    pub(crate) fn get_title(&self) -> Option<String> {
         self.borrow().title.clone()
     }
 
@@ -177,7 +217,7 @@ impl Session {
         }
     }
 
-    pub fn has_table(&self) -> bool {
+    pub(crate) fn has_table(&self) -> bool {
         self.borrow().table.is_some()
     }
 
@@ -222,11 +262,13 @@ impl Session {
         match SessionMetadata::from_table(&table).await {
             Ok(metadata) => {
                 let client = table.get_client();
-                let set_error = self.table_errored.as_boxfn();
+                let on_error = self.on_table_errored.borrow().clone();
                 let session = self.clone();
                 let poll_loop = LocalPollLoop::new(move |(message, reconnect): (ApiError, _)| {
-                    set_error(message.clone());
                     session.borrow_mut().error = Some(TableErrorState(message, reconnect));
+                    if let Some(cb) = &on_error {
+                        cb.emit(());
+                    }
                     if let Some(sub) = session.borrow_mut().view_sub.take() {
                         sub.dismiss();
                     }
@@ -286,7 +328,10 @@ impl Session {
             })),
         ));
 
-        self.table_errored.emit(err.clone());
+        if let Some(cb) = self.on_table_errored.borrow().as_ref() {
+            cb.emit(());
+        }
+
         let sub = self.borrow_mut().view_sub.take();
         if reset_table {
             self.borrow_mut().metadata = SessionMetadata::default();
@@ -324,25 +369,12 @@ impl Session {
         Some(perspective_js::Table::from(self.borrow().table.clone()?).into())
     }
 
-    pub fn js_get_view(&self) -> Option<JsValue> {
-        let view = self.borrow().view_sub.as_ref()?.get_view().clone();
-        Some(perspective_js::View::from(view).into())
-    }
-
-    pub fn is_errored(&self) -> bool {
+    pub(crate) fn is_errored(&self) -> bool {
         self.borrow().error.is_some()
     }
 
-    pub fn get_error(&self) -> Option<ApiError> {
+    pub(crate) fn get_error(&self) -> Option<ApiError> {
         self.borrow().error.as_ref().map(|x| x.0.clone())
-    }
-
-    pub fn is_reconnect(&self) -> bool {
-        self.borrow()
-            .error
-            .as_ref()
-            .map(|x| x.1.is_some())
-            .unwrap_or_default()
     }
 
     pub async fn reconnect(&self) -> ApiResult<()> {
@@ -356,82 +388,6 @@ impl Session {
         }
 
         Ok(())
-    }
-
-    pub fn is_column_expression_in_use(&self, name: &str) -> bool {
-        self.borrow().config.is_column_expression_in_use(name)
-    }
-
-    /// Is this column currently being used or not
-    pub fn is_column_active(&self, name: &str) -> bool {
-        let config = Ref::map(self.borrow(), |x| &x.config);
-        config.columns.iter().any(|maybe_col| {
-            maybe_col
-                .as_ref()
-                .map(|col| col == name)
-                .unwrap_or_default()
-        }) || config.group_by.iter().any(|col| col == name)
-            || config.split_by.iter().any(|col| col == name)
-            || config.filter.iter().any(|col| col.column() == name)
-            || config.sort.iter().any(|col| col.0 == name)
-    }
-
-    pub fn create_drag_drop_update(
-        &self,
-        column: String,
-        index: usize,
-        drop: DragTarget,
-        drag: DragEffect,
-        requirements: &ViewConfigRequirements,
-    ) -> ViewConfigUpdate {
-        use self::drag_drop_update::*;
-        let col_type = self
-            .metadata()
-            .get_column_table_type(column.as_str())
-            .unwrap();
-
-        self.get_view_config().create_drag_drop_update(
-            column,
-            col_type,
-            index,
-            drop,
-            drag,
-            requirements,
-            self.metadata().get_features().unwrap(),
-        )
-    }
-
-    /// An async task which replaces a `column` aliased expression with another.
-    pub async fn create_replace_expression_update(
-        &self,
-        old_expr_name: &str,
-        new_expr: &Expression<'static>,
-    ) -> ViewConfigUpdate {
-        let old_expr_val = self
-            .metadata()
-            .get_expression_by_alias(old_expr_name)
-            .unwrap();
-
-        let old_expr = Expression::new(Some(old_expr_name.into()), old_expr_val.into());
-
-        use self::replace_expression_update::*;
-        self.get_view_config()
-            .create_replace_expression_update(&old_expr, new_expr)
-    }
-
-    pub async fn create_rename_expression_update(
-        &self,
-        old_expr_name: String,
-        new_expr_name: Option<String>,
-    ) -> ViewConfigUpdate {
-        let old_expr_val = self
-            .metadata()
-            .get_expression_by_alias(&old_expr_name)
-            .expect_throw(&format!("Unable to get expr with name {old_expr_name}"));
-        let old_expr = Expression::new(Some(old_expr_name.into()), old_expr_val.clone().into());
-        let new_expr = Expression::new(new_expr_name.map(|n| n.into()), old_expr_val.into());
-        self.get_view_config()
-            .create_replace_expression_update(&old_expr, &new_expr)
     }
 
     /// Validate an expression string and marshall the results.
@@ -527,7 +483,7 @@ impl Session {
             .map(|sub| sub.get_view().clone())
     }
 
-    pub fn get_table_stats(&self) -> Option<ViewStats> {
+    pub(crate) fn get_table_stats(&self) -> Option<ViewStats> {
         self.borrow().stats.clone()
     }
 
@@ -600,7 +556,7 @@ impl Session {
             return Err(ApiError::new(x.0.clone()));
         }
 
-        if self.borrow_mut().config.apply_update(config_update) {
+        if self.borrow_mut().config.apply_update(config_update) && self.0.borrow().is_clean {
             self.0.borrow_mut().is_clean = false;
             self.view_config_changed.emit(());
         }
@@ -673,8 +629,10 @@ impl Session {
     }
 
     fn update_stats(&self, stats: ViewStats) {
-        self.borrow_mut().stats = Some(stats.clone());
-        self.stats_changed.emit(Some(stats));
+        self.borrow_mut().stats = Some(stats);
+        if let Some(cb) = self.on_stats_changed.borrow().as_ref() {
+            cb.emit(());
+        }
     }
 
     fn all_columns(&self) -> Vec<String> {
@@ -780,6 +738,21 @@ impl Session {
         let mut is_clean = true;
         std::mem::swap(&mut is_clean, &mut self.0.borrow_mut().is_clean);
         is_clean
+    }
+
+    /// Snapshot the current session state as a [`SessionProps`] value suitable
+    /// for passing as a Yew prop.  Called by the root component whenever a
+    /// session-related PubSub event fires.
+    pub fn to_props(&self) -> SessionProps {
+        let data = self.borrow();
+        SessionProps {
+            config: Rc::new(data.config.clone()),
+            stats: data.stats.clone(),
+            has_table: data.table.is_some(),
+            error: data.error.clone(),
+            title: data.title.clone(),
+            metadata: Rc::new(data.metadata.clone()),
+        }
     }
 }
 

@@ -16,13 +16,13 @@ use wasm_bindgen::prelude::*;
 use web_sys::*;
 use yew::prelude::*;
 
-use crate::PerspectiveProperties;
 use crate::components::viewer::{PerspectiveViewer, PerspectiveViewerMsg};
 use crate::js::*;
-use crate::model::*;
+use crate::presentation::Presentation;
 use crate::renderer::*;
 use crate::root::Root;
 use crate::session::Session;
+use crate::tasks::*;
 use crate::utils::*;
 
 pub struct ResizeObserverHandle {
@@ -36,6 +36,7 @@ impl ResizeObserverHandle {
         elem: &HtmlElement,
         renderer: &Renderer,
         session: &Session,
+        presentation: &Presentation,
         root: &Root<PerspectiveViewer>,
     ) -> Self {
         let on_resize = root
@@ -48,6 +49,7 @@ impl ResizeObserverHandle {
             elem: elem.clone(),
             renderer: renderer.clone(),
             session: session.clone(),
+            presentation: presentation.clone(),
             width: elem.offset_width(),
             height: elem.offset_height(),
             on_resize,
@@ -70,14 +72,41 @@ impl Drop for ResizeObserverHandle {
     }
 }
 
-#[derive(PerspectiveProperties!)]
+#[derive(Clone)]
 struct ResizeObserverState {
     elem: HtmlElement,
     renderer: Renderer,
     session: Session,
+    presentation: Presentation,
     width: i32,
     height: i32,
     on_resize: Callback<()>,
+}
+
+impl HasRenderer for ResizeObserverState {
+    fn renderer(&self) -> &Renderer {
+        &self.renderer
+    }
+}
+
+impl HasSession for ResizeObserverState {
+    fn session(&self) -> &Session {
+        &self.session
+    }
+}
+
+impl HasPresentation for ResizeObserverState {
+    fn presentation(&self) -> &'_ crate::presentation::Presentation {
+        &self.presentation
+    }
+}
+
+impl StateProvider for ResizeObserverState {
+    type State = ResizeObserverState;
+
+    fn clone_state(&self) -> Self::State {
+        self.clone()
+    }
 }
 
 impl ResizeObserverState {
@@ -97,7 +126,7 @@ impl ResizeObserverState {
             if resized && is_visible {
                 let state = self.clone_state();
                 clone!(self.on_resize);
-                ApiFuture::spawn(async move {
+                ApiFuture::spawn_throttled(async move {
                     let needs_render = state
                         .renderer()
                         .clone()
@@ -108,6 +137,7 @@ impl ResizeObserverState {
                         .await?;
 
                     if needs_render {
+                        state.presentation.reset_attached();
                         state.update_and_render(Default::default())?.await?;
                     } else {
                         state.renderer().resize().await?;

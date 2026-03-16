@@ -16,7 +16,6 @@
 // Required by yew's `html` macro.
 #![recursion_limit = "1024"]
 #![feature(const_type_name)]
-#![feature(macro_metavar_expr)]
 #![feature(iter_intersperse)]
 #![feature(stmt_expr_attributes)]
 #![feature(try_blocks)]
@@ -39,11 +38,12 @@ pub mod exprtk;
 mod js;
 mod root;
 
-#[doc(hidden)]
-pub mod model;
+pub mod engines;
 mod presentation;
 mod renderer;
 mod session;
+#[doc(hidden)]
+pub mod tasks;
 pub mod utils;
 
 #[macro_use]

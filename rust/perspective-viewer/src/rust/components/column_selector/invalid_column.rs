@@ -15,23 +15,12 @@ use yew::prelude::*;
 use crate::components::style::LocalStyle;
 use crate::css;
 
-#[derive(Default)]
-pub struct InvalidColumn {}
-
-impl Component for InvalidColumn {
-    type Message = ();
-    type Properties = ();
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self::default()
-    }
-
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        html! {
-            <div class="pivot-column column-empty column-invalid">
-                <LocalStyle href={css!("empty-column")} />
-                <div class="column-invalid-input" />
-            </div>
-        }
+#[function_component(InvalidColumn)]
+pub fn invalid_column() -> Html {
+    html! {
+        <div class="pivot-column column-empty column-invalid">
+            <LocalStyle href={css!("empty-column")} />
+            <div class="column-invalid-input" />
+        </div>
     }
 }

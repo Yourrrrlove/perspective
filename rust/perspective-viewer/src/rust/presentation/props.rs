@@ -10,35 +10,31 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-//! `components` contains all Yew `Component` types, but only exports the 4
-//! necessary for public Custom Elements.  The rest are internal components of
-//! these 4.
+use std::rc::Rc;
 
-pub mod column_dropdown;
-pub mod column_selector;
-pub mod column_settings_sidebar;
-pub mod containers;
-pub mod copy_dropdown;
-pub mod datetime_column_style;
-pub mod editable_header;
-pub mod empty_row;
-pub mod export_dropdown;
-pub mod expression_editor;
-pub mod filter_dropdown;
-pub mod font_loader;
-pub mod form;
-pub mod function_dropdown;
-pub mod main_panel;
-pub mod modal;
-pub mod number_column_style;
-pub mod plugin_selector;
-pub mod render_warning;
-pub mod settings_panel;
-pub mod status_bar;
-pub mod status_bar_counter;
-pub mod status_indicator;
-pub mod string_column_style;
-pub mod style;
-pub mod style_controls;
-pub mod type_icon;
-pub mod viewer;
+use crate::presentation::OpenColumnSettings;
+
+/// Value-semantic snapshot of the presentation/UI state used by the root
+/// component to drive `is_settings_open`, `selected_theme`, and
+/// `available_themes` into child components via plain props.
+///
+/// The `HtmlElement` handle, async theme-detection machinery, column-settings
+/// state, and per-column config live in `PresentationEngine` and are not
+/// passed as props.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct PresentationProps {
+    /// Whether the settings panel is currently open.
+    pub is_settings_open: bool,
+
+    /// Detected theme names, in discovery order.
+    pub available_themes: Rc<Vec<String>>,
+
+    /// The currently selected theme name, if any theme is active.
+    pub selected_theme: Option<String>,
+
+    /// Snapshot of the currently opened column-settings sidebar state.
+    pub open_column_settings: OpenColumnSettings,
+
+    /// Whether this viewer is hosted inside a `<perspective-workspace>`.
+    pub is_workspace: bool,
+}

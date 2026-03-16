@@ -47,35 +47,18 @@ impl PartialEq for FontLoaderProps {
     }
 }
 
-/// The `FontLoader` component ensures that fonts are loaded before they are
-/// visible.
-pub struct FontLoader {}
+#[function_component(FontLoader)]
+pub fn font_loader(props: &FontLoaderProps) -> Html {
+    if matches!(props.get_status(), FontLoaderStatus::Finished) {
+        html! {}
+    } else {
+        let inner = props
+            .get_fonts()
+            .iter()
+            .map(font_test_html)
+            .collect::<Html>();
 
-impl Component for FontLoader {
-    type Message = ();
-    type Properties = FontLoaderProps;
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self {}
-    }
-
-    fn update(&mut self, _ctx: &Context<Self>, _msg: ()) -> bool {
-        false
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> yew::virtual_dom::VNode {
-        if matches!(ctx.props().get_status(), FontLoaderStatus::Finished) {
-            html! {}
-        } else {
-            let inner = ctx
-                .props()
-                .get_fonts()
-                .iter()
-                .map(font_test_html)
-                .collect::<Html>();
-
-            html! { <><style>{ ":host{opacity:0!important;}" }</style>{ inner }</> }
-        }
+        html! { <><style>{ ":host{opacity:0!important;}" }</style>{ inner }</> }
     }
 }
 

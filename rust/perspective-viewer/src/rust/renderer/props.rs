@@ -10,29 +10,26 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use super::structural::*;
-use crate::session::ResetOptions;
-use crate::utils::*;
-use crate::*;
+use std::rc::Rc;
 
-pub trait ResetAll: HasRenderer + HasSession + HasPresentation {
-    /// Completely reset viewer state
-    fn reset_all(&self) -> ApiFuture<()> {
-        clone!(self.session(), self.renderer(), self.presentation());
-        ApiFuture::new(async move {
-            session
-                .reset(ResetOptions {
-                    config: true,
-                    expressions: true,
-                    ..ResetOptions::default()
-                })
-                .await?;
-            presentation.reset_columns_configs();
-            renderer.reset(None).await?;
-            presentation.reset_available_themes(None).await;
-            Ok(())
-        })
-    }
+use crate::js::plugin::ViewConfigRequirements;
+use crate::renderer::limits::RenderLimits;
+
+/// Value-semantic snapshot of the renderer state read by components.
+///
+/// The actual plugin JS objects, draw lock, and render timer live in
+/// `RendererEngine` and are not passed as props.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct RendererProps {
+    /// Name of the currently active plugin (e.g. `"Datagrid"`).
+    pub plugin_name: Option<String>,
+
+    /// Column count / config requirements reported by the active plugin.
+    pub requirements: ViewConfigRequirements,
+
+    /// Most recently emitted render limits, if any.
+    pub render_limits: Option<RenderLimits>,
+
+    /// Names of all registered plugins, in registration order.
+    pub available_plugins: Rc<Vec<String>>,
 }
-
-impl<T: HasRenderer + HasSession + HasPresentation> ResetAll for T {}

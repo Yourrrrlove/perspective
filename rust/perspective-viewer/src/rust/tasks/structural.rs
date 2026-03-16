@@ -10,35 +10,44 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-//! `components` contains all Yew `Component` types, but only exports the 4
-//! necessary for public Custom Elements.  The rest are internal components of
-//! these 4.
+//! Structural typing traits that allow task methods to be automatically defined
+//! for any struct that holds the necessary state handles.
 
-pub mod column_dropdown;
-pub mod column_selector;
-pub mod column_settings_sidebar;
-pub mod containers;
-pub mod copy_dropdown;
-pub mod datetime_column_style;
-pub mod editable_header;
-pub mod empty_row;
-pub mod export_dropdown;
-pub mod expression_editor;
-pub mod filter_dropdown;
-pub mod font_loader;
-pub mod form;
-pub mod function_dropdown;
-pub mod main_panel;
-pub mod modal;
-pub mod number_column_style;
-pub mod plugin_selector;
-pub mod render_warning;
-pub mod settings_panel;
-pub mod status_bar;
-pub mod status_bar_counter;
-pub mod status_indicator;
-pub mod string_column_style;
-pub mod style;
-pub mod style_controls;
-pub mod type_icon;
-pub mod viewer;
+use crate::custom_events::*;
+use crate::dragdrop::*;
+use crate::presentation::*;
+use crate::renderer::*;
+use crate::session::*;
+
+pub trait HasCustomEvents {
+    fn custom_events(&self) -> &'_ CustomEvents;
+}
+
+pub trait HasDragDrop {
+    fn dragdrop(&self) -> &'_ DragDrop;
+}
+
+pub trait HasPresentation {
+    fn presentation(&self) -> &'_ Presentation;
+}
+
+pub trait HasRenderer {
+    fn renderer(&self) -> &'_ Renderer;
+}
+
+pub trait HasSession {
+    fn session(&self) -> &'_ Session;
+}
+
+impl HasSession for Session {
+    fn session(&self) -> &'_ Session {
+        self
+    }
+}
+
+pub trait StateProvider {
+    type State: Clone + 'static;
+
+    /// Clones just the state object fields into a new dedicated state struct.
+    fn clone_state(&self) -> Self::State;
+}

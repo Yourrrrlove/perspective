@@ -19,11 +19,29 @@ use crate::renderer::Renderer;
 use crate::session::Session;
 use crate::*;
 
-#[derive(PartialEq, PerspectiveProperties!)]
+#[derive(Clone, PartialEq)]
 pub struct ExpressionUpdater {
     presentation: Presentation,
     renderer: Renderer,
     session: Session,
+}
+
+impl HasPresentation for ExpressionUpdater {
+    fn presentation(&self) -> &Presentation {
+        &self.presentation
+    }
+}
+
+impl HasRenderer for ExpressionUpdater {
+    fn renderer(&self) -> &Renderer {
+        &self.renderer
+    }
+}
+
+impl HasSession for ExpressionUpdater {
+    fn session(&self) -> &Session {
+        &self.session
+    }
 }
 
 pub trait EditExpression: HasPresentation + HasRenderer + HasSession + UpdateAndRender {
@@ -41,8 +59,8 @@ pub trait EditExpression: HasPresentation + HasRenderer + HasSession + UpdateAnd
         ApiFuture::spawn(async move {
             let update = this
                 .session
-                .create_replace_expression_update(&old_name, &new_expr)
-                .await;
+                .to_props()
+                .create_replace_expression_update(&old_name, &new_expr);
 
             this.presentation
                 .set_open_column_settings(Some(OpenColumnSettings {
