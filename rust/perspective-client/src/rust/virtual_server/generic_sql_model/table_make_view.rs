@@ -455,14 +455,64 @@ impl<'a> ViewQueryContext<'a> {
     fn order_by_clauses(&self) -> Vec<String> {
         let mut clauses = Vec::new();
         if !self.config.group_by.is_empty() && self.is_flat_mode() {
-            for (sidx, Sort(sort_col, sort_dir)) in self.config.sort.iter().enumerate() {
-                if *sort_dir != SortDir::None && !is_col_sort(sort_dir) {
-                    let dir = sort_dir_to_string(sort_dir);
-                    if !self.config.split_by.is_empty() {
-                        clauses.push(format!("__SORT_{}__ {}", sidx, dir));
-                    } else {
-                        let agg = self.get_aggregate(sort_col);
-                        clauses.push(format!("{}({}) {}", agg, self.col_name(sort_col), dir));
+            let has_row_sort = self
+                .config
+                .sort
+                .iter()
+                .any(|Sort(_, dir)| *dir != SortDir::None && !is_col_sort(dir));
+            if self.config.group_by.len() > 1 && has_row_sort {
+                // Hierarchical flat sort — mirrors rollup logic but without GROUPING_ID
+                for gidx in 0..self.config.group_by.len() {
+                    let is_leaf = gidx >= self.config.group_by.len() - 1;
+                    for (sidx, Sort(sort_col, sort_dir)) in self.config.sort.iter().enumerate() {
+                        if *sort_dir == SortDir::None || is_col_sort(sort_dir) {
+                            continue;
+                        }
+
+                        let dir = sort_dir_to_string(sort_dir);
+                        if !self.config.split_by.is_empty() {
+                            if is_leaf {
+                                clauses.push(format!("__SORT_{}__ {}", sidx, dir));
+                            } else {
+                                clauses.push(format!(
+                                    "first(__SORT_{}__) OVER __WINDOW_{}__ {}",
+                                    sidx, gidx, dir
+                                ));
+                            }
+                        } else {
+                            let agg = self.get_aggregate(sort_col);
+                            if is_leaf {
+                                clauses.push(format!(
+                                    "{}({}) {}",
+                                    agg,
+                                    self.col_name(sort_col),
+                                    dir
+                                ));
+                            } else {
+                                clauses.push(format!(
+                                    "first({}({})) OVER __WINDOW_{}__ {}",
+                                    agg,
+                                    self.col_name(sort_col),
+                                    gidx,
+                                    dir
+                                ));
+                            }
+                        }
+                    }
+
+                    clauses.push(format!("{} ASC", self.row_path_aliases[gidx]));
+                }
+            } else {
+                // Single group level — simple sort, no window needed
+                for (sidx, Sort(sort_col, sort_dir)) in self.config.sort.iter().enumerate() {
+                    if *sort_dir != SortDir::None && !is_col_sort(sort_dir) {
+                        let dir = sort_dir_to_string(sort_dir);
+                        if !self.config.split_by.is_empty() {
+                            clauses.push(format!("__SORT_{}__ {}", sidx, dir));
+                        } else {
+                            let agg = self.get_aggregate(sort_col);
+                            clauses.push(format!("{}({}) {}", agg, self.col_name(sort_col), dir));
+                        }
                     }
                 }
             }
@@ -531,14 +581,30 @@ impl<'a> ViewQueryContext<'a> {
     }
 
     fn window_clauses(&self) -> Vec<String> {
-        if self.is_flat_mode() || self.config.sort.is_empty() || self.config.group_by.len() <= 1 {
+        if self.config.sort.is_empty() || self.config.group_by.len() <= 1 {
             return Vec::new();
         }
 
         let mut clauses = Vec::new();
         for gidx in 0..(self.config.group_by.len() - 1) {
             let partition = self.row_path_aliases[..=gidx].join(", ");
-            if !self.config.split_by.is_empty() {
+            if self.is_flat_mode() {
+                // Flat mode: partition by row path only (no GROUPING_ID)
+                if !self.config.split_by.is_empty() {
+                    let order = self.row_path_aliases.join(", ");
+                    clauses.push(format!(
+                        "__WINDOW_{}__ AS (PARTITION BY {} ORDER BY {})",
+                        gidx, partition, order,
+                    ));
+                } else {
+                    clauses.push(format!(
+                        "__WINDOW_{}__ AS (PARTITION BY {} ORDER BY {})",
+                        gidx,
+                        partition,
+                        self.group_col_names.join(", ")
+                    ));
+                }
+            } else if !self.config.split_by.is_empty() {
                 let shift = self.config.group_by.len() - 1 - gidx;
                 let grouping_expr = if shift > 0 {
                     format!("(__GROUPING_ID__ >> {})", shift)
