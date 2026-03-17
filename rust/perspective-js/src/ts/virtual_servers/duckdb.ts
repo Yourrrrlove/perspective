@@ -290,6 +290,16 @@ export class DuckDBHandler implements perspective.VirtualServerHandler {
         await runQuery(this.db, query);
     }
 
+    async viewGetMinMax(viewId: string, columnName: string, config: ViewConfig) {
+        const query = this.sqlBuilder.viewGetMinMax(viewId, columnName, config);
+        const results = await runQuery(this.db, query);
+        const row = results[0].toJSON();
+        let [min, max] = Object.values(row);
+        if (typeof min === "bigint") min = Number(min);
+        if (typeof max === "bigint") max = Number(max);
+        return { min: min ?? null, max: max ?? null };
+    }
+
     async viewGetData(
         viewId: string,
         config: ViewConfig,

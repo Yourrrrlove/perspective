@@ -462,10 +462,9 @@ message ViewGetMinMaxReq {
 }
 
 message ViewGetMinMaxResp {
-    string min = 1;
-    string max = 2;
+    Scalar min = 1;
+    Scalar max = 2;
 }
-
 
 message ViewExpressionSchemaReq {}
 message ViewExpressionSchemaResp {

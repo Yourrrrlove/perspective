@@ -47,6 +47,15 @@ impl From<ViewWindow> for JsViewWindow {
     }
 }
 
+fn scalar_to_jsvalue(scalar: &perspective_client::config::Scalar) -> JsValue {
+    match scalar {
+        perspective_client::config::Scalar::Float(x) => JsValue::from_f64(*x),
+        perspective_client::config::Scalar::String(x) => JsValue::from_str(x),
+        perspective_client::config::Scalar::Bool(x) => JsValue::from_bool(*x),
+        perspective_client::config::Scalar::Null => JsValue::NULL,
+    }
+}
+
 /// The [`View`] struct is Perspective's query and serialization interface. It
 /// represents a query on the `Table`'s dataset and is always created from an
 /// existing `Table` instance via the [`Table::view`] method.
@@ -147,10 +156,10 @@ impl View {
     #[wasm_bindgen]
     pub async fn get_min_max(&self, name: String) -> ApiResult<Array> {
         let result = self.0.get_min_max(name).await?;
-        Ok([result.0, result.1]
-            .iter()
-            .map(|x| js_sys::JSON::parse(x))
-            .collect::<Result<_, _>>()?)
+        let arr = Array::new();
+        arr.push(&scalar_to_jsvalue(&result.0));
+        arr.push(&scalar_to_jsvalue(&result.1));
+        Ok(arr)
     }
 
     /// The number of aggregated rows in this [`View`]. This is affected by the

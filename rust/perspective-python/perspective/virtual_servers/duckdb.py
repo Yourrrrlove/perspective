@@ -172,6 +172,12 @@ class DuckDBVirtualServerHandler(VirtualServerHandler):
         query = self.sql_builder.view_delete(view_name)
         run_query(self.db, query, execute=True)
 
+    def view_get_min_max(self, view_name, column_name, config):
+        query = self.sql_builder.view_get_min_max(view_name, column_name, config)
+        results = run_query(self.db, query)
+        row = results[0]
+        return (row[0], row[1])
+
     def view_get_data(self, view_name, config, schema, viewport, data):
         group_by = config["group_by"]
         split_by = config["split_by"]

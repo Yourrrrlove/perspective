@@ -60,6 +60,20 @@ impl From<serde_wasm_bindgen::Error> for JsError {
     }
 }
 
+fn jsvalue_to_scalar(val: &JsValue) -> perspective_client::config::Scalar {
+    if val.is_null() || val.is_undefined() {
+        perspective_client::config::Scalar::Null
+    } else if let Some(b) = val.as_bool() {
+        perspective_client::config::Scalar::Bool(b)
+    } else if let Some(n) = val.as_f64() {
+        perspective_client::config::Scalar::Float(n)
+    } else if let Some(s) = val.as_string() {
+        perspective_client::config::Scalar::String(s)
+    } else {
+        perspective_client::config::Scalar::Null
+    }
+}
+
 pub struct JsServerHandler(Object);
 
 impl JsServerHandler {
@@ -449,6 +463,48 @@ impl VirtualServerHandler for JsServerHandler {
             args.push(&data_value);
             this.call_method_js_async("makeTable", &args).await?;
             Ok(())
+        })
+    }
+
+    fn view_get_min_max(
+        &self,
+        view_id: &str,
+        column_name: &str,
+        config: &perspective_client::config::ViewConfig,
+    ) -> HandlerFuture<
+        Result<
+            (
+                perspective_client::config::Scalar,
+                perspective_client::config::Scalar,
+            ),
+            Self::Error,
+        >,
+    > {
+        let has_method = Reflect::get(&self.0, &JsValue::from_str("viewGetMinMax"))
+            .map(|val| !val.is_undefined())
+            .unwrap_or(false);
+
+        if !has_method {
+            return Box::pin(async {
+                Err(JsError(JsValue::from_str("viewGetMinMax not implemented")))
+            });
+        }
+
+        let handler = self.0.clone();
+        let view_id = view_id.to_string();
+        let column_name = column_name.to_string();
+        let config_js = serde_wasm_bindgen::to_value(config).unwrap();
+        Box::pin(async move {
+            let this = JsServerHandler(handler);
+            let args = Array::new();
+            args.push(&JsValue::from_str(&view_id));
+            args.push(&JsValue::from_str(&column_name));
+            args.push(&config_js);
+            let result = this.call_method_js_async("viewGetMinMax", &args).await?;
+            let obj = result.dyn_ref::<Object>().unwrap();
+            let min_val = Reflect::get(obj, &JsValue::from_str(wasm_bindgen::intern("min")))?;
+            let max_val = Reflect::get(obj, &JsValue::from_str(wasm_bindgen::intern("max")))?;
+            Ok((jsvalue_to_scalar(&min_val), jsvalue_to_scalar(&max_val)))
         })
     }
 

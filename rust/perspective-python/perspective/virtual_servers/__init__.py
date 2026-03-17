@@ -122,6 +122,14 @@ class VirtualServerHandler:
 
         pass
 
+    def view_get_min_max(self, view_name, column_name, config):
+        """
+        [OPTIONAL] Get the min and max values of a column in a view.
+        Returns a tuple of (min, max) as native Python values.
+        """
+
+        pass
+
     def view_get_data(self, view_name, config, viewport, data):
         """
         Serialize a rectangular slice `viewport` from temporary table

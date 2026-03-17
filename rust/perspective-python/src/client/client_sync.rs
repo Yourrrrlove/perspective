@@ -13,6 +13,7 @@
 use std::collections::HashMap;
 use std::future::Future;
 
+use perspective_client::config::Scalar;
 #[cfg(doc)]
 use perspective_client::{TableInitOptions, UpdateOptions, config::ViewConfigUpdate};
 use perspective_client::{assert_table_api, assert_view_api};
@@ -23,6 +24,15 @@ use pyo3::types::*;
 
 use super::client_async::*;
 use crate::server::Server;
+
+pub(crate) fn scalar_to_py(py: Python<'_>, scalar: &Scalar) -> PyObject {
+    match scalar {
+        Scalar::Float(x) => x.into_pyobject(py).unwrap().into_any().unbind(),
+        Scalar::String(x) => x.into_pyobject(py).unwrap().into_any().unbind(),
+        Scalar::Bool(x) => x.into_pyobject(py).unwrap().to_owned().into_any().unbind(),
+        Scalar::Null => py.None(),
+    }
+}
 
 pub(crate) trait PyFutureExt: Future {
     fn py_block_on(self, py: Python<'_>) -> Self::Output
@@ -642,7 +652,11 @@ impl View {
     /// # Returns
     ///
     /// A tuple of [min, max], whose types are column and aggregate dependent.
-    pub fn get_min_max(&self, py: Python<'_>, column_name: String) -> PyResult<(String, String)> {
+    pub fn get_min_max(
+        &self,
+        py: Python<'_>,
+        column_name: String,
+    ) -> PyResult<(PyObject, PyObject)> {
         self.0.get_min_max(column_name).py_block_on(py)
     }
 

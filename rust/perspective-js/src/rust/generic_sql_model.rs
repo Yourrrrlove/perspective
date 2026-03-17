@@ -157,6 +157,22 @@ impl GenericSQLVirtualServerModel {
             .view_size(view_id)
             .map_err(|e| JsValue::from_str(&e.to_string()))
     }
+
+    /// Returns the SQL query to get the min and max values of a column.
+    #[wasm_bindgen(js_name = "viewGetMinMax")]
+    pub fn view_get_min_max(
+        &self,
+        view_id: &str,
+        column_name: &str,
+        config: JsValue,
+    ) -> Result<String, JsValue> {
+        let config: ViewConfig = serde_wasm_bindgen::from_value(config)
+            .map_err(|e| JsValue::from_str(&e.to_string()))?;
+
+        self.inner
+            .view_get_min_max(view_id, column_name, &config)
+            .map_err(|e| JsValue::from_str(&e.to_string()))
+    }
 }
 
 impl GenericSQLVirtualServerModel {

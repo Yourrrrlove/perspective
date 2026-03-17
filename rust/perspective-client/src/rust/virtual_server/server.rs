@@ -25,9 +25,9 @@ use crate::proto::{
     ColumnType, GetFeaturesResp, GetHostedTablesResp, MakeTableResp, Request, Response,
     ServerError, TableMakePortResp, TableMakeViewResp, TableOnDeleteResp, TableRemoveDeleteResp,
     TableSchemaResp, TableSizeResp, TableValidateExprResp, ViewColumnPathsResp, ViewDeleteResp,
-    ViewDimensionsResp, ViewExpressionSchemaResp, ViewGetConfigResp, ViewOnDeleteResp,
-    ViewOnUpdateResp, ViewRemoveDeleteResp, ViewRemoveOnUpdateResp, ViewSchemaResp,
-    ViewToColumnsStringResp, ViewToRowsStringResp,
+    ViewDimensionsResp, ViewExpressionSchemaResp, ViewGetConfigResp, ViewGetMinMaxResp,
+    ViewOnDeleteResp, ViewOnUpdateResp, ViewRemoveDeleteResp, ViewRemoveOnUpdateResp,
+    ViewSchemaResp, ViewToColumnsStringResp, ViewToRowsStringResp,
 };
 
 macro_rules! respond {
@@ -338,6 +338,17 @@ impl<T: VirtualServerHandler> VirtualServer<T> {
                     .await?;
                 respond!(msg, MakeTableResp {})
             },
+            ViewGetMinMaxReq(req) => {
+                let config = self.view_configs.get(&msg.entity_id).unwrap();
+                let (min, max) = self
+                    .handler
+                    .view_get_min_max(&msg.entity_id, &req.column_name, config)
+                    .await?;
+                respond!(msg, ViewGetMinMaxResp {
+                    min: Some(min.into()),
+                    max: Some(max.into()),
+                })
+            },
 
             // Stub implementations for callback/update requests that VirtualServer doesn't support
             TableOnDeleteReq(_) => {
@@ -361,7 +372,6 @@ impl<T: VirtualServerHandler> VirtualServer<T> {
             ViewRemoveDeleteReq(_) => {
                 respond!(msg, ViewRemoveDeleteResp {})
             },
-
             x => {
                 // Return an error response instead of empty bytes
                 return Err(VirtualServerError::Other(format!(

@@ -455,13 +455,20 @@ impl View {
     /// # Returns
     ///
     /// A tuple of [min, max], whose types are column and aggregate dependent.
-    pub async fn get_min_max(&self, column_name: String) -> ClientResult<(String, String)> {
+    pub async fn get_min_max(
+        &self,
+        column_name: String,
+    ) -> ClientResult<(crate::config::Scalar, crate::config::Scalar)> {
         let msg = self.client_message(ClientReq::ViewGetMinMaxReq(ViewGetMinMaxReq {
             column_name,
         }));
 
         match self.client.oneshot(&msg).await? {
-            ClientResp::ViewGetMinMaxResp(ViewGetMinMaxResp { min, max }) => Ok((min, max)),
+            ClientResp::ViewGetMinMaxResp(ViewGetMinMaxResp { min, max }) => {
+                let min = min.map(crate::config::Scalar::from).unwrap_or_default();
+                let max = max.map(crate::config::Scalar::from).unwrap_or_default();
+                Ok((min, max))
+            },
             resp => Err(resp.into()),
         }
     }

@@ -47,6 +47,20 @@
 #endif
 
 namespace perspective {
+
+static void
+tscalar_to_proto(const t_tscalar& scalar, proto::Scalar* out) {
+    if (scalar.is_none() || !scalar.is_valid()) {
+        out->set_null(::google::protobuf::NullValue::NULL_VALUE);
+    } else if (scalar.is_str()) {
+        out->set_string(scalar.to_string());
+    } else if (scalar.get_dtype() == DTYPE_BOOL) {
+        out->set_bool_(scalar.as_bool());
+    } else {
+        out->set_float_(scalar.to_double());
+    }
+}
+
 std::uint32_t server::ProtoServer::m_client_id = 1;
 
 template <>
@@ -2807,14 +2821,8 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             const auto min_max = view->get_min_max(col);
             proto::Response resp;
             auto* pair = resp.mutable_view_get_min_max_resp();
-            rapidjson::StringBuffer s;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(s);
-            write_scalar(min_max.first, true, writer);
-            pair->set_min(s.GetString());
-            rapidjson::StringBuffer s2;
-            rapidjson::Writer<rapidjson::StringBuffer> writer2(s2);
-            write_scalar(min_max.second, true, writer2);
-            pair->set_max(s2.GetString());
+            tscalar_to_proto(min_max.first, pair->mutable_min());
+            tscalar_to_proto(min_max.second, pair->mutable_max());
             push_resp(std::move(resp));
             break;
         }

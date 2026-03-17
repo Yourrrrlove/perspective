@@ -710,8 +710,14 @@ impl AsyncView {
     /// # Returns
     ///
     /// A tuple of [min, max], whose types are column and aggregate dependent.
-    pub async fn get_min_max(&self, name: String) -> PyResult<(String, String)> {
-        self.view.get_min_max(name).await.into_pyerr()
+    pub async fn get_min_max(&self, name: String) -> PyResult<(PyObject, PyObject)> {
+        let (min, max) = self.view.get_min_max(name).await.into_pyerr()?;
+        Python::with_gil(|py| {
+            Ok((
+                super::client_sync::scalar_to_py(py, &min),
+                super::client_sync::scalar_to_py(py, &max),
+            ))
+        })
     }
 
     /// The number of aggregated rows in this [`View`]. This is affected by the

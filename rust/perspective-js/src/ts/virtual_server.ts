@@ -68,6 +68,11 @@ export interface VirtualServerHandler {
         tableId: string,
         expression: string,
     ): ColumnType | Promise<ColumnType>;
+    viewGetMinMax?(
+        viewId: string,
+        columnName: string,
+        config: ViewConfig,
+    ): { min: any; max: any } | Promise<{ min: any; max: any }>;
     getFeatures?(): ServerFeatures | Promise<ServerFeatures>;
     makeTable?(
         tableId: string,
