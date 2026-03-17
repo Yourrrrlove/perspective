@@ -207,14 +207,20 @@ test.describe("Column Settings Sidebar", () => {
                 .locator(".tab-title")
                 .getAttribute("id");
         };
+
         expect(await selectedTab()).toBe("Attributes");
         await col.activeBtn.click();
+        await view.columnSettingsSidebar.container
+            .locator(".tab-title#Style")
+            .waitFor({ state: "visible" });
+
         await checkTab(view.columnSettingsSidebar, true, true, true);
         expect(await selectedTab()).toBe("Attributes");
         await view.columnSettingsSidebar.attributesTab.expressionEditor.textarea.clear();
         await view.columnSettingsSidebar.attributesTab.expressionEditor.textarea.type(
             "'new expr value'",
         );
+
         await view.columnSettingsSidebar.attributesTab.saveBtn.click();
         expect(await selectedTab()).toBe("Attributes");
     });
