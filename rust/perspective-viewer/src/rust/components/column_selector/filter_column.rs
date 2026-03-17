@@ -15,7 +15,6 @@ use std::rc::Rc;
 
 use chrono::{Datelike, NaiveDate, TimeZone, Utc};
 use perspective_client::config::*;
-use perspective_client::utils::PerspectiveResultExt;
 use perspective_js::utils::ApiFuture;
 use wasm_bindgen::JsCast;
 use web_sys::*;
@@ -27,18 +26,22 @@ use crate::components::style::LocalStyle;
 use crate::components::type_icon::TypeIcon;
 use crate::custom_elements::*;
 use crate::dragdrop::*;
-use crate::model::*;
 use crate::renderer::*;
 use crate::session::*;
 use crate::utils::*;
-use crate::*;
+use crate::{css, maybe};
 
-#[derive(Clone, Properties, PerspectiveProperties!)]
+#[derive(Clone, Properties)]
 pub struct FilterColumnProps {
     pub filter: Filter,
     pub idx: usize,
     pub filter_dropdown: FilterDropDownElement,
     pub on_keydown: Callback<String>,
+
+    /// Session metadata snapshot — threaded from `SessionProps`.
+    pub metadata: Rc<SessionMetadata>,
+    /// Current view config threaded as a value prop.
+    pub view_config: Rc<ViewConfig>,
 
     // State
     pub session: Session,
@@ -48,7 +51,11 @@ pub struct FilterColumnProps {
 
 impl PartialEq for FilterColumnProps {
     fn eq(&self, rhs: &Self) -> bool {
-        self.idx == rhs.idx && self.filter == rhs.filter && self.on_keydown == rhs.on_keydown
+        self.idx == rhs.idx
+            && self.filter == rhs.filter
+            && self.on_keydown == rhs.on_keydown
+            && self.metadata == rhs.metadata
+            && self.view_config == rhs.view_config
     }
 }
 
@@ -95,7 +102,7 @@ impl Component for FilterColumn {
 
         this.filter_ops = Rc::new(
             maybe! {
-                Some(get_filter_ops(ctx.props().session(), col_type?)?
+                Some(get_filter_ops(&ctx.props().metadata, col_type?)?
                     .into_iter()
                     .map(SelectItem::Option)
                     .collect::<Vec<_>>())
@@ -183,7 +190,7 @@ impl Component for FilterColumn {
             changed = true;
             self.filter_ops = Rc::new(
                 maybe! {
-                    Some(get_filter_ops(&ctx.props().session, col_type?)?
+                    Some(get_filter_ops(&ctx.props().metadata, col_type?)?
                         .into_iter()
                         .map(SelectItem::Option)
                         .collect::<Vec<_>>())
@@ -204,11 +211,7 @@ impl Component for FilterColumn {
         let idx = ctx.props().idx;
         let filter = ctx.props().filter.clone();
         let column = filter.column().to_owned();
-        let col_type = ctx
-            .props()
-            .session
-            .metadata()
-            .get_column_table_type(&column);
+        let col_type = ctx.props().metadata.get_column_table_type(&column);
         let select = ctx.link().callback(FilterColumnMsg::FilterOpSelect);
         let noderef = &self.input_ref;
         let input = ctx.link().callback({
@@ -377,8 +380,7 @@ impl Component for FilterColumn {
 }
 
 /// Get the allowed `FilterOp`s for this filter.
-fn get_filter_ops(session: &Session, col_type: ColumnType) -> Option<Vec<String>> {
-    let metadata = session.metadata();
+fn get_filter_ops(metadata: &SessionMetadata, col_type: ColumnType) -> Option<Vec<String>> {
     let features = metadata.get_features()?;
     features
         .filter_ops
@@ -404,9 +406,7 @@ impl FilterColumnProps {
 
     /// Get this filter's type, e.g. the type of the column.
     fn get_filter_type(&self, filter: &Filter) -> Option<ColumnType> {
-        self.session
-            .metadata()
-            .get_column_table_type(filter.column())
+        self.metadata.get_column_table_type(filter.column())
     }
 
     // Get the string value, suitable for the `value` field of a `FilterColumns`'s
@@ -442,7 +442,7 @@ impl FilterColumnProps {
     /// # Arguments
     /// - `op` The new `FilterOp`.
     fn update_filter_op(&self, idx: usize, op: String) {
-        let mut filter = self.session.get_view_config().filter.clone();
+        let mut filter = self.view_config.filter.clone();
         let filter_column = &mut filter.get_mut(idx).expect("Filter on no column");
         *filter_column.op_mut() = op;
         let update = ViewConfigUpdate {
@@ -450,9 +450,14 @@ impl FilterColumnProps {
             ..ViewConfigUpdate::default()
         };
 
-        self.update_and_render(update)
-            .map(ApiFuture::spawn)
-            .unwrap_or_log();
+        if self.session.update_view_config(update).is_ok() {
+            let session = self.session.clone();
+            let renderer = self.renderer.clone();
+            ApiFuture::spawn(async move {
+                renderer.apply_pending_plugin()?;
+                renderer.draw(session.validate().await?.create_view()).await
+            });
+        }
     }
 
     /// Update the filter value from the string input read from the DOM.
@@ -460,7 +465,7 @@ impl FilterColumnProps {
     /// # Arguments
     /// - `val` The new filter value.
     fn update_filter_input(&self, val: String) {
-        let mut filters = self.session.get_view_config().filter.clone();
+        let mut filters = self.view_config.filter.clone();
         let filter_column = &mut filters.get_mut(self.idx).expect("Filter on no column");
 
         // TODO This belongs in the Features API.
@@ -523,9 +528,14 @@ impl FilterColumnProps {
                 ..ViewConfigUpdate::default()
             };
 
-            self.update_and_render(update)
-                .map(ApiFuture::spawn)
-                .unwrap_or_log();
+            if self.session.update_view_config(update).is_ok() {
+                let session = self.session.clone();
+                let renderer = self.renderer.clone();
+                ApiFuture::spawn(async move {
+                    renderer.apply_pending_plugin()?;
+                    renderer.draw(session.validate().await?.create_view()).await
+                });
+            }
         }
     }
 }

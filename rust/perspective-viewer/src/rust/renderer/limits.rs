@@ -14,15 +14,38 @@ use perspective_js::utils::ApiError;
 
 use crate::js::plugin::*;
 
+/// The row/column limits computed for the current view and plugin
+/// configuration.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct RenderLimits {
+    /// Whether this render was an incremental update (`true`) or a full
+    /// draw (`false`).
+    pub is_update: bool,
+    /// Total number of columns in the view.
+    pub num_cols: usize,
+    /// Total number of rows in the view.
+    pub num_rows: usize,
+    /// Maximum number of columns the plugin will render, if capped.
+    pub max_cols: Option<usize>,
+    /// Maximum number of rows the plugin will render, if capped.
+    pub max_rows: Option<usize>,
+}
+
 pub async fn get_row_and_col_limits(
     view: &perspective_client::View,
     plugin_metadata: &ViewConfigRequirements,
-) -> Result<(usize, usize, Option<usize>, Option<usize>), ApiError> {
+) -> Result<RenderLimits, ApiError> {
     let dimensions = view.dimensions().await?;
     let num_cols = dimensions.num_view_columns as usize;
     let num_rows = dimensions.num_view_rows as usize;
     match (plugin_metadata.max_columns, plugin_metadata.render_warning) {
-        (Some(_), false) => Ok((num_cols, num_rows, None, None)),
+        (Some(_), false) => Ok(RenderLimits {
+            is_update: false,
+            num_cols,
+            num_rows,
+            max_cols: None,
+            max_rows: None,
+        }),
         (max_columns, _) => {
             let schema = view.schema().await?;
             let keys = schema.keys();
@@ -45,7 +68,13 @@ pub async fn get_row_and_col_limits(
                 .ceil() as usize
             });
 
-            Ok((num_cols, num_rows, max_cols, max_rows))
+            Ok(RenderLimits {
+                is_update: false,
+                num_cols,
+                num_rows,
+                max_cols,
+                max_rows,
+            })
         },
     }
 }

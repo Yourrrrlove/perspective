@@ -65,18 +65,20 @@ export function applyBodyCellStyles(
 
         // Calculate aggregate depth visibility
         // @ts-ignore
-        metadata._is_hidden_by_aggregate_depth = ((x?: number) =>
-            x === 0 || x === undefined
-                ? false
-                : x - 1 <
-                  Math.min(
-                      this._config.group_by.length,
-                      plugin?.aggregate_depth || 0,
-                  ))(
-            (metadata.row_header as unknown[] | undefined)?.filter(
-                (x) => x !== undefined,
-            )?.length,
-        );
+        metadata._is_hidden_by_aggregate_depth =
+            this._config.group_rollup_mode === "rollup" &&
+            ((x?: number) =>
+                x === 0 || x === undefined
+                    ? false
+                    : x - 1 <
+                      Math.min(
+                          this._config.group_by.length,
+                          plugin?.aggregate_depth || 0,
+                      ))(
+                (metadata.row_header as unknown[] | undefined)?.filter(
+                    (x) => x !== undefined,
+                )?.length,
+            );
 
         // Apply type-specific cell styling
         if (is_numeric) {

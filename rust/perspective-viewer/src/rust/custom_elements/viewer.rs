@@ -31,11 +31,11 @@ use crate::config::*;
 use crate::custom_events::*;
 use crate::dragdrop::*;
 use crate::js::*;
-use crate::model::*;
 use crate::presentation::*;
 use crate::renderer::*;
 use crate::root::Root;
 use crate::session::{ResetOptions, Session};
+use crate::tasks::*;
 use crate::utils::*;
 use crate::*;
 
@@ -63,7 +63,7 @@ use crate::*;
 /// await viewer.load(worker);
 /// await viewer.restore({table: "table_one"});
 /// ```
-#[derive(Clone, PerspectiveProperties!)]
+#[derive(Clone)]
 #[wasm_bindgen]
 pub struct PerspectiveViewerElement {
     elem: HtmlElement,
@@ -77,9 +77,41 @@ pub struct PerspectiveViewerElement {
     _subscriptions: Rc<[Subscription; 2]>,
 }
 
+impl HasCustomEvents for PerspectiveViewerElement {
+    fn custom_events(&self) -> &CustomEvents {
+        &self.custom_events
+    }
+}
+
+impl HasPresentation for PerspectiveViewerElement {
+    fn presentation(&self) -> &Presentation {
+        &self.presentation
+    }
+}
+
+impl HasRenderer for PerspectiveViewerElement {
+    fn renderer(&self) -> &Renderer {
+        &self.renderer
+    }
+}
+
+impl HasSession for PerspectiveViewerElement {
+    fn session(&self) -> &Session {
+        &self.session
+    }
+}
+
+impl StateProvider for PerspectiveViewerElement {
+    type State = PerspectiveViewerElement;
+
+    fn clone_state(&self) -> Self::State {
+        self.clone()
+    }
+}
+
 impl CustomElementMetadata for PerspectiveViewerElement {
     const CUSTOM_ELEMENT_NAME: &'static str = "perspective-viewer";
-    const STATICS: &'static [&'static str] = ["registerPlugin", "getExprTKCommands"].as_slice();
+    const STATICS: &'static [&'static str] = ["registerPlugin"].as_slice();
 }
 
 #[wasm_bindgen]
@@ -136,7 +168,9 @@ impl PerspectiveViewerElement {
             move |_| ApiFuture::spawn(state.delete_all(&root))
         });
 
-        let resize_handle = ResizeObserverHandle::new(&elem, &renderer, &session, &root);
+        let resize_handle =
+            ResizeObserverHandle::new(&elem, &renderer, &session, &presentation, &root);
+
         let intersect_handle =
             IntersectionObserverHandle::new(&elem, &presentation, &session, &renderer);
 
@@ -256,8 +290,8 @@ impl PerspectiveViewerElement {
         let metadata = self.renderer.metadata();
         self.session
             .set_update_column_defaults(&mut config, &metadata);
-        self.session.update_view_config(config)?;
 
+        self.session.update_view_config(config)?;
         clone!(self.renderer, self.session);
         Ok(ApiFuture::new_throttled(async move {
             let task = async {
@@ -326,7 +360,7 @@ impl PerspectiveViewerElement {
     /// await viewer.delete();
     /// ```
     pub fn delete(self) -> ApiFuture<()> {
-        self.delete_all(self.root())
+        self.delete_all(&self.root)
     }
 
     /// Restart this `<perspective-viewer>` to its initial state, before
@@ -806,6 +840,7 @@ impl PerspectiveViewerElement {
                 &self.elem,
                 &self.renderer,
                 &self.session,
+                &self.presentation,
                 &self.root,
             ));
             *self.resize_handle.borrow_mut() = handle;
@@ -833,7 +868,7 @@ impl PerspectiveViewerElement {
     /// viewer.setAutoPause(false);
     /// ```
     #[wasm_bindgen]
-    pub fn setAutoPause(&self, autopause: bool) {
+    pub fn setAutoPause(&self, autopause: bool) -> ApiFuture<()> {
         if autopause {
             let handle = Some(IntersectionObserverHandle::new(
                 &self.elem,
@@ -845,7 +880,14 @@ impl PerspectiveViewerElement {
             *self.intersection_handle.borrow_mut() = handle;
         } else {
             *self.intersection_handle.borrow_mut() = None;
+            if self.session.set_pause(false) {
+                return ApiFuture::new(
+                    self.restore_and_render(ViewerConfigUpdate::default(), async move { Ok(()) }),
+                );
+            }
         }
+
+        ApiFuture::new(async move { Ok(()) })
     }
 
     /// Return a [`perspective_js::JsViewWindow`] for the currently selected

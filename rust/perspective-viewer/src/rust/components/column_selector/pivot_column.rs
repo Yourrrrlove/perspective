@@ -10,6 +10,8 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+use std::rc::Rc;
+
 use perspective_client::config::ColumnType;
 use web_sys::*;
 use yew::prelude::*;
@@ -19,9 +21,8 @@ use crate::components::type_icon::TypeIcon;
 use crate::dragdrop::*;
 use crate::session::*;
 use crate::utils::*;
-use crate::*;
 
-#[derive(Properties, PerspectiveProperties!)]
+#[derive(Properties)]
 pub struct PivotColumnProps {
     /// Column name.
     pub column: String,
@@ -32,6 +33,10 @@ pub struct PivotColumnProps {
     /// The drag starte of this column, if applicable.
     pub action: DragTarget,
 
+    /// Session metadata snapshot — threaded from `SessionProps`.
+    #[prop_or_default]
+    pub metadata: Option<Rc<SessionMetadata>>,
+
     // State
     #[prop_or_default]
     pub opt_session: Option<Session>,
@@ -40,7 +45,9 @@ pub struct PivotColumnProps {
 
 impl PartialEq for PivotColumnProps {
     fn eq(&self, other: &Self) -> bool {
-        self.column == other.column && self.action == other.action
+        self.column == other.column
+            && self.action == other.action
+            && self.metadata == other.metadata
     }
 }
 
@@ -80,9 +87,9 @@ impl Component for PivotColumn {
 
         let col_type = ctx.props().column_type.unwrap_or_else(|| {
             ctx.props()
-                .opt_session
+                .metadata
                 .as_ref()
-                .and_then(|x| x.metadata().get_column_table_type(&ctx.props().column))
+                .and_then(|x| x.get_column_table_type(&ctx.props().column))
                 .unwrap_or(ColumnType::Integer)
         });
 

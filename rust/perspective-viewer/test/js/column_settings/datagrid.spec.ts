@@ -10,11 +10,14 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { PageView as PspViewer, compareNodes } from "@perspective-dev/test";
+import {
+    PageView as PspViewer,
+    compareNodes,
+    expect,
+    test,
+} from "../helpers.ts";
 
-import { expect, test } from "@perspective-dev/test";
-
-test.describe("Regressions", function () {
+test.describe("Datagrid Column Styles", function () {
     test.beforeEach(async ({ page }) => {
         await page.goto("/tools/test/src/html/basic-test.html");
         await page.evaluate(async () => {

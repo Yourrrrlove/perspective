@@ -72,9 +72,7 @@ test.describe("Line regressions", () => {
                 ?.shadowRoot?.innerHTML;
         });
 
-        compareContentsToSnapshot(out!, [
-            "line-charts-denser-than-one-second-regression.txt",
-        ]);
+        await compareContentsToSnapshot(out!);
     });
 
     test("Zoom on a chart with split Y axis renders the right axis", async ({

@@ -47,6 +47,7 @@
         "@playwright/test": "catalog:",
         "@playwright/experimental-ct-react": "catalog:",
         "@types/react": "catalog:",
+        "@types/node": "catalog:",
         "@types/react-dom": "catalog:",
         "prettier": "catalog:",
         "typedoc": "catalog:",

@@ -22,7 +22,6 @@ pub mod copy_dropdown;
 pub mod datetime_column_style;
 pub mod editable_header;
 pub mod empty_row;
-pub mod error_message;
 pub mod export_dropdown;
 pub mod expression_editor;
 pub mod filter_dropdown;

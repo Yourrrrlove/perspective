@@ -10,8 +10,9 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+use std::rc::Rc;
+
 use perspective_client::config::*;
-use perspective_client::utils::PerspectiveResultExt;
 use perspective_js::utils::ApiFuture;
 use web_sys::*;
 use yew::prelude::*;
@@ -19,16 +20,20 @@ use yew::prelude::*;
 use crate::components::containers::dragdrop_list::*;
 use crate::components::type_icon::TypeIcon;
 use crate::dragdrop::*;
-use crate::model::*;
 use crate::renderer::*;
 use crate::session::*;
 use crate::utils::*;
-use crate::*;
 
-#[derive(Properties, PerspectiveProperties!)]
+#[derive(Properties)]
 pub struct SortColumnProps {
     pub sort: Sort,
     pub idx: usize,
+
+    /// Session metadata snapshot — threaded from `SessionProps`.
+    pub metadata: Rc<SessionMetadata>,
+
+    /// Current view config — threaded as a value prop.
+    pub view_config: Rc<ViewConfig>,
 
     // State
     pub session: Session,
@@ -38,7 +43,10 @@ pub struct SortColumnProps {
 
 impl PartialEq for SortColumnProps {
     fn eq(&self, other: &Self) -> bool {
-        self.sort == other.sort && self.idx == other.idx
+        self.sort == other.sort
+            && self.idx == other.idx
+            && self.metadata == other.metadata
+            && self.view_config == other.view_config
     }
 }
 
@@ -69,8 +77,8 @@ impl Component for SortColumn {
     fn update(&mut self, ctx: &Context<Self>, msg: SortColumnMsg) -> bool {
         match msg {
             SortColumnMsg::SortDirClick(shift_key) => {
-                let is_split = ctx.props().session.get_view_config().split_by.is_empty();
-                let mut sort = ctx.props().session.get_view_config().sort.clone();
+                let is_split = ctx.props().view_config.split_by.is_empty();
+                let mut sort = ctx.props().view_config.sort.clone();
                 let sort_column = &mut sort.get_mut(ctx.props().idx).expect("Sort on no column");
                 sort_column.1 = sort_column.1.cycle(!is_split, shift_key);
                 let update = ViewConfigUpdate {
@@ -78,10 +86,14 @@ impl Component for SortColumn {
                     ..ViewConfigUpdate::default()
                 };
 
-                ctx.props()
-                    .update_and_render(update)
-                    .map(ApiFuture::spawn)
-                    .unwrap_or_log();
+                let session = ctx.props().session.clone();
+                let renderer = ctx.props().renderer.clone();
+                if session.update_view_config(update).is_ok() {
+                    ApiFuture::spawn(async move {
+                        renderer.apply_pending_plugin()?;
+                        renderer.draw(session.validate().await?.create_view()).await
+                    });
+                }
 
                 false
             },
@@ -110,8 +122,7 @@ impl Component for SortColumn {
 
         let col_type = ctx
             .props()
-            .session
-            .metadata()
+            .metadata
             .get_column_table_type(&ctx.props().sort.0.to_owned())
             .unwrap_or(ColumnType::Integer);
 

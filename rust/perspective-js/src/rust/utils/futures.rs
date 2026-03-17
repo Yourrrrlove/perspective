@@ -64,6 +64,10 @@ where
     pub fn spawn<U: Future<Output = ApiResult<T>> + 'static>(x: U) {
         drop(js_sys::Promise::from(Self::new(x)))
     }
+
+    pub fn spawn_throttled<U: Future<Output = ApiResult<T>> + 'static>(x: U) {
+        drop(js_sys::Promise::from(Self::new_throttled(x)))
+    }
 }
 
 impl<T> Default for ApiFuture<T>

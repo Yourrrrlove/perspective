@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="../css/demo.css" />
+        <link rel="stylesheet" href="/node_modules/@perspective-dev/viewer/dist/css/pro.css" />
+        <link rel="stylesheet" href="/node_modules/@fontsource/roboto-mono/400.css" />
+    </head>
+    <body>
+        <script type="module">
+            import perspective from "/node_modules/@perspective-dev/client/dist/cdn/perspective.js";
+            import "/node_modules/@perspective-dev/viewer/dist/cdn/perspective-viewer.js";
+
+            class TestColumnSettingsPlugin extends customElements.get("perspective-viewer-plugin") {
+                get name() {
+                    return "test column settings";
+                }
+
+                can_render_column_styles(type, _group) {
+                    return type !== "boolean";
+                }
+
+                column_style_controls(type, group) {
+                    return {};
+                }
+            }
+
+            customElements.define("test-column-settings-plugin", TestColumnSettingsPlugin);
+            const Viewer = customElements.get("perspective-viewer");
+            Viewer.registerPlugin("test-column-settings-plugin");
+
+            const viewer = document.createElement("perspective-viewer");
+            document.body.appendChild(viewer);
+            let resp = await fetch("/node_modules/@perspective-dev/test/assets/superstore.csv");
+
+            let csv = await resp.text();
+            const worker = await perspective.worker();
+            const table = worker.table(csv, {
+                index: "Row ID",
+                name: "load-viewer-csv",
+            });
+
+            await viewer.load(table);
+            window.__TEST_WORKER__ = worker;
+            window.__TEST_PERSPECTIVE_READY__ = true;
+        </script>
+    </body>
+</html>

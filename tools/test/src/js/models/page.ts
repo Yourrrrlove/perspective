@@ -57,9 +57,9 @@ export class PageView {
     }
 
     async restore(config: ViewerConfigUpdate) {
-        return this.container.evaluate(function (viewer, config) {
+        return this.container.evaluate(async function (viewer, config) {
             let el = viewer as unknown as HTMLPerspectiveViewerElement;
-            return el.restore(config);
+            return await el.restore(config);
         }, config as any);
     }
 

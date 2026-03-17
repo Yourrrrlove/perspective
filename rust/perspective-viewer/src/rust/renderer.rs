@@ -18,8 +18,9 @@
 //! references throughout the application.
 
 mod activate;
-mod limits;
+pub mod limits;
 mod plugin_store;
+mod props;
 mod registry;
 mod render_timer;
 
@@ -38,10 +39,13 @@ use perspective_js::utils::ApiResult;
 use wasm_bindgen::prelude::*;
 use web_sys::*;
 use yew::html::ImplicitClone;
+use yew::prelude::*;
 
 use self::activate::*;
+pub use self::limits::RenderLimits;
 use self::limits::*;
 use self::plugin_store::*;
+pub use self::props::RendererProps;
 pub use self::registry::*;
 use self::render_timer::*;
 use crate::config::*;
@@ -54,9 +58,13 @@ pub struct RendererData {
     plugin_data: RefCell<RendererMutData>,
     draw_lock: DebounceMutex,
     pub plugin_changed: PubSub<JsPerspectiveViewerPlugin>,
-    pub render_limits_changed: PubSub<(bool, RenderLimits)>,
     pub style_changed: PubSub<()>,
     pub reset_changed: PubSub<()>,
+
+    /// Injected callback from the root component, replacing the former
+    /// `render_limits_changed: PubSub` field.  Fires after every draw/update
+    /// with the computed render limits.
+    pub on_render_limits_changed: RefCell<Option<Callback<RenderLimits>>>,
 }
 
 /// Mutable state
@@ -69,8 +77,6 @@ pub struct RendererMutData {
     selection: Option<ViewWindow>,
     pending_plugin: Option<usize>,
 }
-
-type RenderLimits = (usize, usize, Option<usize>, Option<usize>);
 
 /// The state object responsible for the active [`JsPerspectiveViewerPlugin`].
 #[derive(Clone)]
@@ -120,9 +126,9 @@ impl Renderer {
             }),
             draw_lock: Default::default(),
             plugin_changed: Default::default(),
-            render_limits_changed: Default::default(),
             style_changed: Default::default(),
             reset_changed: Default::default(),
+            on_render_limits_changed: Default::default(),
         }))
     }
 
@@ -367,14 +373,17 @@ impl Renderer {
     async fn draw_view(&self, view: &perspective_client::View, is_update: bool) -> ApiResult<()> {
         let plugin = self.get_active_plugin()?;
         let meta = self.metadata().clone();
-        let limits = get_row_and_col_limits(view, &meta).await?;
-        self.render_limits_changed.emit((is_update, limits));
+        let mut limits = get_row_and_col_limits(view, &meta).await?;
+        limits.is_update = is_update;
+        if let Some(cb) = self.0.on_render_limits_changed.borrow().as_ref() {
+            cb.emit(limits);
+        }
         let viewer_elem = &self.0.borrow().viewer_elem.clone();
         if is_update {
-            let task = plugin.update(view.clone().into(), limits.2, limits.3, false);
+            let task = plugin.update(view.clone().into(), limits.max_cols, limits.max_rows, false);
             activate_plugin(viewer_elem, &plugin, task).await?;
         } else {
-            let task = plugin.draw(view.clone().into(), limits.2, limits.3, false);
+            let task = plugin.draw(view.clone().into(), limits.max_cols, limits.max_rows, false);
             activate_plugin(viewer_elem, &plugin, task).await?;
         }
 
@@ -476,4 +485,44 @@ fn make_short_name(name: &str) -> String {
         .chars()
         .filter(|x| x.is_alphabetic())
         .collect()
+}
+
+impl Renderer {
+    /// Snapshot the current renderer state as a [`RendererProps`] value
+    /// suitable for passing as a Yew prop.  Called by the root component
+    /// whenever a renderer-related PubSub event fires.
+    pub fn to_props(&self, render_limits: Option<RenderLimits>) -> RendererProps {
+        // Guard: don't touch the PluginStore if no plugin has been explicitly
+        // selected yet.  Calling `get_active_plugin()` or `get_all_plugins()`
+        // triggers `PluginStore::init_lazy()`, which snapshots the
+        // PLUGIN_REGISTRY.  If this happens during component `create()` —
+        // before JavaScript has called `registerPlugin()` — the cache will
+        // only contain the default Debug plugin and custom plugins registered
+        // later will never be found.
+        let has_plugin = self.0.borrow().plugins_idx.is_some();
+        if has_plugin {
+            let plugin_name = self.get_active_plugin().ok().map(|p| p.name());
+            let requirements = self.metadata().clone();
+            let available_plugins = self
+                .get_all_plugins()
+                .into_iter()
+                .map(|p| p.name())
+                .collect::<Vec<_>>()
+                .into();
+
+            RendererProps {
+                plugin_name,
+                requirements,
+                render_limits,
+                available_plugins,
+            }
+        } else {
+            RendererProps {
+                plugin_name: None,
+                requirements: ViewConfigRequirements::default(),
+                render_limits,
+                available_plugins: Rc::new(vec![]),
+            }
+        }
+    }
 }

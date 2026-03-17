@@ -10,8 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { test, expect } from "@playwright/test";
-import { PageView } from "@perspective-dev/test";
+import { test, expect, PageView } from "../helpers.ts";
 
 test.beforeEach(async ({ page }) => {
     await page.goto("/tools/test/src/html/basic-test.html");
@@ -96,6 +95,7 @@ test.describe("Attributes Tab", () => {
             view.columnSettingsSidebar.attributesTab.saveBtn,
         ).toBeDisabled();
     });
+
     test("Tab Button Click enters 4 spaces.", async ({ page }) => {
         let view = new PageView(page);
         await view.restore({
@@ -128,6 +128,7 @@ test.describe("Attributes Tab", () => {
         );
         expect(caretPosition).toBe(4); // length of foo + length of '\t' = 4;
     });
+
     test("Reset button", async ({ page }) => {
         let view = new PageView(page);
         await view.restore({
@@ -162,6 +163,7 @@ test.describe("Attributes Tab", () => {
             "12345",
         );
     });
+
     test("Delete button", async ({ page }) => {
         let view = new PageView(page);
         await view.restore({
@@ -186,6 +188,7 @@ test.describe("Attributes Tab", () => {
         let config = await view.save();
         expect(config?.expressions).toStrictEqual({});
     });
+
     test("Rename empty header as expression value", async ({ page }) => {
         let view = new PageView(page);
         let settingsPanel = await view.openSettingsPanel();

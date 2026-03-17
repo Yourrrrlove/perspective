@@ -23,6 +23,14 @@ use yew::prelude::*;
 use crate::utils::*;
 use crate::*;
 
+/// Value-semantic snapshot of the drag/drop state threaded through the
+/// component tree for visual feedback (drag-highlight CSS classes).
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct DragDropProps {
+    /// Column name currently being dragged, if a drag is in progress.
+    pub column: Option<String>,
+}
+
 #[derive(Clone, Debug)]
 struct DragFrom {
     column: String,
@@ -53,8 +61,14 @@ impl DragState {
 pub struct DragDropState {
     drag_state: RefCell<DragState>,
     pub drop_received: PubSub<(String, DragTarget, DragEffect, usize)>,
-    pub dragstart_received: PubSub<DragEffect>,
-    pub dragend_received: PubSub<()>,
+
+    /// Injected callback from the root component, replacing the former
+    /// `dragstart_received: PubSub` field.
+    pub on_dragstart: RefCell<Option<Callback<DragEffect>>>,
+
+    /// Injected callback from the root component, replacing the former
+    /// `dragend_received: PubSub` field.
+    pub on_dragend: RefCell<Option<Callback<()>>>,
 }
 
 /// The `<perspective-viewer>` drag/drop service, which manages drag/drop user
@@ -80,6 +94,14 @@ impl PartialEq for DragDrop {
 impl ImplicitClone for DragDrop {}
 
 impl DragDrop {
+    /// Snapshot the drag state as a [`DragDropProps`] value for threading
+    /// through the component tree without PubSub subscriptions.
+    pub fn to_props(&self) -> DragDropProps {
+        DragDropProps {
+            column: self.get_drag_column(),
+        }
+    }
+
     /// Get the column name currently being drag/dropped.
     pub fn get_drag_column(&self) -> Option<String> {
         match *self.drag_state.borrow() {
@@ -169,10 +191,13 @@ impl DragDrop {
     /// Start the drag/drop action with the name of the column being dragged.
     pub fn notify_drag_start(&self, column: String, effect: DragEffect) {
         *self.drag_state.borrow_mut() = DragState::DragInProgress(DragFrom { column, effect });
-        let emit = self.dragstart_received.callback();
+        let emit = self.on_dragstart.borrow().clone();
         ApiFuture::spawn(async move {
             request_animation_frame().await;
-            emit.emit(effect);
+            if let Some(cb) = emit {
+                cb.emit(effect);
+            }
+
             Ok(())
         });
     }
@@ -181,8 +206,9 @@ impl DragDrop {
     pub fn notify_drag_end(&self) {
         if self.drag_state.borrow().is_drag_in_progress() {
             *self.drag_state.borrow_mut() = DragState::NoDrag;
-            let emit = self.dragend_received.callback();
-            emit.emit(());
+            if let Some(cb) = self.on_dragend.borrow().as_ref() {
+                cb.emit(());
+            }
         }
     }
 

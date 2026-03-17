@@ -199,7 +199,9 @@ export default defineConfig({
     expect: {
         timeout: 30_000,
     },
-    repeatEach: process.env.PSP_SATURATE ? parseInt(process.env.PSP_SATURATE) : 0,
+    repeatEach: process.env.PSP_SATURATE
+        ? parseInt(process.env.PSP_SATURATE)
+        : 0,
     forbidOnly: !!process.env.CI,
     workers: process.env.PSP_DEBUG ? 1 : "50%",
     retries: 0,
@@ -208,6 +210,9 @@ export default defineConfig({
     projects: PROJECTS,
     outputDir: "dist/results",
     use: {
+        launchOptions: {
+            slowMo: 500, // 500 milliseconds delay
+        },
         headless: !process.env.PSP_HEADED,
         ctPort: 3100,
         viewport: { width: 1280, height: 720 },

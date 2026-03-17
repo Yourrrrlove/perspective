@@ -11,8 +11,8 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import {
-    getSvgContentString,
     compareContentsToSnapshot,
+    getSvgContentString,
     shadow_click,
 } from "./utils.ts";
 import { test, expect } from "./index.js";

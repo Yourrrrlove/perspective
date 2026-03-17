@@ -56,6 +56,7 @@ c`;
 function generate_layout(params) {
     return {
         plugin: "Heatmap",
+        table: "raw_data",
         settings: true,
         group_by: [`floor("index" / ${params.resolution})`],
         split_by: [`"index" % ${params.resolution}`],
@@ -116,10 +117,16 @@ const make_run_click_callback = (worker, state) => async () => {
 
     window.run.disabled = true;
     if (!state.table) {
-        state.table = await worker.table({
-            index: "integer",
-        });
-        window.viewer.load(Promise.resolve(state.table));
+        state.table = await worker.table(
+            {
+                index: "integer",
+            },
+            {
+                name: "raw_data",
+            },
+        );
+
+        window.viewer.load(worker);
     }
 
     const run = document.getElementById("run");
@@ -154,4 +161,5 @@ run.addEventListener(
     "click",
     make_run_click_callback(await perspective.worker(), {}),
 );
+
 run.dispatchEvent(new Event("click"));

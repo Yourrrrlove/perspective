@@ -12,7 +12,6 @@
 
 import { execSync } from "child_process";
 import { build } from "@perspective-dev/esbuild-plugin/build.js";
-import { PerspectiveEsbuildPlugin } from "@perspective-dev/esbuild-plugin";
 import { NodeModulesExternal } from "@perspective-dev/esbuild-plugin/external.js";
 import * as fs from "node:fs";
 import { BuildCss } from "@prospective.co/procss/target/cjs/procss.js";
@@ -31,9 +30,7 @@ function get_host() {
 }
 async function build_all() {
     execSync(
-        `cargo bundle --target=${get_host()} -- perspective_viewer ${
-            IS_DEBUG ? "" : "--release"
-        }`,
+        `cargo bundle --target=${get_host()} -- perspective_viewer ${IS_DEBUG ? "" : "--release"}`,
         INHERIT,
     );
 
@@ -56,7 +53,6 @@ async function build_all() {
         {
             entryPoints: ["src/ts/perspective-viewer.inline.ts"],
             format: "esm",
-            plugins: [PerspectiveEsbuildPlugin()],
             loader: { ".wasm": "binary" },
             outfile: "dist/esm/perspective-viewer.inline.js",
         },
@@ -85,7 +81,6 @@ async function build_all() {
         {
             entryPoints: ["src/ts/perspective-viewer.cdn.ts"],
             format: "esm",
-            plugins: [PerspectiveEsbuildPlugin()],
             loader: { ".wasm": "file" },
             outfile: "dist/cdn/perspective-viewer.js",
         },
