@@ -26,6 +26,20 @@ use pyo3::types::{
 use pyo3::{IntoPyObject, Py, PyAny, PyErr, PyResult, Python, pyclass, pymethods};
 use serde::Serialize;
 
+fn py_to_scalar(val: pyo3::Bound<'_, PyAny>) -> PyResult<perspective_client::config::Scalar> {
+    if val.is_none() {
+        Ok(perspective_client::config::Scalar::Null)
+    } else if let Ok(b) = val.extract::<bool>() {
+        Ok(perspective_client::config::Scalar::Bool(b))
+    } else if let Ok(f) = val.extract::<f64>() {
+        Ok(perspective_client::config::Scalar::Float(f))
+    } else if let Ok(s) = val.extract::<String>() {
+        Ok(perspective_client::config::Scalar::String(s))
+    } else {
+        Ok(perspective_client::config::Scalar::Null)
+    }
+}
+
 pub struct PyServerHandler(Py<PyAny>);
 
 impl VirtualServerHandler for PyServerHandler {
@@ -264,6 +278,50 @@ impl VirtualServerHandler for PyServerHandler {
             Python::with_gil(|py| {
                 handler.call_method1(py, pyo3::intern!(py, "view_delete"), (&view_id,))?;
                 Ok(())
+            })
+        })
+    }
+
+    fn view_get_min_max(
+        &self,
+        view_id: &str,
+        column_name: &str,
+        config: &perspective_client::config::ViewConfig,
+    ) -> VirtualServerFuture<
+        '_,
+        Result<
+            (
+                perspective_client::config::Scalar,
+                perspective_client::config::Scalar,
+            ),
+            Self::Error,
+        >,
+    > {
+        let handler = Python::with_gil(|py| self.0.clone_ref(py));
+        let view_id = view_id.to_string();
+        let column_name = column_name.to_string();
+        let config = config.clone();
+        Box::pin(async move {
+            Python::with_gil(|py| {
+                let has_method = handler
+                    .getattr(py, pyo3::intern!(py, "view_get_min_max"))
+                    .is_ok();
+
+                if !has_method {
+                    return Err(PyValueError::new_err("view_get_min_max not implemented"));
+                }
+
+                let config_py = pythonize::pythonize(py, &config)?;
+                let result = handler.call_method1(
+                    py,
+                    pyo3::intern!(py, "view_get_min_max"),
+                    (&view_id, &column_name, config_py),
+                )?;
+
+                let tuple = result.downcast_bound::<pyo3::types::PyTuple>(py)?;
+                let min = py_to_scalar(tuple.get_item(0)?)?;
+                let max = py_to_scalar(tuple.get_item(1)?)?;
+                Ok((min, max))
             })
         })
     }

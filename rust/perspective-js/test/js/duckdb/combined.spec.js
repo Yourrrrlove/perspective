@@ -94,6 +94,7 @@ describeDuckDB("combined operations", (getClient) => {
                 "West|Sales": 165134.77900000007,
             },
         ]);
+
         await view.delete();
     });
 
@@ -124,6 +125,7 @@ describeDuckDB("combined operations", (getClient) => {
                 "West|Sales": null,
             },
         ]);
+
         await view.delete();
     });
 
@@ -155,6 +157,93 @@ describeDuckDB("combined operations", (getClient) => {
                 "West|Sales": null,
             },
         ]);
+
+        await view.delete();
+    });
+
+    test("flat + multi group_by + sort", async function () {
+        const table = await getClient().open_table("memory.superstore");
+        const view = await table.view({
+            columns: ["Sales"],
+            group_by: ["Region", "Category"],
+            sort: [["Sales", "desc"]],
+            aggregates: { Sales: "sum" },
+            group_rollup_mode: "flat",
+        });
+        const json = await view.to_json({ start_row: 0, end_row: 5 });
+        expect(json).toEqual([
+            {
+                __ROW_PATH__: ["West", "Furniture"],
+                Sales: 252612.7435000003,
+            },
+            {
+                __ROW_PATH__: ["West", "Technology"],
+                Sales: 251991.83199999997,
+            },
+            {
+                __ROW_PATH__: ["West", "Office Supplies"],
+                Sales: 220853.24900000007,
+            },
+            {
+                __ROW_PATH__: ["East", "Technology"],
+                Sales: 264973.9810000003,
+            },
+            {
+                __ROW_PATH__: ["East", "Furniture"],
+                Sales: 208291.20400000009,
+            },
+        ]);
+        await view.delete();
+    });
+
+    test("flat + multi group_by + split_by + sort", async function () {
+        const table = await getClient().open_table("memory.superstore");
+        const view = await table.view({
+            columns: ["Sales"],
+            group_by: ["Region", "Category"],
+            split_by: ["Ship Mode"],
+            sort: [["Sales", "desc"]],
+            aggregates: { Sales: "sum" },
+            group_rollup_mode: "flat",
+        });
+        const json = await view.to_json({ start_row: 0, end_row: 5 });
+        expect(json).toEqual([
+            {
+                __ROW_PATH__: ["West", "Furniture"],
+                "First Class|Sales": 40018.829499999985,
+                "Same Day|Sales": 14527.978000000001,
+                "Second Class|Sales": 54155.6555,
+                "Standard Class|Sales": 143910.28049999996,
+            },
+            {
+                __ROW_PATH__: ["West", "Technology"],
+                "First Class|Sales": 61107.98900000001,
+                "Same Day|Sales": 19218.053999999993,
+                "Second Class|Sales": 38610.979999999996,
+                "Standard Class|Sales": 133054.809,
+            },
+            {
+                __ROW_PATH__: ["West", "Office Supplies"],
+                "First Class|Sales": 28635.06999999996,
+                "Same Day|Sales": 9857.678000000002,
+                "Second Class|Sales": 52572.79199999999,
+                "Standard Class|Sales": 129787.70900000003,
+            },
+            {
+                __ROW_PATH__: ["East", "Technology"],
+                "First Class|Sales": 47693.312999999995,
+                "Same Day|Sales": 21349.464999999997,
+                "Second Class|Sales": 29304.490000000005,
+                "Standard Class|Sales": 166626.71300000005,
+            },
+            {
+                __ROW_PATH__: ["East", "Furniture"],
+                "First Class|Sales": 29410.643999999997,
+                "Same Day|Sales": 12852.570999999996,
+                "Second Class|Sales": 44035.937000000005,
+                "Standard Class|Sales": 121992.05199999997,
+            },
+        ]);
         await view.delete();
     });
 
@@ -167,6 +256,7 @@ describeDuckDB("combined operations", (getClient) => {
             sort: [["profitmargin", "desc"]],
             aggregates: { profitmargin: "avg" },
         });
+
         const json = await view.to_json();
         expect(json).toEqual([
             {
@@ -190,6 +280,7 @@ describeDuckDB("combined operations", (getClient) => {
                 profitmargin: -10.407293926323575,
             },
         ]);
+
         await view.delete();
     });
 });

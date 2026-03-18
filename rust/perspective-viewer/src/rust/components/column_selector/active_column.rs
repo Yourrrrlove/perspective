@@ -336,7 +336,6 @@ impl Component for ActiveColumn {
                     let event_name = name.to_owned();
                     let dragdrop = ctx.props().dragdrop.clone();
                     move |event: DragEvent| {
-                        tracing::error!("dragstart");
                         dragdrop.set_drag_image(&event).unwrap();
                         dragdrop.notify_drag_start(
                             event_name.to_string(),

@@ -126,6 +126,22 @@ impl PyGenericSQLVirtualServerModel {
             .view_size(view_id)
             .map_err(|e| PyValueError::new_err(e.to_string()))
     }
+
+    pub fn view_get_min_max(
+        &self,
+        view_id: &str,
+        column_name: &str,
+        config: Py<PyAny>,
+    ) -> PyResult<String> {
+        let config: ViewConfig = Python::with_gil(|py| {
+            pythonize::depythonize(config.bind(py))
+                .map_err(|e| PyValueError::new_err(e.to_string()))
+        })?;
+
+        self.inner
+            .view_get_min_max(view_id, column_name, &config)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
 }
 
 impl PyGenericSQLVirtualServerModel {

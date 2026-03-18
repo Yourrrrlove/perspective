@@ -856,3 +856,53 @@ class TestDuckDBCombinedOperations:
             {"__ROW_PATH__": ["Central"], "profitmargin": -10.407293926323575},
         ]
         view.delete()
+
+
+class TestDuckDBMinMax:
+    def test_min_max_integer(self, client):
+        table = client.open_table("memory.superstore")
+        view = table.view(columns=["Quantity"])
+        min_val, max_val = view.get_min_max("Quantity")
+        assert min_val == 1
+        assert max_val == 14
+        view.delete()
+
+    def test_min_max_float(self, client):
+        table = client.open_table("memory.superstore")
+        view = table.view(columns=["Sales"])
+        min_val, max_val = view.get_min_max("Sales")
+        assert min_val == 0.444
+        assert max_val == 22638.48
+        view.delete()
+
+    def test_min_max_string(self, client):
+        table = client.open_table("memory.superstore")
+        view = table.view(columns=["Category"])
+        min_val, max_val = view.get_min_max("Category")
+        assert min_val == "Furniture"
+        assert max_val == "Technology"
+        view.delete()
+
+    def test_min_max_with_group_by(self, client):
+        table = client.open_table("memory.superstore")
+        view = table.view(
+            columns=["Sales"],
+            group_by=["Region"],
+            aggregates={"Sales": "sum"},
+        )
+        min_val, max_val = view.get_min_max("Sales")
+        assert min_val > 0
+        assert max_val > 0
+        assert max_val >= min_val
+        view.delete()
+
+    def test_min_max_with_filter(self, client):
+        table = client.open_table("memory.superstore")
+        view = table.view(
+            columns=["Quantity"],
+            filter=[["Quantity", ">", 10]],
+        )
+        min_val, max_val = view.get_min_max("Quantity")
+        assert min_val >= 11
+        assert max_val == 14
+        view.delete()

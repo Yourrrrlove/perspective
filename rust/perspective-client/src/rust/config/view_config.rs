@@ -416,13 +416,13 @@ impl ViewConfig {
                 .map(|x| !x.is_empty())
                 .unwrap_or_default()
         {
-            tracing::warn!("`total` incompatible with `group_by`");
+            tracing::info!("`total` incompatible with `group_by`");
             changed = true;
             update.group_rollup_mode = Some(GroupRollupMode::Rollup);
         }
 
         if update.group_rollup_mode == Some(GroupRollupMode::Total) && !self.group_by.is_empty() {
-            tracing::warn!("`group_by` incompatible with `total`");
+            tracing::info!("`group_by` incompatible with `total`");
             changed = true;
             update.group_by = Some(vec![]);
         }
@@ -436,7 +436,7 @@ impl ViewConfig {
         changed = Self::_apply(&mut self.expressions, update.expressions) || changed;
         changed = Self::_apply(&mut self.group_rollup_mode, update.group_rollup_mode) || changed;
         if self.group_rollup_mode == GroupRollupMode::Total && !self.group_by.is_empty() {
-            tracing::warn!("`total` incompatible with `group_by`");
+            tracing::info!("`total` incompatible with `group_by`");
             changed = true;
             self.group_by = vec![];
         }

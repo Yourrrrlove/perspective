@@ -17,8 +17,6 @@
 
 // TODO(texodus): Missing these features
 //
-// - `min_max` API for value-coloring and value-sizing.
-//
 // - row expand/collapse in the datagrid needs datamodel support, this is likely
 //   a "collapsed" boolean column in the temp table we `UPDATE`.
 //
@@ -285,6 +283,37 @@ impl GenericSQLVirtualServerModel {
     /// SQL: `SELECT COUNT(*) FROM {view_id}`
     pub fn view_size(&self, view_id: &str) -> GenericSQLResult<String> {
         Ok(format!("SELECT COUNT(*) FROM {}", view_id))
+    }
+
+    /// Returns the SQL query to get the min and max values of a column.
+    ///
+    /// # Arguments
+    /// * `view_id` - The identifier of the view.
+    /// * `column_name` - The name of the column.
+    /// * `config` - The view configuration.
+    ///
+    /// # Returns
+    /// SQL: `SELECT MIN("column_name"), MAX("column_name") FROM {view_id}`
+    /// When the view uses ROLLUP grouping (non-flat mode with group_by),
+    /// a `WHERE __GROUPING_ID__ = 0` clause is added to exclude non-leaf rows.
+    pub fn view_get_min_max(
+        &self,
+        view_id: &str,
+        column_name: &str,
+        config: &ViewConfig,
+    ) -> GenericSQLResult<String> {
+        let has_grouping_id =
+            !config.group_by.is_empty() && config.group_rollup_mode != GroupRollupMode::Flat;
+        let where_clause = if has_grouping_id {
+            " WHERE __GROUPING_ID__ = 0"
+        } else {
+            ""
+        };
+
+        Ok(format!(
+            "SELECT MIN(\"{}\"), MAX(\"{}\") FROM {}{}",
+            column_name, column_name, view_id, where_clause
+        ))
     }
 
     fn filter_term_to_sql(term: &FilterTerm) -> Option<String> {

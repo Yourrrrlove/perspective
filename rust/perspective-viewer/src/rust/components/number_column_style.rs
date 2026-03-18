@@ -10,6 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+use perspective_client::config::Scalar;
 use yew::prelude::*;
 use yew::*;
 
@@ -72,18 +73,30 @@ impl PartialEq for NumberColumnStyleProps {
     }
 }
 
+fn scalar_to_f64(scalar: &Scalar) -> f64 {
+    match scalar {
+        Scalar::Float(x) => *x,
+        Scalar::String(x) => x.parse::<f64>().unwrap_or_default(),
+        Scalar::Bool(x) => {
+            if *x {
+                1.0
+            } else {
+                0.0
+            }
+        },
+        Scalar::Null => 0.0,
+    }
+}
+
 fn set_default_gradient(session: &Session, ctx: &Context<NumberColumnStyle>) {
     if let Some(column_name) = ctx.props().column_name.clone() {
         let session = session.clone();
         ctx.link().send_future(async move {
             let view = session.get_view().unwrap();
             let min_max = view.get_min_max(column_name).await.unwrap();
-            let abs_max = min_max
-                .0
-                .parse::<f64>()
-                .unwrap_or_default()
+            let abs_max = scalar_to_f64(&min_max.0)
                 .abs()
-                .max(min_max.1.parse::<f64>().unwrap_or_default().abs());
+                .max(scalar_to_f64(&min_max.1).abs());
 
             let gradient = (abs_max * 100.).round() / 100.;
             NumberColumnStyleMsg::DefaultGradientChanged(gradient)

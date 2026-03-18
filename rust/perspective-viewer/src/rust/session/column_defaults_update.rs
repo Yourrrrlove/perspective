@@ -43,7 +43,7 @@ pub impl ViewConfigUpdate {
                 .unwrap_or(&GroupRollupMode::Rollup),
         ) {
             self.group_rollup_mode = group_rollups.first().cloned();
-            tracing::error!(
+            tracing::debug!(
                 "Setting plugin-advised rollup mode {:?}",
                 self.group_rollup_mode
             );

@@ -145,6 +145,19 @@ pub trait VirtualServerHandler {
         Box::pin(async { Ok(0) })
     }
 
+    /// Returns the min and max values of a column in a view.
+    ///
+    /// Default implementation panics with "not implemented".
+    fn view_get_min_max(
+        &self,
+        _view_id: &str,
+        _column_name: &str,
+        _config: &crate::config::ViewConfig,
+    ) -> VirtualServerFuture<'_, Result<(crate::config::Scalar, crate::config::Scalar), Self::Error>>
+    {
+        Box::pin(async { unimplemented!("view_get_min_max not implemented") })
+    }
+
     // Unused
 
     /// Creates a new table with the given data.
