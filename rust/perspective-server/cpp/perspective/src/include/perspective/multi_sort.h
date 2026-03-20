@@ -16,21 +16,127 @@
 #include <perspective/scalar.h>
 #include <perspective/exports.h>
 #include <perspective/comparators.h>
+#include <array>
 #include <vector>
 
 namespace perspective {
+
+// Inline fixed-capacity vector for sort rows with small-buffer optimization.
+// Uses a stack-allocated array for <= SBO_CAPACITY elements, falling back to
+// heap allocation for larger sizes. All access is branchless via pointer
+// indirection; the inline-vs-heap decision is made once at reserve() time.
+struct PERSPECTIVE_EXPORT t_sortrow_vec {
+    static constexpr std::size_t SBO_CAPACITY = 8;
+
+    t_sortrow_vec() : m_ptr(m_data.data()), m_alloc(nullptr), m_size(0) {}
+
+    t_sortrow_vec(const std::vector<t_tscalar>& v)
+        : m_alloc(nullptr), m_size(v.size()) {
+        if (m_size > SBO_CAPACITY) {
+            m_alloc = new t_tscalar[m_size];
+            m_ptr = m_alloc;
+        } else {
+            m_ptr = m_data.data();
+        }
+        for (std::size_t i = 0; i < m_size; ++i) {
+            m_ptr[i] = v[i];
+        }
+    }
+
+    ~t_sortrow_vec() { delete[] m_alloc; }
+
+    t_sortrow_vec(const t_sortrow_vec& o)
+        : m_data(o.m_data), m_alloc(nullptr), m_size(o.m_size) {
+        if (o.m_alloc) {
+            m_alloc = new t_tscalar[m_size];
+            std::copy(o.m_ptr, o.m_ptr + m_size, m_alloc);
+            m_ptr = m_alloc;
+        } else {
+            m_ptr = m_data.data();
+        }
+    }
+
+    t_sortrow_vec& operator=(const t_sortrow_vec& o) {
+        if (this != &o) {
+            delete[] m_alloc;
+            m_alloc = nullptr;
+            m_size = o.m_size;
+            if (o.m_alloc) {
+                m_alloc = new t_tscalar[m_size];
+                std::copy(o.m_ptr, o.m_ptr + m_size, m_alloc);
+                m_ptr = m_alloc;
+            } else {
+                m_data = o.m_data;
+                m_ptr = m_data.data();
+            }
+        }
+        return *this;
+    }
+
+    t_sortrow_vec(t_sortrow_vec&& o) noexcept
+        : m_data(o.m_data), m_alloc(o.m_alloc), m_size(o.m_size) {
+        if (m_alloc) {
+            m_ptr = m_alloc;
+        } else {
+            m_ptr = m_data.data();
+        }
+        o.m_alloc = nullptr;
+        o.m_size = 0;
+        o.m_ptr = o.m_data.data();
+    }
+
+    t_sortrow_vec& operator=(t_sortrow_vec&& o) noexcept {
+        if (this != &o) {
+            delete[] m_alloc;
+            m_data = o.m_data;
+            m_alloc = o.m_alloc;
+            m_size = o.m_size;
+            if (m_alloc) {
+                m_ptr = m_alloc;
+            } else {
+                m_ptr = m_data.data();
+            }
+            o.m_alloc = nullptr;
+            o.m_size = 0;
+            o.m_ptr = o.m_data.data();
+        }
+        return *this;
+    }
+
+    void reserve(std::size_t capacity) {
+        if (capacity > SBO_CAPACITY && !m_alloc) {
+            m_alloc = new t_tscalar[capacity];
+            m_ptr = m_alloc;
+        }
+    }
+
+    void push_back(const t_tscalar& v) { m_ptr[m_size++] = v; }
+
+    const t_tscalar& operator[](std::size_t i) const { return m_ptr[i]; }
+    t_tscalar& operator[](std::size_t i) { return m_ptr[i]; }
+
+    std::size_t size() const { return m_size; }
+
+    const t_tscalar* begin() const { return m_ptr; }
+    const t_tscalar* end() const { return m_ptr + m_size; }
+
+    std::array<t_tscalar, SBO_CAPACITY> m_data;
+    t_tscalar* m_ptr;
+    t_tscalar* m_alloc;
+    std::uint8_t m_size;
+};
 
 struct PERSPECTIVE_EXPORT t_mselem {
     t_mselem();
     t_mselem(const std::vector<t_tscalar>& row);
     t_mselem(const std::vector<t_tscalar>& row, t_uindex order);
     t_mselem(const t_tscalar& pkey, const std::vector<t_tscalar>& row);
-    t_mselem(const t_mselem& other);
-    t_mselem(t_mselem&& other) noexcept;
-    t_mselem& operator=(const t_mselem& other);
-    t_mselem& operator=(t_mselem&& other) noexcept;
+    t_mselem(const t_mselem& other) = default;
+    t_mselem(t_mselem&& other) noexcept = default;
+    t_mselem& operator=(const t_mselem& other) = default;
+    t_mselem& operator=(t_mselem&& other) noexcept = default;
 
-    std::vector<t_tscalar> m_row;
+    t_sortrow_vec m_row;
     t_tscalar m_pkey;
     t_uindex m_order;
     bool m_deleted;
@@ -40,6 +146,19 @@ struct PERSPECTIVE_EXPORT t_mselem {
 } // end namespace perspective
 
 namespace std {
+
+inline std::ostream&
+operator<<(std::ostream& os, const perspective::t_sortrow_vec& v) {
+    os << "[";
+    for (std::size_t i = 0; i < v.size(); ++i) {
+        if (i > 0) {
+            os << ", ";
+        }
+        os << v[i];
+    }
+    os << "]";
+    return os;
+}
 
 inline std::ostream&
 operator<<(std::ostream& os, const perspective::t_mselem& t) {
@@ -107,20 +226,22 @@ cmp_mselem(
 
         t_sorttype order = sort_order[idx];
 
-        t_nancmp nancmp = nan_compare(order, first, second);
+        if (first.is_floating_point() || second.is_floating_point()) {
+            t_nancmp nancmp = nan_compare(order, first, second);
 
-        if (first.is_floating_point() && nancmp.m_active) {
-            switch (nancmp.m_cmpval) {
-                case CMP_OP_LT: {
-                    return true;
-                } break;
-                case CMP_OP_GT: {
-                    return false;
-                } break;
-                case CMP_OP_EQ:
-                default: {
-                    continue;
-                } break;
+            if (nancmp.m_active) {
+                switch (nancmp.m_cmpval) {
+                    case CMP_OP_LT: {
+                        return true;
+                    } break;
+                    case CMP_OP_GT: {
+                        return false;
+                    } break;
+                    case CMP_OP_EQ:
+                    default: {
+                        continue;
+                    } break;
+                }
             }
         }
 
