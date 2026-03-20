@@ -180,21 +180,12 @@ class DuckDBVirtualServerHandler(VirtualServerHandler):
 
     def view_get_data(self, view_name, config, schema, viewport, data):
         group_by = config["group_by"]
-        split_by = config["split_by"]
-        is_group_by = len(group_by) > 0
-        is_split_by = len(split_by) > 0
         query = self.sql_builder.view_get_data(view_name, config, viewport, schema)
         results, columns, dtypes = run_query(self.db, query, columns=True)
         for cidx, col in enumerate(columns):
-            if cidx == 0 and is_group_by:
-                continue
-
-            if is_split_by and not col.startswith("__"):
-                col = col.replace("_", "|")
-
             dtype = duckdb_type_to_psp(str(dtypes[cidx]))
             for ridx, row in enumerate(results):
-                grouping_id = row[0] if is_group_by else None
+                grouping_id = row[0] if len(group_by) > 0 else None
                 data.set_col(dtype, col, ridx, row[cidx], grouping_id)
 
 

@@ -18,7 +18,7 @@ use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 use indexmap::IndexMap;
-use js_sys::{Array, Date, Object, Reflect};
+use js_sys::{Array, Date, Object, Reflect, Uint8Array};
 use perspective_client::proto::{ColumnType, HostedTable};
 use perspective_client::virtual_server;
 use perspective_client::virtual_server::{Features, ResultExt, VirtualServerHandler};
@@ -585,6 +585,18 @@ impl VirtualDataSlice {
                 config.into_serde_ext().unwrap(),
             )))),
         )
+    }
+
+    #[wasm_bindgen(js_name = "fromArrowIpc")]
+    pub fn from_arrow_ipc(&self, ipc: Uint8Array) -> Result<(), JsValue> {
+        // tracing::error!("L {}", ipc.len());
+        self.1
+            .lock()
+            .unwrap()
+            .as_mut()
+            .unwrap()
+            .from_arrow_ipc(&ipc.to_vec())
+            .map_err(|e| JsValue::from_str(&e.to_string()))
     }
 
     #[wasm_bindgen(js_name = "setCol")]

@@ -119,25 +119,6 @@ function duckdbTypeToPsp(name: string): ColumnType {
     return "string";
 }
 
-function convertDecimalToNumber(value: any, dtypeString: string) {
-    if (!(value instanceof Uint32Array || value instanceof Int32Array)) {
-        return value;
-    }
-
-    let bigIntValue = BigInt(0);
-    for (let i = 0; i < value.length; i++) {
-        bigIntValue |= BigInt(value[i]) << BigInt(i * 32);
-    }
-
-    const scaleMatch = dtypeString.match(/Decimal\[\d+e(\d+)\]/);
-    if (scaleMatch) {
-        const scale = parseInt(scaleMatch[1]);
-        return Number(bigIntValue) / Math.pow(10, scale);
-    } else {
-        return Number(bigIntValue);
-    }
-}
-
 async function runQuery(
     db: duckdb.AsyncDuckDBConnection,
     query: string,
@@ -311,10 +292,6 @@ export class DuckDBHandler implements perspective.VirtualServerHandler {
         viewport: ViewWindow,
         dataSlice: perspective.VirtualDataSlice,
     ) {
-        const is_group_by = config.group_by?.length > 0;
-        const is_split_by = config.split_by?.length > 0;
-        const is_flat = config.group_rollup_mode === "flat";
-        const has_grouping_id = is_group_by && !is_flat;
         const query = this.sqlBuilder.viewGetData(
             viewId,
             config,
@@ -322,47 +299,10 @@ export class DuckDBHandler implements perspective.VirtualServerHandler {
             schema,
         );
 
-        const { rows, columns, dtypes } = await runQuery(this.db, query, {
-            columns: true,
-        });
+        const ipc = await this.db.useUnsafe((bindings, conn) =>
+            bindings.runQuery(conn, query),
+        );
 
-        for (let cidx = 0; cidx < columns.length; cidx++) {
-            if (cidx === 0 && has_grouping_id) {
-                // This is the grouping_id column, skip it
-                continue;
-            }
-
-            let col = columns[cidx];
-            if (is_split_by && !col.startsWith("__")) {
-                col = col.replaceAll("_", "|");
-            }
-
-            const dtype = duckdbTypeToPsp(dtypes[cidx]) as ColumnType;
-            const isDecimal = dtypes[cidx].startsWith("Decimal");
-            for (let ridx = 0; ridx < rows.length; ridx++) {
-                const rowArray = rows[ridx].toArray();
-                const grouping_id = has_grouping_id
-                    ? Number(rowArray[0])
-                    : undefined;
-                let value = rowArray[cidx];
-                if (isDecimal) {
-                    value = convertDecimalToNumber(value, dtypes[cidx]);
-                }
-
-                if (typeof value === "bigint") {
-                    value = Number(value);
-                }
-
-                if (typeof value !== "string" && dtype === "string") {
-                    try {
-                        value = JSON.stringify(value);
-                    } catch (e) {
-                        value = `${value}`;
-                    }
-                }
-
-                dataSlice.setCol(dtype, col, ridx, value, grouping_id);
-            }
-        }
+        dataSlice.fromArrowIpc(ipc);
     }
 }

@@ -65,6 +65,9 @@ prost-build = { version = "0.12.3" }
 protobuf-src = { version = "2.1.1", optional = true }
 
 [dependencies]
+arrow-array = { version = "57.3.0", default-features = false }
+arrow-ipc = { version = "57.3.0", default-features = false }
+arrow-schema = { version = "57.3.0", default-features = false }
 async-lock = { version = "2.5.0" }
 futures = { version = "0.3.28" }
 indexmap = { version = "2.2.6", features = ["serde"] }
@@ -78,7 +81,7 @@ num-traits = "0.2.19"
 rand = { version = ">=0.9,<1" }
 serde = { version = "1.0", features = ["derive"] }
 serde_bytes = { version = "0.11" }
-serde_json = { version = "1.0.107", features = ["raw_value"] }
+serde_json = { version = "1.0.107", features = ["raw_value", "preserve_order"] }
 talc = { version = "4.4.3", features = ["counters"], optional = true }
 thiserror = { version = "1.0.55" }
 tracing = { version = "0.1.36" }

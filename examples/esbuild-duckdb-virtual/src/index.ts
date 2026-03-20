@@ -31,7 +31,9 @@ import * as duckdb from "@duckdb/duckdb-wasm";
 import SUPERSTORE_ARROW from "superstore-arrow/superstore.lz4.arrow";
 
 await Promise.all([
+    // @ts-ignore
     perspective.init_server(fetch(SERVER_WASM)),
+    // @ts-ignore
     perspective_viewer.init_client(fetch(CLIENT_WASM)),
 ]);
 

@@ -45,7 +45,7 @@ catalog:
 
     # Dev Dependencies
     "@clickhouse/client-web": "^1.12.0"
-    "@duckdb/duckdb-wasm": "^1.30.0"
+    "@duckdb/duckdb-wasm": "1.33.1-dev18.0"
     "@duckdb/duckdb-wasm-shell": "^1.30.0"
     "@fontsource/roboto-mono": "4.5.10"
     "@iarna/toml": "3.0.0"
@@ -62,7 +62,7 @@ catalog:
     "@types/ws": ">=8"
     "@types/chroma-js": "^3.1.2"
     "@zip.js/zip.js": "^2.7.54"
-    "apache-arrow": "18.1.0"
+    "apache-arrow": "17.0.0"
     "arraybuffer-loader": ">=1.0.8 <2"
     "auto-changelog": "^2.5.0"
     "chalk": ">=5"
