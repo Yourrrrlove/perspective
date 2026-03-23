@@ -13,24 +13,91 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use ::perspective_js::utils::{global, *};
+use perspective_js::utils::global;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::*;
-use yew::*;
+use yew::prelude::*;
 
-use super::modal::*;
 use super::viewer::PerspectiveViewerElement;
-use crate::components::copy_dropdown::{CopyDropDownMenu, CopyDropDownMenuProps};
+use crate::components::copy_dropdown::CopyDropDownMenu;
+use crate::components::portal::PortalModal;
+use crate::components::style::StyleProvider;
 use crate::js::*;
+use crate::renderer::*;
 use crate::tasks::*;
 use crate::utils::*;
+use crate::*;
+
+type TargetState = Rc<RefCell<Option<HtmlElement>>>;
+
+#[derive(Properties, PartialEq)]
+struct CopyDropDownWrapperProps {
+    renderer: Renderer,
+    callback: Callback<ExportFile>,
+    target: TargetState,
+    custom_element: HtmlElement,
+    #[prop_or_default]
+    theme: String,
+}
+
+enum CopyDropDownWrapperMsg {
+    Open,
+    Close,
+}
+
+struct CopyDropDownWrapper {
+    target: Option<HtmlElement>,
+}
+
+impl Component for CopyDropDownWrapper {
+    type Message = CopyDropDownWrapperMsg;
+    type Properties = CopyDropDownWrapperProps;
+
+    fn create(_ctx: &Context<Self>) -> Self {
+        Self { target: None }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        match msg {
+            CopyDropDownWrapperMsg::Open => {
+                self.target = ctx.props().target.borrow().clone();
+                true
+            },
+            CopyDropDownWrapperMsg::Close => {
+                self.target = None;
+                true
+            },
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let on_close = ctx.link().callback(|_| CopyDropDownWrapperMsg::Close);
+        html! {
+            <StyleProvider root={ctx.props().custom_element.clone()}>
+                <PortalModal
+                    tag_name="perspective-copy-menu"
+                    target={self.target.clone()}
+                    own_focus=true
+                    {on_close}
+                    theme={ctx.props().theme.clone()}
+                >
+                    <CopyDropDownMenu
+                        renderer={ctx.props().renderer.clone()}
+                        callback={ctx.props().callback.clone()}
+                    />
+                </PortalModal>
+            </StyleProvider>
+        }
+    }
+}
 
 #[wasm_bindgen]
 #[derive(Clone)]
 pub struct CopyDropDownMenuElement {
     elem: HtmlElement,
-    modal: Rc<RefCell<Option<ModalElement<CopyDropDownMenu>>>>,
+    target: TargetState,
+    root: Rc<RefCell<Option<AppHandle<CopyDropDownWrapper>>>>,
 }
 
 impl CustomElementMetadata for CopyDropDownMenuElement {
@@ -43,24 +110,25 @@ impl CopyDropDownMenuElement {
     pub fn new(elem: HtmlElement) -> Self {
         Self {
             elem,
-            modal: Default::default(),
+            target: Default::default(),
+            root: Default::default(),
         }
     }
 
     pub fn open(&self, target: HtmlElement) {
-        if let Some(x) = &*self.modal.borrow() {
-            ApiFuture::spawn(x.clone().open(target, None));
+        *self.target.borrow_mut() = Some(target);
+        if let Some(root) = self.root.borrow().as_ref() {
+            root.send_message(CopyDropDownWrapperMsg::Open);
         }
     }
 
     pub fn hide(&self) -> ApiResult<()> {
-        let borrowed = self.modal.borrow();
-        borrowed.as_ref().into_apierror()?.hide()
+        if let Some(root) = self.root.borrow().as_ref() {
+            root.send_message(CopyDropDownWrapperMsg::Close);
+        }
+        Ok(())
     }
 
-    /// Internal Only.
-    ///
-    /// Set this custom element model's raw pointer.
     pub fn __set_model(&self, parent: &PerspectiveViewerElement) {
         self.set_config_model(parent)
     }
@@ -91,30 +159,43 @@ impl CopyDropDownMenuElement {
     {
         let callback = Callback::from({
             let model = model.clone_state();
-            let modal_rc = self.modal.clone();
+            let target = self.target.clone();
+            let root = self.root.clone();
             move |x: ExportFile| {
                 let model = model.clone();
-                let modal = modal_rc.borrow().clone().unwrap();
+                let target = target.clone();
+                let root = root.clone();
                 spawn_local(async move {
                     let mime = x.method.mimetype(x.is_chart);
                     let task = model.export_method_to_blob(x.method);
                     let result = copy_to_clipboard(task, mime).await;
                     crate::maybe_log!({
                         result?;
-                        modal.hide()?;
+                        *target.borrow_mut() = None;
+                        if let Some(root) = root.borrow().as_ref() {
+                            root.send_message(CopyDropDownWrapperMsg::Close);
+                        }
                     })
                 })
             }
         });
 
         let renderer = model.renderer().clone();
-        let props = props!(CopyDropDownMenuProps {
+        let init = ShadowRootInit::new(ShadowRootMode::Open);
+        let shadow_root = self
+            .elem
+            .attach_shadow(&init)
+            .unwrap()
+            .unchecked_into::<Element>();
+
+        let props = yew::props!(CopyDropDownWrapperProps {
             renderer,
             callback,
-            root: self.elem.clone()
+            target: self.target.clone(),
+            custom_element: self.elem.clone()
         });
 
-        let modal = ModalElement::new(self.elem.clone(), props, true, None);
-        *self.modal.borrow_mut() = Some(modal);
+        let handle = yew::Renderer::with_root_and_props(shadow_root, props).render();
+        *self.root.borrow_mut() = Some(handle);
     }
 }

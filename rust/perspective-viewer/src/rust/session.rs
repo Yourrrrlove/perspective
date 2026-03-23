@@ -32,7 +32,7 @@ use yew::html::ImplicitClone;
 use yew::prelude::*;
 
 use self::metadata::*;
-pub use self::metadata::{MetadataRef, SessionMetadata};
+pub use self::metadata::{MetadataRef, SessionMetadata, SessionMetadataRc};
 pub use self::props::SessionProps;
 pub use self::view_subscription::ViewStats;
 use self::view_subscription::*;
@@ -541,7 +541,7 @@ impl Session {
         use self::column_defaults_update::*;
         config_update.set_update_column_defaults(
             &self.metadata(),
-            &self.all_columns().into_iter().map(Some).collect::<Vec<_>>(),
+            &self.get_view_config().columns,
             requirements,
         )
     }
@@ -746,12 +746,12 @@ impl Session {
     pub fn to_props(&self) -> SessionProps {
         let data = self.borrow();
         SessionProps {
-            config: Rc::new(data.config.clone()),
+            config: PtrEqRc::new(data.config.clone()),
             stats: data.stats.clone(),
             has_table: data.table.is_some(),
             error: data.error.clone(),
             title: data.title.clone(),
-            metadata: Rc::new(data.metadata.clone()),
+            metadata: PtrEqRc::new(data.metadata.clone()),
         }
     }
 }

@@ -10,10 +10,9 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use crate::js::plugin::ViewConfigRequirements;
 use crate::renderer::limits::RenderLimits;
+use crate::utils::PtrEqRc;
 
 /// Value-semantic snapshot of the renderer state read by components.
 ///
@@ -31,5 +30,5 @@ pub struct RendererProps {
     pub render_limits: Option<RenderLimits>,
 
     /// Names of all registered plugins, in registration order.
-    pub available_plugins: Rc<Vec<String>>,
+    pub available_plugins: PtrEqRc<Vec<String>>,
 }

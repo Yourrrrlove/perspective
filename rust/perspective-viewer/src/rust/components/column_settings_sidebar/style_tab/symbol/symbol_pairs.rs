@@ -16,10 +16,11 @@ use itertools::Itertools;
 use yew::{Callback, Html, Properties, html};
 
 use crate::components::column_settings_sidebar::style_tab::symbol::symbol_pairs_item::PairsListItem;
+use crate::components::filter_dropdown::FilterDropDownElement;
 use crate::components::style::LocalStyle;
 use crate::config::SymbolKVPair;
 use crate::css;
-use crate::custom_elements::FilterDropDownElement;
+use crate::utils::PtrEqRc;
 
 #[derive(Properties, PartialEq)]
 pub struct PairsListProps {
@@ -28,7 +29,7 @@ pub struct PairsListProps {
     pub update_pairs: Callback<Vec<SymbolKVPair>>,
     pub id: Option<String>,
     pub row_dropdown: Rc<FilterDropDownElement>,
-    pub values: Rc<Vec<String>>,
+    pub values: PtrEqRc<Vec<String>>,
     pub column_name: String,
 }
 

@@ -16,9 +16,9 @@ use perspective_client::config::Expression;
 use web_sys::*;
 use yew::prelude::*;
 
+use crate::components::column_dropdown::ColumnDropDownElement;
 use crate::components::style::LocalStyle;
 use crate::css;
-use crate::custom_elements::ColumnDropDownElement;
 
 #[derive(Properties)]
 pub struct EmptyColumnProps {
@@ -38,7 +38,7 @@ impl PartialEq for EmptyColumnProps {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum InPlaceColumn {
     Column(String),
     Expression(Expression<'static>),

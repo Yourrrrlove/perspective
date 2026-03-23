@@ -19,9 +19,9 @@ use web_sys::*;
 use yew::html::Scope;
 use yew::prelude::*;
 
+use crate::components::column_dropdown::ColumnDropDownElement;
 use crate::components::column_selector::{EmptyColumn, InPlaceColumn, InvalidColumn};
 use crate::components::type_icon::TypeIcon;
-use crate::custom_elements::ColumnDropDownElement;
 use crate::dragdrop::*;
 use crate::utils::DragTarget;
 

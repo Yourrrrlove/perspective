@@ -22,9 +22,9 @@ use yew::prelude::*;
 
 use crate::components::containers::dragdrop_list::*;
 use crate::components::containers::select::*;
+use crate::components::filter_dropdown::FilterDropDownElement;
 use crate::components::style::LocalStyle;
 use crate::components::type_icon::TypeIcon;
-use crate::custom_elements::*;
 use crate::dragdrop::*;
 use crate::renderer::*;
 use crate::session::*;
@@ -39,9 +39,9 @@ pub struct FilterColumnProps {
     pub on_keydown: Callback<String>,
 
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
     /// Current view config threaded as a value prop.
-    pub view_config: Rc<ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
 
     // State
     pub session: Session,

@@ -23,10 +23,10 @@ use itertools::Itertools;
 use yew::{Callback, Html, Properties, html};
 
 use crate::components::column_settings_sidebar::style_tab::symbol::symbol_pairs::PairsList;
+use crate::components::filter_dropdown::{FilterDropDownElement, FilterDropDownPortal};
 use crate::components::style::LocalStyle;
 use crate::config::{ColumnConfigValueUpdate, KeyValueOpts, SymbolKVPair};
 use crate::css;
-use crate::custom_elements::FilterDropDownElement;
 use crate::session::Session;
 
 #[derive(Properties, PartialEq, Clone)]
@@ -36,6 +36,8 @@ pub struct SymbolAttrProps {
     pub restored_config: Option<HashMap<String, String>>,
     pub on_change: Callback<ColumnConfigValueUpdate>,
     pub default_config: KeyValueOpts,
+    /// Selected theme name, threaded for PortalModal consumers.
+    pub selected_theme: Option<String>,
 }
 impl SymbolAttrProps {
     pub fn next_default_symbol(&self, pairs_len: usize) -> String {
@@ -124,6 +126,10 @@ impl yew::Component for SymbolStyle {
                     column_name={ctx.props().column_name.clone()}
                     values={Rc::new(ctx.props().default_config.values.clone())}
                     {update_pairs}
+                />
+                <FilterDropDownPortal
+                    element={(*self.row_dropdown).clone()}
+                    theme={ctx.props().selected_theme.clone().unwrap_or_default()}
                 />
             </>
         }

@@ -56,7 +56,7 @@ pub struct PresentationHandle {
     pub on_is_workspace_changed: RefCell<Option<Callback<bool>>>,
     pub settings_before_open_changed: PubSub<bool>,
     pub column_settings_open_changed: PubSub<(bool, Option<String>)>,
-    pub theme_config_updated: PubSub<(Rc<Vec<String>>, Option<usize>)>,
+    pub theme_config_updated: PubSub<(PtrEqRc<Vec<String>>, Option<usize>)>,
     pub on_eject: PubSub<()>,
 }
 
@@ -184,7 +184,7 @@ impl Presentation {
     /// Get the available theme names from the browser environment by parsing
     /// readable stylesheets.  This method is memoized - the state can be
     /// flushed by calling `reset()`.
-    pub async fn get_available_themes(&self) -> ApiResult<Rc<Vec<String>>> {
+    pub async fn get_available_themes(&self) -> ApiResult<PtrEqRc<Vec<String>>> {
         let mut data = self.0.theme_data.lock().await;
         if data.themes.is_none() {
             await_dom_loaded().await?;
@@ -213,7 +213,9 @@ impl Presentation {
         changed
     }
 
-    pub async fn get_selected_theme_config(&self) -> ApiResult<(Rc<Vec<String>>, Option<usize>)> {
+    pub async fn get_selected_theme_config(
+        &self,
+    ) -> ApiResult<(PtrEqRc<Vec<String>>, Option<usize>)> {
         let themes = self.get_available_themes().await?;
         let name = self.0.viewer_elem.get_attribute("theme");
         let index = name
@@ -325,7 +327,7 @@ impl Presentation {
     ///
     /// `available_themes` must be provided by the caller because theme
     /// detection is async and therefore not available synchronously here.
-    pub fn to_props(&self, available_themes: Rc<Vec<String>>) -> PresentationProps {
+    pub fn to_props(&self, available_themes: PtrEqRc<Vec<String>>) -> PresentationProps {
         let theme_attr = self.0.viewer_elem.get_attribute("theme");
         let selected_theme = theme_attr.as_deref().and_then(|name| {
             available_themes

@@ -164,6 +164,16 @@ runs:
               targets: aarch64-unknown-linux-gnu
               components: rust-src
 
+        # Did you see a CI error of the form:
+        #
+        #     error: failed to install component: 'clippy-preview-aarch64-unknown-linux-gnu',
+        #     detected conflict: 'bin/cargo-clippy'
+        #
+        # See https://github.com/rust-lang/rustup/issues/988#issuecomment-1820438467
+        - name: Stupid cargo hack
+          shell: bash
+          run: cargo version
+
         # # TODO doesn't work.
         # - name: Install LLVM 17
         #   if: ${{ inputs.cpp == 'true' }}

@@ -10,8 +10,6 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use perspective_js::utils::*;
 use wasm_bindgen::prelude::*;
 use yew::prelude::*;
@@ -51,7 +49,7 @@ pub struct MainPanelProps {
     /// Value props from root's `PresentationProps`, threaded to `StatusBar`.
     pub is_settings_open: bool,
     pub selected_theme: Option<String>,
-    pub available_themes: Rc<Vec<String>>,
+    pub available_themes: PtrEqRc<Vec<String>>,
     pub is_workspace: bool,
 
     /// State
@@ -160,6 +158,7 @@ impl Component for MainPanel {
                 });
             })
         };
+
         html! {
             <div id="main_column">
                 <StatusBar

@@ -14,8 +14,6 @@ mod agg_depth_selector;
 mod stub;
 mod symbol;
 
-use std::rc::Rc;
-
 use itertools::Itertools;
 use perspective_client::config::ColumnType;
 use yew::{Html, Properties, function_component, html};
@@ -35,6 +33,7 @@ use crate::tasks::{
     HasCustomEvents, HasPresentation, HasRenderer, HasSession, SendPluginConfig,
     get_column_style_control_options,
 };
+use crate::utils::PtrEqRc;
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct StyleTabProps {
@@ -43,10 +42,13 @@ pub struct StyleTabProps {
     pub group_by_depth: u32,
 
     /// View config snapshot — threaded from parent.
-    pub view_config: Rc<perspective_client::config::ViewConfig>,
+    pub view_config: PtrEqRc<perspective_client::config::ViewConfig>,
 
     /// Session metadata snapshot — threaded from parent.
-    pub metadata: Rc<crate::session::SessionMetadata>,
+    pub metadata: PtrEqRc<crate::session::SessionMetadata>,
+
+    /// Selected theme name, threaded for PortalModal consumers.
+    pub selected_theme: Option<String>,
 
     // State
     pub custom_events: CustomEvents,
@@ -162,6 +164,7 @@ pub fn StyleTab(props: &StyleTabProps) -> Html {
                     {restored_config}
                     on_change={on_change.clone()}
                     column_name={props.column_name.clone()}
+                    selected_theme={props.selected_theme.clone()}
                     session={props.session.clone()}
                 />
             }))

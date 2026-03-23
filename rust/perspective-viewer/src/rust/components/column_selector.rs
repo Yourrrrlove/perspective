@@ -27,6 +27,7 @@ use std::rc::Rc;
 
 pub use empty_column::*;
 pub use invalid_column::*;
+use perspective_client::config::ViewConfig;
 use perspective_js::utils::ApiFuture;
 pub use pivot_column::*;
 use web_sys::*;
@@ -39,9 +40,9 @@ use self::inactive_column::*;
 use super::containers::scroll_panel::*;
 use super::containers::split_panel::{Orientation, SplitPanel};
 use super::style::LocalStyle;
+use crate::components::column_dropdown::{ColumnDropDownElement, ColumnDropDownPortal};
 use crate::components::containers::scroll_panel_item::ScrollPanelItem;
 use crate::css;
-use crate::custom_elements::ColumnDropDownElement;
 use crate::dragdrop::*;
 use crate::presentation::ColumnLocator;
 use crate::renderer::*;
@@ -60,23 +61,27 @@ pub struct ColumnSelectorProps {
     /// This is passed to the add_expression_button for styling.
     pub selected_column: Option<ColumnLocator>,
 
-    /// Fires when this component is resized via the UI.
-    #[prop_or_default]
-    pub on_resize: Option<Rc<PubSub<()>>>,
-
     /// Value props threaded from root's `SessionProps` / `RendererProps`.
     pub has_table: bool,
     pub named_column_count: usize,
-    pub view_config: Rc<perspective_client::config::ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
     pub drag_column: Option<String>,
+
     /// Cloned session metadata snapshot — threaded from `SessionProps`
     /// so that metadata changes trigger re-renders via prop diffing.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
+
+    /// Selected theme name, threaded for PortalModal consumers.
+    pub selected_theme: Option<String>,
 
     // State
     pub session: Session,
     pub renderer: Renderer,
     pub dragdrop: DragDrop,
+
+    /// Fires when this component is resized via the UI.
+    #[prop_or_default]
+    pub on_resize: Option<Rc<PubSub<()>>>,
 }
 
 impl PartialEq for ColumnSelectorProps {
@@ -87,6 +92,7 @@ impl PartialEq for ColumnSelectorProps {
             && self.view_config == rhs.view_config
             && self.drag_column == rhs.drag_column
             && self.metadata == rhs.metadata
+            && self.selected_theme == rhs.selected_theme
     }
 }
 
@@ -163,12 +169,14 @@ impl Component for ColumnSelector {
                         .columns
                         .iter()
                         .position(|x| x.as_ref() == Some(&column));
+
                     let min_cols = ctx.props().renderer.metadata().min;
                     let is_to_empty = !config
                         .columns
                         .get(index)
                         .map(|x| x.is_some())
                         .unwrap_or_default();
+
                     min_cols
                         .and_then(|x| from_index.map(|fi| fi < x))
                         .unwrap_or_default()
@@ -180,6 +188,7 @@ impl Component for ColumnSelector {
                         .metadata
                         .get_column_table_type(column.as_str())
                         .unwrap();
+
                     let update = ctx.props().view_config.create_drag_drop_update(
                         column,
                         col_type,
@@ -242,22 +251,25 @@ impl Component for ColumnSelector {
             ..
         } = ctx.props();
         let metadata = &ctx.props().metadata;
+
         // When `config.columns` is empty but the table has columns (transient
         // state during `load()` after `reset()` clears the config), fill in
         // all table columns as active — matching `validate_view_config()`.
         let prop_config = &ctx.props().view_config;
-        let config: Rc<perspective_client::config::ViewConfig> = if prop_config.columns.is_empty() {
+        let config = if prop_config.columns.is_empty() {
             if let Some(table_cols) = metadata.get_table_columns() {
-                Rc::new(perspective_client::config::ViewConfig {
+                ViewConfig {
                     columns: table_cols.iter().map(|c| Some(c.clone())).collect(),
                     ..(**prop_config).clone()
-                })
+                }
+                .into()
             } else {
                 prop_config.clone()
             }
         } else {
             prop_config.clone()
         };
+
         let is_aggregated = config.is_aggregated();
         let columns_iter = ColumnsIteratorSet::new(&config, metadata, renderer, dragdrop);
         let onselect = ctx.link().callback(|()| Redraw);
@@ -320,6 +332,7 @@ impl Component for ColumnSelector {
                     view_config={ctx.props().view_config.clone()}
                     drag_column={ctx.props().drag_column.clone()}
                     metadata={metadata.clone()}
+                    selected_theme={ctx.props().selected_theme.clone()}
                     {dragdrop}
                     {renderer}
                     {session}
@@ -496,6 +509,10 @@ impl Component for ColumnSelector {
                 >
                     { for selected_columns }
                 </SplitPanel>
+                <ColumnDropDownPortal
+                    element={self.column_dropdown.clone()}
+                    theme={ctx.props().selected_theme.clone().unwrap_or_default()}
+                />
             </>
         }
     }

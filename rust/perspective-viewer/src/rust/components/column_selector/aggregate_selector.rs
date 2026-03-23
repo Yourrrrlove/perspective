@@ -22,6 +22,7 @@ use crate::components::style::LocalStyle;
 use crate::css;
 use crate::renderer::*;
 use crate::session::*;
+use crate::utils::PtrEqRc;
 
 #[derive(Properties)]
 pub struct AggregateSelectorProps {
@@ -32,10 +33,10 @@ pub struct AggregateSelectorProps {
     pub aggregate: Option<Aggregate>,
 
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
 
     /// View config snapshot — threaded from parent as a value prop.
-    pub view_config: Rc<ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
 
     // State
     pub renderer: Renderer,

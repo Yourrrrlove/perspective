@@ -169,7 +169,7 @@ impl Component for PerspectiveViewer {
         let subscriptions = create_subscriptions(ctx);
         let session_props = ctx.props().session.to_props();
         let renderer_props = ctx.props().renderer.to_props(None);
-        let presentation_props = ctx.props().presentation.to_props(std::rc::Rc::new(vec![]));
+        let presentation_props = ctx.props().presentation.to_props(PtrEqRc::new(vec![]));
 
         // Memoized callback for column settings drawer
         let on_close_column_settings = ctx.link().callback(|_| OpenColumnSettings {
@@ -183,7 +183,7 @@ impl Component for PerspectiveViewer {
         // subscription is registered.
         {
             let presentation = ctx.props().presentation.clone();
-            let cb = ctx.link().callback(move |themes: Rc<Vec<String>>| {
+            let cb = ctx.link().callback(move |themes: PtrEqRc<Vec<String>>| {
                 UpdatePresentation(Box::new(presentation.to_props(themes)))
             });
 
@@ -522,6 +522,7 @@ impl Component for PerspectiveViewer {
                     {drag_column}
                     metadata={metadata.clone()}
                     open_column_settings={self.presentation_props.open_column_settings.clone()}
+                    selected_theme={self.presentation_props.selected_theme.clone()}
                     {dragdrop}
                     {presentation}
                     {renderer}
@@ -550,6 +551,7 @@ impl Component for PerspectiveViewer {
                         plugin_name={self.renderer_props.plugin_name.clone()}
                         {metadata}
                         view_config={self.session_props.config.clone()}
+                        selected_theme={self.presentation_props.selected_theme.clone()}
                         {custom_events}
                         {presentation}
                         {renderer}
@@ -750,7 +752,7 @@ fn create_subscriptions(ctx: &Context<PerspectiveViewer>) -> Vec<Subscription> {
         let cb_theme = {
             let pres = presentation.clone();
             ctx.link()
-                .callback(move |(themes, _): (std::rc::Rc<Vec<String>>, _)| {
+                .callback(move |(themes, _): (PtrEqRc<Vec<String>>, _)| {
                     UpdatePresentation(Box::new(pres.to_props(themes)))
                 })
         };

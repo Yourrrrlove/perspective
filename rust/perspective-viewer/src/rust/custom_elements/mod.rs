@@ -13,15 +13,8 @@
 //! Each file in `custom_elements` exports a single struct which will be the
 //! public [`wasm_bindgen`] API to a JavaScript Custom Element.
 
-mod column_dropdown;
 pub mod copy_dropdown;
 pub mod debug_plugin;
 pub mod export_dropdown;
-mod filter_dropdown;
-mod function_dropdown;
 pub mod modal;
 pub mod viewer;
-
-pub use self::column_dropdown::*;
-pub use self::filter_dropdown::*;
-pub use self::function_dropdown::*;

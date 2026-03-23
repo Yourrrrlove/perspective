@@ -12,16 +12,12 @@
 
 use std::rc::Rc;
 
-use session::Session;
 use yew::prelude::*;
 
 use super::containers::dropdown_menu::*;
-use super::modal::{ModalLink, SetModalLink};
-use super::style::StyleProvider;
 use crate::renderer::*;
+use crate::session::Session;
 use crate::tasks::*;
-use crate::utils::*;
-use crate::*;
 
 pub type ExportDropDownMenuItem = DropDownMenuItem<ExportFile>;
 
@@ -30,16 +26,6 @@ pub struct ExportDropDownMenuProps {
     pub renderer: Renderer,
     pub session: Session,
     pub callback: Callback<ExportFile>,
-    pub root: web_sys::HtmlElement,
-
-    #[prop_or_default]
-    weak_link: WeakScope<ExportDropDownMenu>,
-}
-
-impl ModalLink<ExportDropDownMenu> for ExportDropDownMenuProps {
-    fn weak_link(&self) -> &'_ utils::WeakScope<ExportDropDownMenu> {
-        &self.weak_link
-    }
 }
 
 pub enum ExportDropDownMenuMsg {
@@ -60,11 +46,9 @@ impl Component for ExportDropDownMenu {
     fn view(&self, ctx: &Context<Self>) -> yew::virtual_dom::VNode {
         let callback = ctx.link().callback(|_| ExportDropDownMenuMsg::TitleChange);
         let plugin = ctx.props().renderer.get_active_plugin().unwrap();
-        // let has_render = js_sys::Reflect::has(&plugin,
-        // js_intern::js_intern!("render")).unwrap();
         let is_chart = plugin.name().as_str() != "Datagrid";
         html! {
-            <StyleProvider root={ctx.props().root.clone()}>
+            <>
                 <span class="dropdown-group-label">{ "Save as" }</span>
                 <input
                     class={if self.invalid { "invalid" } else { "" }}
@@ -76,7 +60,7 @@ impl Component for ExportDropDownMenu {
                     values={Rc::new(get_menu_items(&self.title, is_chart))}
                     callback={&ctx.props().callback}
                 />
-            </StyleProvider>
+            </>
         }
     }
 
@@ -96,7 +80,6 @@ impl Component for ExportDropDownMenu {
     }
 
     fn create(ctx: &Context<Self>) -> Self {
-        ctx.set_modal_link();
         Self {
             title: ctx
                 .props()

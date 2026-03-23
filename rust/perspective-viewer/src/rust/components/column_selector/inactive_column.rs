@@ -10,8 +10,6 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use itertools::Itertools;
 use perspective_client::config::*;
 use perspective_js::utils::ApiFuture;
@@ -47,11 +45,11 @@ pub struct InactiveColumnProps {
     pub is_expression: bool,
 
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
 
     /// View config snapshot — threaded from parent so we avoid
     /// `session.get_view_config()` calls.
-    pub view_config: Rc<ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
 
     /// `dragend` event`.
     pub ondragend: Callback<()>,
@@ -176,14 +174,13 @@ impl Component for InactiveColumn {
                         <TypeIcon ty={col_type} />
                         <span class="column_name">{ ctx.props().name.clone() }</span>
                         <span class="column-selector--spacer" />
-                        if is_expression {
-                            <ExprEditButton
-                                name={ctx.props().name.clone()}
-                                on_open_expr_panel={&ctx.props().on_open_expr_panel}
-                                is_expression=true
-                                is_editing={ctx.props().is_editing}
-                            />
-                        }
+                        <ExprEditButton
+                            name={ctx.props().name.clone()}
+                            on_open_expr_panel={&ctx.props().on_open_expr_panel}
+                            {is_expression}
+                            is_disabled={!is_expression}
+                            is_editing={ctx.props().is_editing}
+                        />
                     </div>
                 </div>
             </div>

@@ -106,8 +106,8 @@ pub fn js_init() {
 pub fn bootstrap_web_components(psp: &JsValue) {
     define_web_component::<PerspectiveViewerElement>(psp);
     define_web_component::<PerspectiveDebugPluginElement>(psp);
-    define_web_component::<ExportDropDownMenuElement>(psp);
     define_web_component::<CopyDropDownMenuElement>(psp);
+    define_web_component::<ExportDropDownMenuElement>(psp);
 }
 
 /// Defining the web components needs an extern struct to reference the

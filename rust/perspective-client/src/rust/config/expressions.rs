@@ -251,7 +251,7 @@ impl Expressions {
 }
 
 #[doc(hidden)]
-#[derive(Serialize, Clone, Copy)]
+#[derive(Serialize, Clone, Copy, PartialEq)]
 pub struct CompletionItemSuggestion {
     pub label: &'static str,
     pub insert_text: &'static str,

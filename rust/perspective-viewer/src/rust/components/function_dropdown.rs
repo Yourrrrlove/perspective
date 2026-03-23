@@ -10,142 +10,215 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use perspective_client::config::CompletionItemSuggestion;
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use perspective_client::config::{COMPLETIONS, CompletionItemSuggestion};
+use perspective_js::utils::ApiResult;
 use web_sys::*;
+use yew::html::ImplicitClone;
 use yew::prelude::*;
 
-use super::modal::*;
-use crate::utils::WeakScope;
+use super::portal::PortalModal;
+use crate::utils::*;
 
 static CSS: &str = include_str!(concat!(env!("OUT_DIR"), "/css/function-dropdown.css"));
 
-#[derive(Properties, PartialEq)]
-pub struct FunctionDropDownProps {
-    #[prop_or_default]
-    pub weak_link: WeakScope<FunctionDropDown>,
+#[derive(Default)]
+struct FunctionDropDownState {
+    values: Vec<CompletionItemSuggestion>,
+    selected: usize,
+    on_select: Option<Callback<CompletionItemSuggestion>>,
+    target: Option<HtmlElement>,
 }
 
-impl ModalLink<FunctionDropDown> for FunctionDropDownProps {
-    fn weak_link(&self) -> &'_ WeakScope<FunctionDropDown> {
-        &self.weak_link
+#[derive(Clone, Default)]
+pub struct FunctionDropDownElement {
+    state: Rc<RefCell<FunctionDropDownState>>,
+    notify: Rc<PubSub<()>>,
+}
+
+impl PartialEq for FunctionDropDownElement {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.state, &other.state)
     }
 }
 
-pub enum FunctionDropDownMsg {
-    SetValues(Vec<CompletionItemSuggestion>),
-    SetCallback(Callback<CompletionItemSuggestion>),
-    ItemDown,
-    ItemUp,
-    ItemSelect,
+impl ImplicitClone for FunctionDropDownElement {}
+
+impl FunctionDropDownElement {
+    pub fn reautocomplete(&self) {
+        self.notify.emit(());
+    }
+
+    pub fn autocomplete(
+        &self,
+        input: String,
+        target: HtmlElement,
+        callback: Callback<CompletionItemSuggestion>,
+    ) -> ApiResult<()> {
+        let values = filter_values(&input);
+        if values.is_empty() {
+            self.hide()?;
+        } else {
+            let mut s = self.state.borrow_mut();
+            s.values = values;
+            s.selected = 0;
+            s.on_select = Some(callback);
+            s.target = Some(target);
+            drop(s);
+            self.notify.emit(());
+        }
+
+        Ok(())
+    }
+
+    pub fn item_select(&self) {
+        let state = self.state.borrow();
+        if let Some(value) = state.values.get(state.selected)
+            && let Some(ref cb) = state.on_select
+        {
+            cb.emit(*value);
+        }
+    }
+
+    pub fn item_down(&self) {
+        let mut state = self.state.borrow_mut();
+        state.selected += 1;
+        if state.selected >= state.values.len() {
+            state.selected = 0;
+        }
+
+        drop(state);
+        self.notify.emit(());
+    }
+
+    pub fn item_up(&self) {
+        let mut state = self.state.borrow_mut();
+        if state.selected < 1 {
+            state.selected = state.values.len();
+        }
+
+        state.selected -= 1;
+        drop(state);
+        self.notify.emit(());
+    }
+
+    pub fn hide(&self) -> ApiResult<()> {
+        self.state.borrow_mut().target = None;
+        self.notify.emit(());
+        Ok(())
+    }
 }
 
-pub struct FunctionDropDown {
-    values: Option<Vec<CompletionItemSuggestion>>,
+#[derive(Properties, PartialEq)]
+pub struct FunctionDropDownPortalProps {
+    pub element: FunctionDropDownElement,
+    pub theme: String,
+}
+
+pub struct FunctionDropDownPortal {
+    _sub: Subscription,
+}
+
+impl Component for FunctionDropDownPortal {
+    type Message = ();
+    type Properties = FunctionDropDownPortalProps;
+
+    fn create(ctx: &Context<Self>) -> Self {
+        let link = ctx.link().clone();
+        let sub = ctx
+            .props()
+            .element
+            .notify
+            .add_listener(move |()| link.send_message(()));
+        Self { _sub: sub }
+    }
+
+    fn update(&mut self, _ctx: &Context<Self>, _msg: ()) -> bool {
+        true
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        let state = ctx.props().element.state.borrow();
+        let target = state.target.clone();
+        let on_close = {
+            let element = ctx.props().element.clone();
+            Callback::from(move |()| {
+                let _ = element.hide();
+            })
+        };
+
+        if target.is_some() {
+            let values = state.values.clone();
+            let selected = state.selected;
+            let on_select = state.on_select.clone();
+            drop(state);
+
+            html! {
+                <PortalModal
+                    tag_name="perspective-dropdown"
+                    {target}
+                    own_focus=false
+                    {on_close}
+                    theme={ctx.props().theme.clone()}
+                >
+                    <FunctionDropDownView {values} {selected} {on_select} />
+                </PortalModal>
+            }
+        } else {
+            html! {}
+        }
+    }
+}
+
+#[derive(Properties, PartialEq)]
+struct FunctionDropDownViewProps {
+    values: Vec<CompletionItemSuggestion>,
     selected: usize,
     on_select: Option<Callback<CompletionItemSuggestion>>,
 }
 
-impl Component for FunctionDropDown {
-    type Message = FunctionDropDownMsg;
-    type Properties = FunctionDropDownProps;
+#[function_component]
+fn FunctionDropDownView(props: &FunctionDropDownViewProps) -> Html {
+    let body = html! {
+        if !props.values.is_empty() {
+            { for props.values
+                    .iter()
+                    .enumerate()
+                    .map(|(idx, value)| {
+                        let click = props.on_select.as_ref().unwrap().reform({
+                            let value = *value;
+                            move |_: MouseEvent| value
+                        });
 
-    fn create(ctx: &Context<Self>) -> Self {
-        ctx.set_modal_link();
-        Self {
-            values: Some(vec![]),
-            selected: 0,
-            on_select: None,
+                        html! {
+                            if idx == props.selected {
+                                <div onmousedown={click} class="selected">
+                                    <span style="font-weight:500">{ value.label }</span>
+                                    <br/>
+                                    <span style="padding-left:12px">{ value.documentation }</span>
+                                </div>
+                            } else {
+                                <div onmousedown={click}>
+                                    <span style="font-weight:500">{ value.label }</span>
+                                    <br/>
+                                    <span style="padding-left:12px">{ value.documentation }</span>
+                                </div>
+                            }
+                        }
+                    }) }
         }
-    }
+    };
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            FunctionDropDownMsg::SetCallback(callback) => {
-                self.on_select = Some(callback);
-                false
-            },
-            FunctionDropDownMsg::SetValues(values) => {
-                self.values = Some(values);
-                self.selected = 0;
-                true
-            },
-            FunctionDropDownMsg::ItemSelect => {
-                if let Some(ref values) = self.values {
-                    match values.get(self.selected) {
-                        None => {
-                            console::error_1(&"Selected out-of-bounds".into());
-                            false
-                        },
-                        Some(x) => {
-                            self.on_select.as_ref().unwrap().emit(*x);
-                            false
-                        },
-                    }
-                } else {
-                    console::error_1(&"No Values".into());
-                    false
-                }
-            },
-            FunctionDropDownMsg::ItemDown => {
-                self.selected += 1;
-                if let Some(ref values) = self.values
-                    && self.selected >= values.len()
-                {
-                    self.selected = 0;
-                };
+    html! { <><style>{ CSS }</style>{ body }</> }
+}
 
-                true
-            },
-            FunctionDropDownMsg::ItemUp => {
-                if let Some(ref values) = self.values
-                    && self.selected < 1
-                {
-                    self.selected = values.len();
-                }
-
-                self.selected -= 1;
-                true
-            },
-        }
-    }
-
-    fn changed(&mut self, _ctx: &Context<Self>, _old: &Self::Properties) -> bool {
-        false
-    }
-
-    fn view(&self, _ctx: &Context<Self>) -> Html {
-        let body = html! {
-            if let Some(ref values) = self.values {
-                if !values.is_empty() {
-                    { for values
-                            .iter()
-                            .enumerate()
-                            .map(|(idx, value)| {
-                                let click = self.on_select.as_ref().unwrap().reform({
-                                    let value = *value;
-                                    move |_: MouseEvent| value
-                                });
-
-                                html! {
-                                    if idx == self.selected {
-                                        <div onmousedown={ click } class="selected">
-                                            <span style="font-weight:500">{ value.label }</span>
-                                            <br/>
-                                            <span style="padding-left:12px">{ value.documentation }</span>
-                                        </div>
-                                    } else {
-                                        <div onmousedown={ click }>
-                                            <span style="font-weight:500">{ value.label }</span>
-                                            <br/>
-                                            <span style="padding-left:12px">{ value.documentation }</span>
-                                        </div>
-                                    }
-                                }
-                            }) }
-                }
-            }
-        };
-
-        html! { <><style>{ CSS }</style>{ body }</> }
-    }
+fn filter_values(input: &str) -> Vec<CompletionItemSuggestion> {
+    let input = input.to_lowercase();
+    COMPLETIONS
+        .iter()
+        .filter(|x| x.label.to_lowercase().starts_with(&input))
+        .cloned()
+        .collect::<Vec<_>>()
 }

@@ -42,7 +42,7 @@ test.describe("Cancellable Views", () => {
 
             const view = await viewer.getView();
             await view.delete();
-            await viewer.resize(true);
+            await viewer.resize({ force: true });
         });
 
         const contents = await get_contents(page);

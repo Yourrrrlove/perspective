@@ -10,15 +10,14 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use perspective_client::config::*;
 
 use crate::js::plugin::ViewConfigRequirements;
 use crate::session::column_defaults_update::ViewConfigUpdateExt;
 use crate::session::drag_drop_update::ViewConfigExt as DragDropExt;
+use crate::session::metadata::SessionMetadataRc;
 use crate::session::replace_expression_update::ViewConfigExt as ReplaceExprExt;
-use crate::session::{SessionMetadata, TableErrorState, ViewStats};
+use crate::session::{TableErrorState, ViewStats};
 use crate::utils::*;
 
 /// Value-semantic snapshot of the session state read by the root component.
@@ -29,7 +28,7 @@ use crate::utils::*;
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct SessionProps {
     /// The current `ViewConfig` driving the active `View`.
-    pub config: Rc<ViewConfig>,
+    pub config: PtrEqRc<ViewConfig>,
 
     /// Row/column statistics for the status bar.
     pub stats: Option<ViewStats>,
@@ -48,7 +47,7 @@ pub struct SessionProps {
     /// `to_props()` call.  Components read column types, features,
     /// expression info, etc. from this snapshot instead of borrowing
     /// `Session`'s `RefCell` directly.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
 }
 
 impl SessionProps {

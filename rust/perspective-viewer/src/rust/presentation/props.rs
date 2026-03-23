@@ -10,9 +10,8 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use crate::presentation::OpenColumnSettings;
+use crate::utils::PtrEqRc;
 
 /// Value-semantic snapshot of the presentation/UI state used by the root
 /// component to drive `is_settings_open`, `selected_theme`, and
@@ -27,7 +26,7 @@ pub struct PresentationProps {
     pub is_settings_open: bool,
 
     /// Detected theme names, in discovery order.
-    pub available_themes: Rc<Vec<String>>,
+    pub available_themes: PtrEqRc<Vec<String>>,
 
     /// The currently selected theme name, if any theme is active.
     pub selected_theme: Option<String>,
