@@ -593,6 +593,25 @@ namespace server {
             std::uint32_t sub_id, std::uint32_t client_id
         );
 
+        // Join table tracking
+        struct JoinDef {
+            t_id left_table_id;
+            t_id right_table_id;
+            std::string on_column;
+        };
+
+        void register_join(
+            const t_id& join_table_id,
+            const t_id& left_table_id,
+            const t_id& right_table_id,
+            const std::string& on_column
+        );
+        void unregister_join(const t_id& join_table_id);
+        bool is_join_table(const t_id& id);
+        bool is_readonly_table(const t_id& id);
+        std::vector<t_id> get_dependent_join_tables(const t_id& source_table_id);
+        JoinDef get_join_def(const t_id& join_table_id);
+
         void mark_table_dirty(const t_id& id);
         void mark_table_clean(const t_id& id);
         void mark_all_tables_clean();
@@ -629,6 +648,11 @@ namespace server {
 
         tsl::hopscotch_set<t_id> m_dirty_tables;
         tsl::hopscotch_map<t_id, Subscription> m_deleted_tables;
+
+        // Join dependency tracking
+        tsl::hopscotch_map<t_id, JoinDef> m_join_defs;
+        std::multimap<t_id, t_id> m_table_to_join_tables;
+        tsl::hopscotch_set<t_id> m_readonly_tables;
 
 #ifdef PSP_PARALLEL_FOR
         std::shared_mutex m_write_lock;
@@ -673,6 +697,11 @@ namespace server {
         void _process_table_unchecked(
             std::shared_ptr<Table>& table,
             const ServerResources::t_id& table_id,
+            std::vector<ProtoServerResp<Response>>& outs
+        );
+
+        void _recompute_join(
+            const ServerResources::t_id& join_table_id,
             std::vector<ProtoServerResp<Response>>& outs
         );
 

@@ -234,6 +234,35 @@ impl AsyncClient {
         })
     }
 
+    /// Creates a new read-only [`Table`] by performing an INNER JOIN on two
+    /// source tables. The resulting table is reactive: when either source
+    /// table is updated, the join is automatically recomputed.
+    ///
+    /// # Python Examples
+    ///
+    /// ```python
+    /// joined = await client.join(orders_table, products_table, "Product ID")
+    /// ```
+    #[pyo3(signature = (left, right, on, name=None))]
+    pub async fn join(
+        &self,
+        left: AsyncTable,
+        right: AsyncTable,
+        on: String,
+        name: Option<String>,
+    ) -> PyResult<AsyncTable> {
+        let client = self.client.clone();
+        let py_client = self.clone();
+        let table = client
+            .join(&left.table, &right.table, &on, name)
+            .await
+            .into_pyerr()?;
+        Ok(AsyncTable {
+            table: Arc::new(table),
+            client: py_client,
+        })
+    }
+
     /// Retrieves the names of all tables that this client has access to.
     ///
     /// `name` is a string identifier unique to the [`Table`] (per [`Client`]),

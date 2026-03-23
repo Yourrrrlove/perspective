@@ -274,6 +274,23 @@ export function on_error(callback: Function) {
 }
 
 /**
+ * Create a read-only table from an INNER JOIN of two source tables.
+ * @param left
+ * @param right
+ * @param on
+ * @param name
+ * @returns
+ */
+export function join(
+    left: perspective_client.Table,
+    right: perspective_client.Table,
+    on: string,
+    name?: string,
+) {
+    return SYNC_CLIENT.join(left, right, on, name);
+}
+
+/**
  * Create a table from the global Perspective instance.
  * @param init_data
  * @param options
@@ -356,6 +373,7 @@ export { perspective_client as wasmModule };
 
 export default {
     table,
+    join,
     websocket,
     worker,
     get_hosted_table_names,

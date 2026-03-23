@@ -562,6 +562,76 @@ ServerResources::mark_all_tables_clean() {
 }
 
 void
+ServerResources::register_join(
+    const t_id& join_table_id,
+    const t_id& left_table_id,
+    const t_id& right_table_id,
+    const std::string& on_column
+) {
+    PSP_WRITE_LOCK(m_write_lock);
+    JoinDef def{left_table_id, right_table_id, on_column};
+    m_join_defs.emplace(join_table_id, def);
+    m_table_to_join_tables.emplace(left_table_id, join_table_id);
+    m_table_to_join_tables.emplace(right_table_id, join_table_id);
+    m_readonly_tables.insert(join_table_id);
+}
+
+void
+ServerResources::unregister_join(const t_id& join_table_id) {
+    PSP_WRITE_LOCK(m_write_lock);
+    auto it = m_join_defs.find(join_table_id);
+    if (it == m_join_defs.end()) {
+        return;
+    }
+
+    auto& def = it->second;
+
+    // Remove from m_table_to_join_tables for both source tables
+    for (const auto& source_id : {def.left_table_id, def.right_table_id}) {
+        auto range = m_table_to_join_tables.equal_range(source_id);
+        for (auto jt = range.first; jt != range.second;) {
+            if (jt->second == join_table_id) {
+                jt = m_table_to_join_tables.erase(jt);
+            } else {
+                ++jt;
+            }
+        }
+    }
+
+    m_join_defs.erase(it);
+    m_readonly_tables.erase(join_table_id);
+}
+
+bool
+ServerResources::is_join_table(const t_id& id) {
+    PSP_READ_LOCK(m_write_lock);
+    return m_join_defs.contains(id);
+}
+
+bool
+ServerResources::is_readonly_table(const t_id& id) {
+    PSP_READ_LOCK(m_write_lock);
+    return m_readonly_tables.contains(id);
+}
+
+std::vector<ServerResources::t_id>
+ServerResources::get_dependent_join_tables(const t_id& source_table_id) {
+    PSP_READ_LOCK(m_write_lock);
+    std::vector<t_id> result;
+    auto range = m_table_to_join_tables.equal_range(source_table_id);
+    for (auto it = range.first; it != range.second; ++it) {
+        result.push_back(it->second);
+    }
+    return result;
+}
+
+ServerResources::JoinDef
+ServerResources::get_join_def(const t_id& join_table_id) {
+    PSP_READ_LOCK(m_write_lock);
+    return m_join_defs.at(join_table_id);
+}
+
+void
 ServerResources::create_table_on_delete_sub(
     const t_id& table_id, Subscription sub_id
 ) {
@@ -1077,6 +1147,7 @@ needs_poll(const proto::Request::ClientReqCase proto_case) {
         case ReqCase::kViewRemoveOnUpdateReq:
         case ReqCase::kServerSystemInfoReq:
         case ReqCase::kGetFeaturesReq:
+        case ReqCase::kMakeJoinTableReq:
             return false;
         case proto::Request::CLIENT_REQ_NOT_SET:
             throw std::runtime_error("Unhandled request type 2");
@@ -1104,6 +1175,7 @@ entity_type_is_table(const proto::Request::ClientReqCase proto_case) {
         case ReqCase::kTableReplaceReq:
         case ReqCase::kTableDeleteReq:
         case ReqCase::kTableMakeViewReq:
+        case ReqCase::kMakeJoinTableReq:
             return true;
         case ReqCase::kViewOnDeleteReq:
         case ReqCase::kViewRemoveDeleteReq:
@@ -1667,6 +1739,150 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
 
             break;
         }
+        case proto::Request::kMakeJoinTableReq: {
+            const auto& r = req.make_join_table_req();
+            if (m_resources.has_table(entity_id)) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                std::stringstream ss;
+                ss << "Table \"" << entity_id << "\" already exists";
+                *err = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            if (!m_resources.has_table(r.left_table_id())) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                std::stringstream ss;
+                ss << "Table \"" << r.left_table_id() << "\" not found";
+                *err = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            if (!m_resources.has_table(r.right_table_id())) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                std::stringstream ss;
+                ss << "Table \"" << r.right_table_id() << "\" not found";
+                *err = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            auto left_table = m_resources.get_table(r.left_table_id());
+            auto right_table = m_resources.get_table(r.right_table_id());
+            auto left_schema = left_table->get_schema();
+            auto right_schema = right_table->get_schema();
+
+            // Validate join column exists in both tables
+            if (!left_schema.has_column(r.on_column())) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                std::stringstream ss;
+                ss << "Column \"" << r.on_column()
+                   << "\" not found in table \"" << r.left_table_id() << "\"";
+                *err = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            if (!right_schema.has_column(r.on_column())) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                std::stringstream ss;
+                ss << "Column \"" << r.on_column()
+                   << "\" not found in table \"" << r.right_table_id() << "\"";
+                *err = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            // Validate type match
+            if (left_schema.get_dtype(r.on_column())
+                != right_schema.get_dtype(r.on_column())) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                *err = "Join column type mismatch";
+                push_resp(std::move(resp));
+                break;
+            }
+
+            // Check for column name conflicts (excluding join key)
+            bool has_conflict = false;
+            for (const auto& rcol : right_schema.columns()) {
+                if (rcol == r.on_column()) {
+                    continue;
+                }
+                if (left_schema.has_column(rcol)) {
+                    proto::Response resp;
+                    auto* err = resp.mutable_server_error()->mutable_message();
+                    std::stringstream ss;
+                    ss << "Column \"" << rcol << "\" exists in both tables";
+                    *err = ss.str();
+                    push_resp(std::move(resp));
+                    has_conflict = true;
+                    break;
+                }
+            }
+            if (has_conflict) {
+                break;
+            }
+
+            // Build merged schema: all left columns + right columns
+            // (excluding join key from right)
+            std::vector<std::string> merged_columns;
+            std::vector<t_dtype> merged_types;
+            for (t_uindex i = 0; i < left_schema.columns().size(); ++i) {
+                merged_columns.push_back(left_schema.columns()[i]);
+                merged_types.push_back(left_schema.types()[i]);
+            }
+            for (t_uindex i = 0; i < right_schema.columns().size(); ++i) {
+                if (right_schema.columns()[i] == r.on_column()) {
+                    continue;
+                }
+                merged_columns.push_back(right_schema.columns()[i]);
+                merged_types.push_back(right_schema.types()[i]);
+            }
+
+            t_schema merged_schema(merged_columns, merged_types);
+            auto join_table =
+                Table::from_schema(r.on_column(), merged_schema);
+
+            m_resources.host_table(entity_id, join_table);
+            m_resources.register_join(
+                entity_id,
+                r.left_table_id(),
+                r.right_table_id(),
+                r.on_column()
+            );
+
+            // Compute initial join
+            _recompute_join(entity_id, proto_resp);
+
+            // Process the join table so its gnode state is up to date
+            auto jt = m_resources.get_table(entity_id);
+            jt->get_pool()->_process();
+            m_resources.mark_table_clean(entity_id);
+
+            proto::Response resp;
+            resp.mutable_make_join_table_resp();
+            push_resp(std::move(resp));
+
+            // Notify on_hosted_tables_update listeners
+            auto subscriptions = m_resources.get_on_hosted_tables_update_sub();
+            for (auto& subscription : subscriptions) {
+                Response out;
+                out.set_msg_id(subscription.id);
+                ProtoServerResp<ProtoServer::Response> resp2;
+                resp2.data = std::move(out);
+                resp2.client_id = subscription.client_id;
+                proto_resp.emplace_back(std::move(resp2));
+            }
+
+            break;
+        }
         case proto::Request::kTableSizeReq: {
             auto table = m_resources.get_table(req.entity_id());
             proto::Response resp;
@@ -1768,6 +1984,13 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             break;
         }
         case proto::Request::kTableReplaceReq: {
+            if (m_resources.is_readonly_table(req.entity_id())) {
+                proto::Response resp;
+                *resp.mutable_server_error()->mutable_message() =
+                    "Cannot update a read-only join table";
+                push_resp(std::move(resp));
+                break;
+            }
             auto table = m_resources.get_table(req.entity_id());
             table->clear();
             const auto& r = req.table_replace_req();
@@ -1802,6 +2025,13 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             break;
         }
         case proto::Request::kTableRemoveReq: {
+            if (m_resources.is_readonly_table(req.entity_id())) {
+                proto::Response resp;
+                *resp.mutable_server_error()->mutable_message() =
+                    "Cannot update a read-only join table";
+                push_resp(std::move(resp));
+                break;
+            }
             const auto& r = req.table_remove_req();
             auto table = m_resources.get_table(req.entity_id());
             switch (r.data().data_case()) {
@@ -1831,6 +2061,13 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             break;
         }
         case proto::Request::kTableUpdateReq: {
+            if (m_resources.is_readonly_table(req.entity_id())) {
+                proto::Response resp;
+                *resp.mutable_server_error()->mutable_message() =
+                    "Cannot update a read-only join table";
+                push_resp(std::move(resp));
+                break;
+            }
             const auto& r = req.table_update_req();
             auto table = m_resources.get_table(req.entity_id());
             switch (r.data().data_case()) {
@@ -2624,6 +2861,25 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             break;
         }
         case proto::Request::kTableDeleteReq: {
+            // Prevent deleting a source table that feeds a join table
+            auto dependents =
+                m_resources.get_dependent_join_tables(req.entity_id());
+            if (!dependents.empty()
+                && !m_resources.is_join_table(req.entity_id())) {
+                proto::Response resp;
+                std::stringstream ss;
+                ss << "Cannot delete table: it is a source for join table \""
+                   << dependents[0] << "\"";
+                *resp.mutable_server_error()->mutable_message() = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            // If this is a join table being deleted, clean up join metadata
+            if (m_resources.is_join_table(req.entity_id())) {
+                m_resources.unregister_join(req.entity_id());
+            }
+
             const auto is_immediate = req.table_delete_req().is_immediate();
             if (is_immediate
                 || m_resources.get_table_view_count(req.entity_id()) == 0) {
@@ -2895,6 +3151,125 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
     return proto_resp;
 }
 
+void
+ProtoServer::_recompute_join(
+    const ServerResources::t_id& join_table_id,
+    std::vector<ProtoServerResp<Response>>& outs
+) {
+    auto def = m_resources.get_join_def(join_table_id);
+    auto left_table = m_resources.get_table(def.left_table_id);
+    auto right_table = m_resources.get_table(def.right_table_id);
+    auto join_table = m_resources.get_table(join_table_id);
+
+    // Get the raw master data tables and pkey maps
+    auto left_data = left_table->get_gnode()->get_table_sptr();
+    auto right_data = right_table->get_gnode()->get_table_sptr();
+    const auto& left_pkey_map = left_table->get_gnode()->get_pkey_map();
+    const auto& right_pkey_map = right_table->get_gnode()->get_pkey_map();
+
+    // Get the join key columns from both tables
+    auto left_key_col = left_data->get_column(def.on_column);
+    auto right_key_col = right_data->get_column(def.on_column);
+
+    // Build multimap: join_key_value → list of right row indices,
+    // sorted by pkey so that right-side ordering is deterministic.
+    tsl::hopscotch_map<t_tscalar, std::vector<t_uindex>> right_join_key_to_rows;
+    right_join_key_to_rows.reserve(right_pkey_map.size());
+    {
+        // Sort right pkey entries so rows are grouped in insertion order.
+        std::vector<std::pair<t_tscalar, t_uindex>> right_entries(
+            right_pkey_map.begin(), right_pkey_map.end()
+        );
+        std::sort(right_entries.begin(), right_entries.end(),
+            [](const auto& a, const auto& b) { return a.first < b.first; }
+        );
+        for (const auto& [pkey, row_idx] : right_entries) {
+            auto join_key = right_key_col->get_scalar(row_idx);
+            if (!join_key.is_none()) {
+                right_join_key_to_rows[join_key].push_back(row_idx);
+            }
+        }
+    }
+
+    // Sort left pkey entries so the join result preserves left-table
+    // insertion order (pkeys are auto-incremented integers for non-indexed
+    // tables, so sorting by pkey gives insertion order).
+    std::vector<std::pair<t_tscalar, t_uindex>> left_entries(
+        left_pkey_map.begin(), left_pkey_map.end()
+    );
+    std::sort(left_entries.begin(), left_entries.end(),
+        [](const auto& a, const auto& b) { return a.first < b.first; }
+    );
+
+    // Find matching rows by iterating left rows in order.
+    // For each left row, pair it with every matching right row (cross product
+    // per key value) to handle duplicate join keys in non-indexed tables.
+    std::vector<std::pair<t_uindex, t_uindex>> matched_rows;
+    matched_rows.reserve(left_entries.size());
+    for (const auto& [pkey, row_idx] : left_entries) {
+        auto join_key = left_key_col->get_scalar(row_idx);
+        if (join_key.is_none()) {
+            continue;
+        }
+        auto it = right_join_key_to_rows.find(join_key);
+        if (it != right_join_key_to_rows.end()) {
+            for (auto right_row_idx : it->second) {
+                matched_rows.emplace_back(row_idx, right_row_idx);
+            }
+        }
+    }
+
+    t_uindex num_matched = matched_rows.size();
+
+    // Build the joined schema and data table
+    auto join_schema = join_table->get_schema();
+    t_data_table joined_data(join_schema);
+    joined_data.init();
+    joined_data.extend(num_matched);
+
+    auto left_schema = left_table->get_schema();
+    auto right_schema = right_table->get_schema();
+
+    // Copy data column-by-column
+    for (const auto& col_name : join_schema.columns()) {
+        auto dst_col = joined_data.get_column(col_name);
+        if (left_schema.has_column(col_name)) {
+            auto src_col = left_data->get_column(col_name);
+            for (t_uindex i = 0; i < num_matched; ++i) {
+                dst_col->set_scalar(
+                    i, src_col->get_scalar(matched_rows[i].first)
+                );
+            }
+        } else if (right_schema.has_column(col_name)) {
+            auto src_col = right_data->get_column(col_name);
+            for (t_uindex i = 0; i < num_matched; ++i) {
+                dst_col->set_scalar(
+                    i, src_col->get_scalar(matched_rows[i].second)
+                );
+            }
+        }
+    }
+
+    joined_data.set_size(num_matched);
+
+    // Add psp_pkey and psp_okey columns with synthetic integer keys.
+    // We cannot use the join column as pkey because duplicate join key
+    // values (from non-indexed source tables) would cause rows to collapse.
+    auto* pkey_col = joined_data.add_column("psp_pkey", DTYPE_INT32, true);
+    auto* okey_col = joined_data.add_column("psp_okey", DTYPE_INT32, true);
+    for (t_uindex i = 0; i < num_matched; ++i) {
+        t_tscalar key;
+        key.set(static_cast<std::int32_t>(i));
+        pkey_col->set_scalar(i, key);
+        okey_col->set_scalar(i, key);
+    }
+
+    // Clear the join table and push the new data
+    join_table->clear();
+    join_table->init(joined_data, num_matched, t_op::OP_INSERT, 0);
+    m_resources.mark_table_dirty(join_table_id);
+}
+
 std::vector<ProtoServerResp<ProtoServer::Response>>
 ProtoServer::_poll() {
     std::vector<ProtoServerResp<Response>> resp_envs;
@@ -2904,6 +3279,41 @@ ProtoServer::_poll() {
     }
 
     m_resources.mark_all_tables_clean();
+
+    // Recompute join tables whose sources were dirty, using a worklist
+    // to handle chained joins (join of join) in dependency order.
+    tsl::hopscotch_set<ServerResources::t_id> processed_joins;
+    std::vector<ServerResources::t_id> worklist;
+    for (auto& [_, table_id] : tables) {
+        auto dependents = m_resources.get_dependent_join_tables(table_id);
+        for (auto& join_id : dependents) {
+            if (processed_joins.find(join_id) == processed_joins.end()) {
+                worklist.push_back(join_id);
+            }
+        }
+    }
+
+    while (!worklist.empty()) {
+        auto join_id = worklist.back();
+        worklist.pop_back();
+        if (!processed_joins.insert(join_id).second) {
+            continue;
+        }
+
+        _recompute_join(join_id, resp_envs);
+        auto join_table = m_resources.get_table(join_id);
+        _process_table_unchecked(join_table, join_id, resp_envs);
+        m_resources.mark_table_clean(join_id);
+
+        // Check for chained joins (join tables that depend on this join)
+        auto chained = m_resources.get_dependent_join_tables(join_id);
+        for (auto& chained_id : chained) {
+            if (processed_joins.find(chained_id) == processed_joins.end()) {
+                worklist.push_back(chained_id);
+            }
+        }
+    }
+
     return resp_envs;
 }
 

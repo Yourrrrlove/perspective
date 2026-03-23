@@ -26,8 +26,8 @@ use crate::proto::request::ClientReq;
 use crate::proto::response::ClientResp;
 use crate::proto::{
     ColumnType, GetFeaturesReq, GetFeaturesResp, GetHostedTablesReq, GetHostedTablesResp,
-    HostedTable, MakeTableReq, RemoveHostedTablesUpdateReq, Request, Response, ServerError,
-    ServerSystemInfoReq,
+    HostedTable, MakeJoinTableReq, MakeTableReq, RemoveHostedTablesUpdateReq, Request, Response,
+    ServerError, ServerSystemInfoReq,
 };
 use crate::table::{Table, TableInitOptions, TableOptions};
 use crate::table_data::{TableData, UpdateData};
@@ -585,6 +585,45 @@ impl Client {
         let client = self.clone();
         match self.oneshot(&msg).await? {
             ClientResp::MakeTableResp(_) => Ok(Table::new(entity_id, client, options)),
+            resp => Err(resp.into()),
+        }
+    }
+
+    /// Create a new read-only [`Table`] by performing an INNER JOIN on two
+    /// source tables. The resulting table is reactive: when either source
+    /// table is updated, the join is automatically recomputed.
+    ///
+    /// # Arguments
+    ///
+    /// * `left` - The left source table.
+    /// * `right` - The right source table.
+    /// * `on` - The column name to join on. Must exist in both tables with the
+    ///   same type.
+    /// * `name` - Optional name for the resulting table.
+    pub async fn join(
+        &self,
+        left: &Table,
+        right: &Table,
+        on: &str,
+        name: Option<String>,
+    ) -> ClientResult<Table> {
+        let entity_id = name.unwrap_or_else(randid);
+        let msg = Request {
+            msg_id: self.gen_id(),
+            entity_id: entity_id.clone(),
+            client_req: Some(ClientReq::MakeJoinTableReq(MakeJoinTableReq {
+                left_table_id: left.get_name().to_owned(),
+                right_table_id: right.get_name().to_owned(),
+                on_column: on.to_owned(),
+            })),
+        };
+
+        let client = self.clone();
+        match self.oneshot(&msg).await? {
+            ClientResp::MakeJoinTableResp(_) => Ok(Table::new(entity_id, client, TableOptions {
+                index: Some(on.to_owned()),
+                limit: None,
+            })),
             resp => Err(resp.into()),
         }
     }

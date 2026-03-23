@@ -382,6 +382,34 @@ impl Client {
         Ok(Table(self.client.table(args, options).await?))
     }
 
+    /// Creates a new read-only [`Table`] by performing an INNER JOIN on two
+    /// source tables. The resulting table is reactive: when either source
+    /// table is updated, the join is automatically recomputed.
+    ///
+    /// # Arguments
+    ///
+    /// - `left` - The left source table.
+    /// - `right` - The right source table.
+    /// - `on` - The column name to join on. Must exist in both tables with the
+    ///   same type.
+    /// - `name` - Optional name for the resulting table.
+    ///
+    /// # JavaScript Examples
+    ///
+    /// ```javascript
+    /// const joined = await client.join(orders_table, products_table, "Product ID");
+    /// ```
+    #[wasm_bindgen]
+    pub async fn join(
+        &self,
+        left: &Table,
+        right: &Table,
+        on: &str,
+        name: Option<String>,
+    ) -> ApiResult<Table> {
+        Ok(Table(self.client.join(&left.0, &right.0, on, name).await?))
+    }
+
     /// Terminates this [`Client`], cleaning up any [`crate::View`] handles the
     /// [`Client`] has open as well as its callbacks.
     #[wasm_bindgen]

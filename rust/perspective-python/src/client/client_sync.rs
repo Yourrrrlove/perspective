@@ -173,6 +173,31 @@ impl Client {
         Ok(Table(table))
     }
 
+    /// Creates a new read-only [`Table`] by performing an INNER JOIN on two
+    /// source tables. The resulting table is reactive: when either source
+    /// table is updated, the join is automatically recomputed.
+    ///
+    /// # Python Examples
+    ///
+    /// ```python
+    /// joined = client.join(orders_table, products_table, "Product ID")
+    /// ```
+    #[pyo3(signature = (left, right, on, name=None))]
+    pub fn join(
+        &self,
+        py: Python<'_>,
+        left: &Table,
+        right: &Table,
+        on: String,
+        name: Option<String>,
+    ) -> PyResult<Table> {
+        Ok(Table(
+            self.0
+                .join(left.0.clone(), right.0.clone(), on, name)
+                .py_block_on(py)?,
+        ))
+    }
+
     /// Retrieves the names of all tables that this client has access to.
     ///
     /// `name` is a string identifier unique to the [`Table`] (per [`Client`]),

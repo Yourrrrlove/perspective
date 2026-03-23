@@ -782,6 +782,13 @@ t_gnode::get_table_sptr() const {
     return m_gstate->get_table();
 }
 
+std::shared_ptr<t_data_table>
+t_gnode::get_pkeyed_table() const {
+    PSP_TRACE_SENTINEL();
+    PSP_VERBOSE_ASSERT(m_init, "Cannot `get_pkeyed_table` on an uninited gnode.");
+    return m_gstate->get_pkeyed_table();
+}
+
 /**
  * Convenience method for promoting a column.  This is a hack used to
  * interop with javascript more efficiently, and does not handle all

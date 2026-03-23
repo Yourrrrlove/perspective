@@ -383,6 +383,11 @@ def get_hosted_table_names(*args, **kwargs):
     return GLOBAL_CLIENT.get_hosted_table_names(*args, **kwargs)
 
 
+@functools.wraps(Client.join)
+def join(*args, **kwargs):
+    return GLOBAL_CLIENT.join(*args, **kwargs)
+
+
 @functools.wraps(Client.system_info)
 def system_info(*args, **kwargs):
     return GLOBAL_CLIENT.system_info(*args, **kwargs)
