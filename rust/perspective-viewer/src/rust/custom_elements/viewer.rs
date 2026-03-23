@@ -39,6 +39,17 @@ use crate::tasks::*;
 use crate::utils::*;
 use crate::*;
 
+#[derive(serde::Deserialize, Default)]
+struct ResizeOptions {
+    dimensions: Option<ResizeDimensions>,
+}
+
+#[derive(serde::Deserialize, Clone, Copy)]
+struct ResizeDimensions {
+    width: f64,
+    height: f64,
+}
+
 /// The `<perspective-viewer>` custom element.
 ///
 /// # JavaScript Examples
@@ -574,11 +585,26 @@ impl PerspectiveViewerElement {
                 PerspectiveViewerMsg::ToggleSettingsComplete(settings, sender),
             );
 
+            let task = if let OptionalUpdate::Update(_) = &decoded_update.table {
+                Some(this.session.reset(ResetOptions {
+                    config: true,
+                    expressions: true,
+                    stats: true,
+                    ..ResetOptions::default()
+                }))
+            } else {
+                None
+            };
+
             let result = this
                 .restore_and_render(decoded_update.clone(), {
                     clone!(this, decoded_update.table);
                     async move {
                         if let OptionalUpdate::Update(name) = table {
+                            if let Some(task) = task {
+                                task.await?;
+                            }
+
                             this.session.set_table(name).await?;
                             this.session
                                 .update_column_defaults(&this.renderer.metadata());
@@ -780,30 +806,36 @@ impl PerspectiveViewerElement {
     ///
     /// # Arguments
     ///
-    /// - `force` - If [`Self::resize`] is called with `false` or without an
-    ///   argument, and _auto-size_ mode is enabled via [`Self::setAutoSize`],
-    ///   [`Self::resize`] will log a warning and auto-disable auto-size mode.
+    /// - `options` - An optional object with the following fields:
+    ///   - `dimensions` - An optional object `{width, height}` providing
+    ///     explicit size hints (in pixels) for the plugin container. When
+    ///     provided, the plugin element will be temporarily sized to these
+    ///     dimensions during resize, then reset.
     ///
     /// # JavaScript Examples
     ///
     /// ```javascript
-    /// await viewer.resize(true)
+    /// await viewer.resize()
+    /// await viewer.resize({dimensions: {width: 800, height: 600}})
     /// ```
     #[wasm_bindgen]
-    pub fn resize(&self, force: Option<bool>) -> ApiFuture<()> {
-        if !force.unwrap_or_default() && self.resize_handle.borrow().is_some() {
-            let msg: JsValue = "`resize(false)` called, disabling auto-size.  It can be \
-                                re-enabled with `setAutoSize(true)`."
-                .into();
-            web_sys::console::warn_1(&msg);
-            *self.resize_handle.borrow_mut() = None;
-        }
+    pub fn resize(&self, options: Option<JsValue>) -> ApiFuture<()> {
+        let opts: ResizeOptions = options
+            .map(|v| v.into_serde_ext())
+            .transpose()
+            .unwrap_or_default()
+            .unwrap_or_default();
 
         let state = self.clone_state();
         ApiFuture::new_throttled(async move {
             if !state.renderer().is_plugin_activated()? {
                 state
                     .update_and_render(ViewConfigUpdate::default())?
+                    .await?;
+            } else if let Some(dims) = opts.dimensions {
+                state
+                    .renderer()
+                    .resize_with_dimensions(dims.width, dims.height)
                     .await?;
             } else {
                 state.renderer().resize().await?;

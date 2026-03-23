@@ -18,8 +18,8 @@ use perspective_client::clone;
 use yew::{Html, Properties, function_component, html};
 
 use crate::components::empty_row::EmptyRow;
+use crate::components::filter_dropdown::FilterDropDownElement;
 use crate::config::SymbolKVPair;
-use crate::custom_elements::FilterDropDownElement;
 
 #[derive(Properties, PartialEq)]
 pub struct RowSelectorProps {

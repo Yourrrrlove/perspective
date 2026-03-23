@@ -10,18 +10,17 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use itertools::Itertools;
 use yew::{Callback, Html, Properties, function_component, html};
 
 use crate::components::containers::select::{Select, SelectItem};
+use crate::utils::PtrEqRc;
 
 #[derive(Properties, PartialEq)]
 pub struct SymbolSelectorProps {
     pub index: usize,
     pub selected_value: Option<String>,
-    pub values: Rc<Vec<String>>,
+    pub values: PtrEqRc<Vec<String>>,
     pub callback: Callback<String>,
 }
 

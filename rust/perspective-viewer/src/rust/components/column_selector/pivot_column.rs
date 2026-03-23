@@ -10,8 +10,6 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use perspective_client::config::ColumnType;
 use web_sys::*;
 use yew::prelude::*;
@@ -35,7 +33,7 @@ pub struct PivotColumnProps {
 
     /// Session metadata snapshot — threaded from `SessionProps`.
     #[prop_or_default]
-    pub metadata: Option<Rc<SessionMetadata>>,
+    pub metadata: Option<SessionMetadataRc>,
 
     // State
     #[prop_or_default]

@@ -84,7 +84,9 @@ impl<T: Clone> PubSubInternal<T> {
 /// publishers, without leaking callbacks as listeners are dropped.
 ///
 /// Unlike `mpsc` etc., `PubSub` has no internal queue and is completely
-/// synchronous.
+/// synchronous. Explicitly does not implement clone, as this is intended as
+/// RAII, even though the internal data structures are `Clone` because they
+/// need to be sent to listeners.
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
 pub struct PubSub<T: Clone>(Rc<PubSubInternal<T>>);

@@ -16,8 +16,9 @@ use yew::{Callback, Html, Properties, html};
 
 use crate::components::column_settings_sidebar::style_tab::symbol::row_selector::RowSelector;
 use crate::components::column_settings_sidebar::style_tab::symbol::symbol_selector::SymbolSelector;
+use crate::components::filter_dropdown::FilterDropDownElement;
 use crate::config::SymbolKVPair;
-use crate::custom_elements::FilterDropDownElement;
+use crate::utils::PtrEqRc;
 
 #[derive(Properties, PartialEq)]
 pub struct PairsListItemProps {
@@ -26,7 +27,7 @@ pub struct PairsListItemProps {
     pub pairs: Vec<SymbolKVPair>,
     pub update_pairs: Callback<Vec<SymbolKVPair>>,
     pub row_dropdown: Rc<FilterDropDownElement>,
-    pub values: Rc<Vec<String>>,
+    pub values: PtrEqRc<Vec<String>>,
     pub focused: bool,
     pub set_focused_index: Callback<Option<usize>>,
     pub column_name: String,

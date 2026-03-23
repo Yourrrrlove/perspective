@@ -11,7 +11,6 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 use std::collections::HashSet;
-use std::rc::Rc;
 
 use perspective_client::config::*;
 use perspective_js::utils::ApiFuture;
@@ -21,9 +20,9 @@ use yew::prelude::*;
 use super::InPlaceColumn;
 use super::aggregate_selector::*;
 use super::expr_edit_button::*;
+use crate::components::column_dropdown::ColumnDropDownElement;
 use crate::components::column_selector::{EmptyColumn, InvalidColumn};
 use crate::components::type_icon::TypeIcon;
-use crate::custom_elements::ColumnDropDownElement;
 use crate::dragdrop::*;
 use crate::js::plugin::*;
 use crate::presentation::ColumnLocator;
@@ -79,10 +78,10 @@ pub struct ActiveColumnProps {
     pub col_type: Option<ColumnType>,
 
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
 
     /// View config snapshot — threaded from parent as a value prop.
-    pub view_config: Rc<ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
 
     /// State
     pub session: Session,
@@ -395,14 +394,13 @@ impl Component for ActiveColumn {
                                 if !ctx.props().is_aggregated {
                                     <span class="column-selector--spacer" />
                                 }
-                                if show_edit_btn {
-                                    <ExprEditButton
-                                        name={name.clone()}
-                                        on_open_expr_panel={&ctx.props().on_open_expr_panel}
-                                        {is_expression}
-                                        is_editing={ctx.props().is_editing}
-                                    />
-                                }
+                                <ExprEditButton
+                                    name={name.clone()}
+                                    on_open_expr_panel={&ctx.props().on_open_expr_panel}
+                                    {is_expression}
+                                    is_disabled={!show_edit_btn}
+                                    is_editing={ctx.props().is_editing}
+                                />
                             </div>
                         </div>
                     </div>

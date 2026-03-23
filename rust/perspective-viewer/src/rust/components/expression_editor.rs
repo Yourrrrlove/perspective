@@ -17,7 +17,7 @@ use yew::prelude::*;
 
 use super::form::code_editor::*;
 use super::style::LocalStyle;
-use crate::session::{Session, SessionMetadata};
+use crate::session::{Session, SessionMetadata, SessionMetadataRc};
 use crate::*;
 
 #[derive(Properties, PartialEq, Clone)]
@@ -32,7 +32,11 @@ pub struct ExpressionEditorProps {
     pub reset_count: u8,
 
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
+
+    /// Selected theme name, threaded for PortalModal consumers.
+    #[prop_or_default]
+    pub selected_theme: Option<String>,
 
     // State
     pub session: Session,
@@ -126,6 +130,7 @@ impl Component for ExpressionEditor {
                         {disabled}
                         oninput={self.oninput.clone()}
                         onsave={ctx.props().on_save.clone()}
+                        theme={ctx.props().selected_theme.clone().unwrap_or_default()}
                     />
                     <div id="psp-expression-editor-meta">
                         <div class="error">

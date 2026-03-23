@@ -10,49 +10,65 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use yew::prelude::*;
+use std::ops::Deref;
+use std::rc::Rc;
 
-use super::ColumnLocator;
+use yew::html::{ImplicitClone, IntoPropValue};
 
-#[derive(PartialEq, Clone, Properties)]
-pub struct ExprEditButtonProps {
-    /// Column name.
-    pub name: String,
+/// A thin wrapper around `Rc<T>` whose `PartialEq` uses pointer identity
+/// (`Rc::ptr_eq`) instead of deep structural comparison.  This makes it
+/// suitable for Yew `Properties` fields that hold large, cheaply-shared
+/// snapshots (e.g. `ViewConfig`, `SessionMetadata`, `Vec<String>`).
+pub struct PtrEqRc<T>(Rc<T>);
 
-    /// Is this an expression column?
-    pub is_expression: bool,
-
-    /// Fires when the config/expresison button is clicked.
-    pub on_open_expr_panel: Callback<ColumnLocator>,
-
-    /// Is the expression/config panel open?
-    pub is_editing: bool,
-
-    /// Is the expression/config panel enabled? If not, show an invisible
-    /// square in the same dimensions (so the layout does not jump around).
-    pub is_disabled: bool,
+impl<T> PtrEqRc<T> {
+    pub fn new(val: T) -> Self {
+        Self(Rc::new(val))
+    }
 }
 
-/// A button that goes into a column-list for a custom expression
-/// when pressed, it opens up the expression editor side-panel.
-#[function_component]
-pub fn ExprEditButton(p: &ExprEditButtonProps) -> Html {
-    let onmousedown = yew::use_callback(p.clone(), |_, p| {
-        let name = if p.is_expression {
-            ColumnLocator::Expression(p.name.clone())
-        } else {
-            ColumnLocator::Table(p.name.clone())
-        };
-        p.on_open_expr_panel.emit(name)
-    });
+impl<T> Clone for PtrEqRc<T> {
+    fn clone(&self) -> Self {
+        Self(Rc::clone(&self.0))
+    }
+}
 
-    let class = if p.is_disabled {
-        "expression-edit-button disabled"
-    } else if p.is_editing {
-        "expression-edit-button is-editing"
-    } else {
-        "expression-edit-button"
-    };
+impl<T> PartialEq for PtrEqRc<T> {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &other.0)
+    }
+}
 
-    html! { <span {onmousedown} {class} /> }
+impl<T> Deref for PtrEqRc<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
+
+impl<T> From<T> for PtrEqRc<T> {
+    fn from(rc: T) -> Self {
+        Self(Rc::new(rc))
+    }
+}
+
+impl<T: Default> Default for PtrEqRc<T> {
+    fn default() -> Self {
+        Self(Rc::default())
+    }
+}
+
+impl<T: std::fmt::Debug> std::fmt::Debug for PtrEqRc<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl<T> ImplicitClone for PtrEqRc<T> {}
+
+impl<T> IntoPropValue<PtrEqRc<T>> for Rc<T> {
+    fn into_prop_value(self) -> PtrEqRc<T> {
+        PtrEqRc(self)
+    }
 }

@@ -38,19 +38,22 @@ pub struct SettingsPanelProps {
 
     /// Value props threaded from the root's `RendererProps` / `SessionProps`.
     pub plugin_name: Option<String>,
-    pub available_plugins: Rc<Vec<String>>,
+    pub available_plugins: PtrEqRc<Vec<String>>,
     pub has_table: bool,
     pub named_column_count: usize,
-    pub view_config: Rc<ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
     /// Column currently being dragged (if any) — threaded to show drag
     /// highlights without per-component `DragDrop` PubSub subscriptions.
     pub drag_column: Option<String>,
     /// Cloned session metadata snapshot — threaded from `SessionProps`
     /// so that metadata changes trigger re-renders via prop diffing.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
     /// Snapshot of the column-settings sidebar state — threaded from
     /// `PresentationProps` so that open/close triggers re-renders.
     pub open_column_settings: OpenColumnSettings,
+
+    /// Selected theme name, threaded for PortalModal consumers.
+    pub selected_theme: Option<String>,
 
     /// State
     pub dragdrop: DragDrop,
@@ -70,6 +73,7 @@ impl PartialEq for SettingsPanelProps {
             && self.drag_column == rhs.drag_column
             && self.metadata == rhs.metadata
             && self.open_column_settings == rhs.open_column_settings
+            && self.selected_theme == rhs.selected_theme
     }
 }
 
@@ -117,25 +121,26 @@ pub fn SettingsPanel(props: &SettingsPanelProps) -> Html {
             if !session.is_errored() {
                 let metadata =
                     renderer.get_next_plugin_metadata(&PluginUpdate::Update(plugin_name));
+
                 let prev_metadata = renderer.metadata();
                 let requirements = metadata.as_ref().unwrap_or(&*prev_metadata);
                 let rollup_features = session_metadata
                     .get_features()
                     .map(|x| x.get_group_rollup_modes())
                     .unwrap();
+
                 let group_rollups = requirements.get_group_rollups(&rollup_features);
-                let all_columns: Vec<_> = session_metadata
-                    .get_table_columns()
-                    .into_iter()
-                    .flatten()
-                    .cloned()
-                    .map(Some)
-                    .collect();
                 let mut update = ViewConfigUpdate {
                     group_rollup_mode: group_rollups.first().cloned(),
                     ..ViewConfigUpdate::default()
                 };
-                update.set_update_column_defaults(&session_metadata, &all_columns, requirements);
+
+                update.set_update_column_defaults(
+                    &session_metadata,
+                    &session.get_view_config().columns,
+                    requirements,
+                );
+
                 if session.update_view_config(update).is_ok() {
                     clone!(renderer, session);
                     ApiFuture::spawn(async move {
@@ -143,6 +148,7 @@ pub fn SettingsPanel(props: &SettingsPanelProps) -> Html {
                         renderer.draw(session.validate().await?.create_view()).await
                     });
                 }
+
                 presentation.set_open_column_settings(None);
             }
         })
@@ -170,6 +176,7 @@ pub fn SettingsPanel(props: &SettingsPanelProps) -> Html {
                 view_config={props.view_config.clone()}
                 drag_column={props.drag_column.clone()}
                 metadata={props.metadata.clone()}
+                selected_theme={props.selected_theme.clone()}
                 {dragdrop}
                 renderer={renderer.clone()}
                 session={session.clone()}

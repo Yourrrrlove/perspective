@@ -21,11 +21,12 @@ use super::InPlaceColumn;
 use super::filter_column::*;
 use super::pivot_column::*;
 use super::sort_column::*;
+use crate::components::column_dropdown::{ColumnDropDownElement, ColumnDropDownPortal};
 use crate::components::containers::dragdrop_list::*;
 use crate::components::containers::select::{Select, SelectItem};
+use crate::components::filter_dropdown::{FilterDropDownElement, FilterDropDownPortal};
 use crate::components::style::LocalStyle;
 use crate::css;
-use crate::custom_elements::{ColumnDropDownElement, FilterDropDownElement};
 use crate::dragdrop::*;
 use crate::renderer::*;
 use crate::session::drag_drop_update::*;
@@ -42,12 +43,15 @@ pub struct ConfigSelectorProps {
     /// Current view config threaded as a value prop so that config changes
     /// (group_by, sort, filter, etc.) trigger re-renders via normal prop
     /// diffing rather than a PubSub `view_created` subscription.
-    pub view_config: Rc<ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
     /// Column currently being dragged — threaded to show `dragdrop-highlight`
     /// without subscribing to `dragstart_received`/`dragend_received`.
     pub drag_column: Option<String>,
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
+
+    /// Selected theme name, threaded for PortalModal consumers.
+    pub selected_theme: Option<String>,
 
     // State
     pub session: Session,
@@ -60,6 +64,7 @@ impl PartialEq for ConfigSelectorProps {
         self.view_config == other.view_config
             && self.drag_column == other.drag_column
             && self.metadata == other.metadata
+            && self.selected_theme == other.selected_theme
     }
 }
 
@@ -602,43 +607,44 @@ impl Component for ConfigSelector {
         let group_rollups = requirements.get_group_rollups(&rollup_features);
 
         html! {
-            <div slot="top_panel" id="top_panel" {class} ondragend={dragend}>
-                <LocalStyle href={css!("config-selector")} />
-                <div class="pivot_controls">
-                    if group_rollups.len() > 1 {
-                        <Select<GroupRollupMode>
-                            id="group_rollup_mode_selector"
-                            wrapper_class="group_rollup_wrapper"
-                            values={Rc::new(
+            <>
+                <div slot="top_panel" id="top_panel" {class} ondragend={dragend}>
+                    <LocalStyle href={css!("config-selector")} />
+                    <div class="pivot_controls">
+                        if group_rollups.len() > 1 {
+                            <Select<GroupRollupMode>
+                                id="group_rollup_mode_selector"
+                                wrapper_class="group_rollup_wrapper"
+                                values={Rc::new(
                                 group_rollups
                                     .iter()
                                     .map(|x| SelectItem::Option(*x))
                                     .collect(),
                             )}
-                            selected={config.group_rollup_mode}
-                            on_select={on_group_rollup_mode}
-                        />
-                    }
-                    if !config.group_by.is_empty() && config.split_by.is_empty() {
-                        <span
-                            id="transpose_button"
-                            class="rrow centered"
-                            title="Transpose Pivots"
-                            onmousedown={transpose.clone()}
-                        />
-                    }
-                </div>
-                if features.group_by {
-                    <GroupBySelector
-                        name="group_by"
-                        disabled={config.group_rollup_mode == GroupRollupMode::Total}
-                        parent={ctx.link().clone()}
-                        column_dropdown={column_dropdown.clone()}
-                        exclude={config.group_by.iter().cloned().collect::<HashSet<_>>()}
-                        is_dragover={ctx.props().dragdrop.is_dragover(DragTarget::GroupBy)}
-                        {dragdrop}
-                    >
-                        { for config.group_by.iter().map(|group_by| {
+                                selected={config.group_rollup_mode}
+                                on_select={on_group_rollup_mode}
+                            />
+                        }
+                        if !config.group_by.is_empty() && config.split_by.is_empty() {
+                            <span
+                                id="transpose_button"
+                                class="rrow centered"
+                                title="Transpose Pivots"
+                                onmousedown={transpose.clone()}
+                            />
+                        }
+                    </div>
+                    if features.group_by {
+                        <GroupBySelector
+                            name="group_by"
+                            disabled={config.group_rollup_mode == GroupRollupMode::Total}
+                            parent={ctx.link().clone()}
+                            column_dropdown={column_dropdown.clone()}
+                            exclude={config.group_by.iter().cloned().collect::<HashSet<_>>()}
+                            is_dragover={ctx.props().dragdrop.is_dragover(DragTarget::GroupBy)}
+                            {dragdrop}
+                        >
+                            { for config.group_by.iter().map(|group_by| {
                                 html_nested! {
                                     <PivotColumn
                                         action={DragTarget::GroupBy}
@@ -650,28 +656,28 @@ impl Component for ConfigSelector {
                                     </PivotColumn>
                                 }
                             }) }
-                    </GroupBySelector>
-                }
-                if features.split_by {
-                    if !config.split_by.is_empty() {
-                        <div class="pivot_controls">
-                            <span
-                                id="transpose_button"
-                                class="rrow centered"
-                                title="Transpose Pivots"
-                                onmousedown={transpose}
-                            />
-                        </div>
+                        </GroupBySelector>
                     }
-                    <SplitBySelector
-                        name="split_by"
-                        parent={ctx.link().clone()}
-                        column_dropdown={column_dropdown.clone()}
-                        exclude={config.split_by.iter().cloned().collect::<HashSet<_>>()}
-                        is_dragover={dragdrop.is_dragover(DragTarget::SplitBy)}
-                        {dragdrop}
-                    >
-                        { for config.split_by.iter().map(|split_by| {
+                    if features.split_by {
+                        if !config.split_by.is_empty() {
+                            <div class="pivot_controls">
+                                <span
+                                    id="transpose_button"
+                                    class="rrow centered"
+                                    title="Transpose Pivots"
+                                    onmousedown={transpose}
+                                />
+                            </div>
+                        }
+                        <SplitBySelector
+                            name="split_by"
+                            parent={ctx.link().clone()}
+                            column_dropdown={column_dropdown.clone()}
+                            exclude={config.split_by.iter().cloned().collect::<HashSet<_>>()}
+                            is_dragover={dragdrop.is_dragover(DragTarget::SplitBy)}
+                            {dragdrop}
+                        >
+                            { for config.split_by.iter().map(|split_by| {
                             html_nested! {
                                 <PivotColumn
                                     action={ DragTarget::SplitBy }
@@ -682,21 +688,21 @@ impl Component for ConfigSelector {
                                 </PivotColumn>
                             }
                         }) }
-                    </SplitBySelector>
-                }
-                if features.sort {
-                    <SortSelector
-                        name="sort"
-                        allow_duplicates=true
-                        parent={ctx.link().clone()}
-                        column_dropdown={column_dropdown.clone()}
-                        exclude={config.sort.iter().map(|x| x.0.clone()).collect::<HashSet<_>>()}
-                        is_dragover={dragdrop.is_dragover(DragTarget::Sort).map(|(index, name)| {
+                        </SplitBySelector>
+                    }
+                    if features.sort {
+                        <SortSelector
+                            name="sort"
+                            allow_duplicates=true
+                            parent={ctx.link().clone()}
+                            column_dropdown={column_dropdown.clone()}
+                            exclude={config.sort.iter().map(|x| x.0.clone()).collect::<HashSet<_>>()}
+                            is_dragover={dragdrop.is_dragover(DragTarget::Sort).map(|(index, name)| {
                             (index, Sort(name, SortDir::Asc))
                         })}
-                        {dragdrop}
-                    >
-                        { for config.sort.iter().enumerate().map(|(idx, sort)| {
+                            {dragdrop}
+                        >
+                            { for config.sort.iter().enumerate().map(|(idx, sort)| {
                             html_nested! {
                                 <SortColumn
                                     idx={ idx }
@@ -709,21 +715,21 @@ impl Component for ConfigSelector {
                                 </SortColumn>
                             }
                         }) }
-                    </SortSelector>
-                }
-                if !features.filter_ops.is_empty() {
-                    <FilterSelector
-                        name="filter"
-                        allow_duplicates=true
-                        parent={ctx.link().clone()}
-                        {column_dropdown}
-                        exclude={config.filter.iter().map(|x| x.column().to_string()).collect::<HashSet<_>>()}
-                        is_dragover={dragdrop.is_dragover(DragTarget::Filter).map(|(index, name)| {
+                        </SortSelector>
+                    }
+                    if !features.filter_ops.is_empty() {
+                        <FilterSelector
+                            name="filter"
+                            allow_duplicates=true
+                            parent={ctx.link().clone()}
+                            {column_dropdown}
+                            exclude={config.filter.iter().map(|x| x.column().to_string()).collect::<HashSet<_>>()}
+                            is_dragover={dragdrop.is_dragover(DragTarget::Filter).map(|(index, name)| {
                             (index, Filter::new(&name, "", FilterTerm::Scalar(Scalar::Null)))
                         })}
-                        {dragdrop}
-                    >
-                        { for config.filter.iter().enumerate().map(|(idx, filter)| {
+                            {dragdrop}
+                        >
+                            { for config.filter.iter().enumerate().map(|(idx, filter)| {
                                 let filter_keydown = ctx.link()
                                     .callback(move |txt| ConfigSelectorMsg::SetFilterValue(idx, txt));
 
@@ -741,9 +747,18 @@ impl Component for ConfigSelector {
                                     </FilterColumn>
                                 }
                             }) }
-                    </FilterSelector>
-                }
-            </div>
+                        </FilterSelector>
+                    }
+                </div>
+                <ColumnDropDownPortal
+                    element={self.column_dropdown.clone()}
+                    theme={ctx.props().selected_theme.clone().unwrap_or_default()}
+                />
+                <FilterDropDownPortal
+                    element={self.filter_dropdown.clone()}
+                    theme={ctx.props().selected_theme.clone().unwrap_or_default()}
+                />
+            </>
         }
     }
 }

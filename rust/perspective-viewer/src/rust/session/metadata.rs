@@ -17,6 +17,7 @@ use std::ops::{Deref, DerefMut};
 use perspective_client::config::*;
 use perspective_js::apierror;
 
+use crate::utils::PtrEqRc;
 use crate::*;
 
 #[derive(Clone, PartialEq)]
@@ -31,6 +32,8 @@ struct SessionViewExpressionMetadata {
 /// `View`/`ViewConfig`.
 #[derive(Clone, Default, PartialEq)]
 pub struct SessionMetadata(Option<SessionMetadataState>);
+
+pub type SessionMetadataRc = PtrEqRc<SessionMetadata>;
 
 impl std::fmt::Debug for SessionMetadata {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

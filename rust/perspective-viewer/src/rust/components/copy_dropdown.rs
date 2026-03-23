@@ -15,28 +15,15 @@ use std::rc::Rc;
 use yew::prelude::*;
 
 use super::containers::dropdown_menu::*;
-use super::modal::*;
-use super::style::StyleProvider;
 use crate::renderer::*;
 use crate::tasks::*;
-use crate::utils::*;
 
 type CopyDropDownMenuItem = DropDownMenuItem<ExportFile>;
 
 #[derive(Properties, PartialEq)]
 pub struct CopyDropDownMenuProps {
     pub callback: Callback<ExportFile>,
-    pub root: web_sys::HtmlElement,
     pub renderer: Renderer,
-
-    #[prop_or_default]
-    weak_link: WeakScope<CopyDropDownMenu>,
-}
-
-impl ModalLink<CopyDropDownMenu> for CopyDropDownMenuProps {
-    fn weak_link(&self) -> &'_ WeakScope<CopyDropDownMenu> {
-        &self.weak_link
-    }
 }
 
 pub struct CopyDropDownMenu {}
@@ -45,8 +32,7 @@ impl Component for CopyDropDownMenu {
     type Message = ();
     type Properties = CopyDropDownMenuProps;
 
-    fn create(ctx: &Context<Self>) -> Self {
-        ctx.set_modal_link();
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {}
     }
 
@@ -59,12 +45,13 @@ impl Component for CopyDropDownMenu {
         let is_chart = plugin.name().as_str() != "Datagrid";
         let has_selection = ctx.props().renderer.get_selection().is_some();
         html! {
-            <StyleProvider root={ctx.props().root.clone()}>
+            <>
+                <div id="test" />
                 <DropDownMenu<ExportFile>
                     values={Rc::new(get_menu_items(is_chart, has_selection))}
                     callback={&ctx.props().callback}
                 />
-            </StyleProvider>
+            </>
         }
     }
 }

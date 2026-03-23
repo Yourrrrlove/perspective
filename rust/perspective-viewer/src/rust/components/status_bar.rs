@@ -10,22 +10,24 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
+use wasm_bindgen_futures::spawn_local;
 use web_sys::*;
 use yew::prelude::*;
 
 use super::status_indicator::StatusIndicator;
 use super::style::LocalStyle;
 use crate::components::containers::select::*;
+use crate::components::copy_dropdown::CopyDropDownMenu;
+use crate::components::export_dropdown::ExportDropDownMenu;
+use crate::components::portal::PortalModal;
 use crate::components::status_bar_counter::StatusBarRowsCounter;
-use crate::custom_elements::copy_dropdown::*;
-use crate::custom_elements::export_dropdown::*;
 use crate::custom_events::CustomEvents;
+use crate::js::*;
 use crate::presentation::Presentation;
 use crate::renderer::*;
 use crate::session::*;
 use crate::tasks::*;
+use crate::utils::*;
 use crate::*;
 
 #[derive(Clone, Properties)]
@@ -55,7 +57,7 @@ pub struct StatusBarProps {
     /// visibility_changed subscriptions.
     pub is_settings_open: bool,
     pub selected_theme: Option<String>,
-    pub available_themes: Rc<Vec<String>>,
+    pub available_themes: PtrEqRc<Vec<String>>,
     /// Whether this viewer is hosted inside a `<perspective-workspace>`.
     pub is_workspace: bool,
 
@@ -118,6 +120,8 @@ pub enum StatusBarMsg {
     Reset(MouseEvent),
     Export,
     Copy,
+    CloseExport,
+    CloseCopy,
     Noop,
     Eject,
     SetTheme(String),
@@ -137,6 +141,8 @@ pub struct StatusBar {
     /// change (blur / Enter).  Reset to the prop value whenever the prop
     /// changes.
     title: Option<String>,
+    copy_target: Option<HtmlElement>,
+    export_target: Option<HtmlElement>,
 }
 
 impl Component for StatusBar {
@@ -150,6 +156,8 @@ impl Component for StatusBar {
             input_ref: NodeRef::default(),
             statusbar_ref: NodeRef::default(),
             title: ctx.props().title.clone(),
+            copy_target: None,
+            export_target: None,
         }
     }
 
@@ -196,14 +204,20 @@ impl Component for StatusBar {
                 false
             },
             StatusBarMsg::Export => {
-                let target = self.export_ref.cast::<HtmlElement>().into_apierror()?;
-                ExportDropDownMenuElement::new_from_model(ctx.props()).open(target);
-                false
+                self.export_target = self.export_ref.cast::<HtmlElement>();
+                true
             },
             StatusBarMsg::Copy => {
-                let target = self.copy_ref.cast::<HtmlElement>().into_apierror()?;
-                CopyDropDownMenuElement::new_from_model(ctx.props()).open(target);
-                false
+                self.copy_target = self.copy_ref.cast::<HtmlElement>();
+                true
+            },
+            StatusBarMsg::CloseExport => {
+                self.export_target = None;
+                true
+            },
+            StatusBarMsg::CloseCopy => {
+                self.copy_target = None;
+                true
             },
             StatusBarMsg::Eject => {
                 ctx.props().presentation().on_eject.emit(());
@@ -307,6 +321,43 @@ impl Component for StatusBar {
             || is_settings_open
             || presentation.is_active(&self.input_ref.cast::<Element>());
 
+        let on_copy_select = {
+            let props = ctx.props().clone();
+            let link = ctx.link().clone();
+            Callback::from(move |x: ExportFile| {
+                let props = props.clone();
+                let link = link.clone();
+                spawn_local(async move {
+                    let mime = x.method.mimetype(x.is_chart);
+                    let task = props.export_method_to_blob(x.method);
+                    let result = copy_to_clipboard(task, mime).await;
+                    crate::maybe_log!({
+                        result?;
+                        link.send_message(StatusBarMsg::CloseCopy);
+                    })
+                })
+            })
+        };
+
+        let on_export_select = {
+            let props = ctx.props().clone();
+            let link = ctx.link().clone();
+            Callback::from(move |x: ExportFile| {
+                if !x.name.is_empty() {
+                    clone!(props, link);
+                    spawn_local(async move {
+                        let val = props.export_method_to_blob(x.method).await.unwrap();
+                        let is_chart = props.renderer().is_chart();
+                        download(&x.as_filename(is_chart), &val).unwrap();
+                        link.send_message(StatusBarMsg::CloseExport);
+                    })
+                }
+            })
+        };
+
+        let on_close_copy = ctx.link().callback(|_| StatusBarMsg::CloseCopy);
+        let on_close_export = ctx.link().callback(|_| StatusBarMsg::CloseExport);
+
         if is_settings {
             html! {
                 <>
@@ -386,6 +437,28 @@ impl Component for StatusBar {
                             <div id="close_button" class="noselect" onmousedown={onclose} />
                         }
                     </div>
+                    <PortalModal
+                        tag_name="perspective-copy-menu"
+                        target={self.copy_target.clone()}
+                        own_focus=true
+                        on_close={on_close_copy}
+                        theme={ctx.props().selected_theme.clone().unwrap_or_default()}
+                    >
+                        <CopyDropDownMenu renderer={renderer.clone()} callback={on_copy_select} />
+                    </PortalModal>
+                    <PortalModal
+                        tag_name="perspective-export-menu"
+                        target={self.export_target.clone()}
+                        own_focus=true
+                        on_close={on_close_export}
+                        theme={ctx.props().selected_theme.clone().unwrap_or_default()}
+                    >
+                        <ExportDropDownMenu
+                            renderer={renderer.clone()}
+                            session={session.clone()}
+                            callback={on_export_select}
+                        />
+                    </PortalModal>
                 </>
             }
         } else if let Some(x) = ctx.props().on_settings.as_ref() {
@@ -405,7 +478,7 @@ impl Component for StatusBar {
 #[derive(Properties, PartialEq)]
 struct ThemeSelectorProps {
     pub theme: Option<String>,
-    pub themes: Rc<Vec<String>>,
+    pub themes: PtrEqRc<Vec<String>>,
     pub on_reset: Callback<()>,
     pub on_change: Callback<String>,
 }

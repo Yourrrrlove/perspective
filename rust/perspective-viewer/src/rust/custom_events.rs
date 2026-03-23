@@ -188,6 +188,10 @@ impl CustomEvents {
     {
         self.0.0.dispatch_event(name, event)
     }
+
+    pub fn dispatch_raw_event(&self, event: &web_sys::CustomEvent) -> ApiResult<bool> {
+        self.0.0.elem.dispatch_event(event).map_err(|e| e.into())
+    }
 }
 
 impl CustomEventsDataRc {

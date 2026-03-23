@@ -19,7 +19,7 @@ use yew::{Callback, Component, Html, NodeRef, Properties, TargetCast, classes, h
 use super::type_icon::TypeIconType;
 use crate::components::type_icon::TypeIcon;
 use crate::maybe;
-use crate::session::{Session, SessionMetadata};
+use crate::session::{Session, SessionMetadataRc};
 
 #[derive(Clone, PartialEq, Properties)]
 pub struct EditableHeaderProps {
@@ -33,7 +33,7 @@ pub struct EditableHeaderProps {
     pub reset_count: u8,
 
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
 
     // State
     pub session: Session,

@@ -36,11 +36,12 @@ use crate::components::type_icon::TypeIconType;
 use crate::custom_events::CustomEvents;
 use crate::presentation::{ColumnLocator, ColumnSettingsTab, Presentation};
 use crate::renderer::Renderer;
-use crate::session::{Session, SessionMetadata};
+use crate::session::{Session, SessionMetadataRc};
 use crate::tasks::{
     EditExpression, HasCustomEvents, HasPresentation, HasRenderer, HasSession,
     can_render_column_styles, locator_name_or_default, locator_view_type,
 };
+use crate::utils::PtrEqRc;
 use crate::*;
 
 #[derive(Clone, Derivative, Properties)]
@@ -58,10 +59,13 @@ pub struct ColumnSettingsPanelProps {
     pub plugin_name: Option<String>,
 
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
 
     /// View config snapshot — threaded from `SessionProps`.
-    pub view_config: Rc<ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
+
+    /// Selected theme name, threaded for PortalModal consumers.
+    pub selected_theme: Option<String>,
 
     // State
     #[derivative(Debug = "ignore")]
@@ -84,6 +88,7 @@ impl PartialEq for ColumnSettingsPanelProps {
             && self.plugin_name == other.plugin_name
             && self.metadata == other.metadata
             && self.view_config == other.view_config
+            && self.selected_theme == other.selected_theme
     }
 }
 
@@ -294,6 +299,7 @@ impl Component for ColumnSettingsPanel {
             disabled: !ctx.props().selected_column.is_expr(),
             reset_count: self.reset_count,
             metadata: ctx.props().metadata.clone(),
+            selected_theme: ctx.props().selected_theme.clone(),
             session: &ctx.props().session
         });
 
@@ -341,6 +347,7 @@ impl Component for ColumnSettingsPanel {
             group_by_depth: ctx.props().view_config.group_by.len() as u32,
             view_config: ctx.props().view_config.clone(),
             metadata: ctx.props().metadata.clone(),
+            selected_theme: ctx.props().selected_theme.clone(),
             custom_events: ctx.props().custom_events.clone(),
             presentation: ctx.props().presentation.clone(),
             renderer: ctx.props().renderer.clone(),

@@ -10,8 +10,6 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use perspective_client::config::*;
 use perspective_js::utils::ApiFuture;
 use web_sys::*;
@@ -30,10 +28,10 @@ pub struct SortColumnProps {
     pub idx: usize,
 
     /// Session metadata snapshot — threaded from `SessionProps`.
-    pub metadata: Rc<SessionMetadata>,
+    pub metadata: SessionMetadataRc,
 
     /// Current view config — threaded as a value prop.
-    pub view_config: Rc<ViewConfig>,
+    pub view_config: PtrEqRc<ViewConfig>,
 
     // State
     pub session: Session,

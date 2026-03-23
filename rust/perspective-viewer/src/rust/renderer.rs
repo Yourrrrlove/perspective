@@ -328,6 +328,31 @@ impl Renderer {
             .await
     }
 
+    pub async fn resize_with_dimensions(&self, width: f64, height: f64) -> ApiResult<()> {
+        let draw_mutex = self.draw_lock();
+        let timer = self.render_timer();
+        draw_mutex
+            .debounce(async {
+                set_timeout(timer.get_throttle()).await?;
+                let plugin = self.get_active_plugin()?;
+                let main_panel: &web_sys::HtmlElement = plugin.unchecked_ref();
+                let rect = main_panel.get_bounding_client_rect();
+                if (height - rect.height()).abs() > 0.5 || (width - rect.width()).abs() > 0.5 {
+                    let new_width = format!("{}px", width);
+                    let new_height = format!("{}px", height);
+                    main_panel.style().set_property("width", &new_width)?;
+                    main_panel.style().set_property("height", &new_height)?;
+                    let result = plugin.resize().await;
+                    main_panel.style().set_property("width", "")?;
+                    main_panel.style().set_property("height", "")?;
+                    result?;
+                }
+
+                Ok(())
+            })
+            .await
+    }
+
     /// This will take a future which _should_ create a new view and then will
     /// draw it. As the `session` closure is asynchronous, it can be cancelled
     /// by returning `None`.
@@ -521,7 +546,7 @@ impl Renderer {
                 plugin_name: None,
                 requirements: ViewConfigRequirements::default(),
                 render_limits,
-                available_plugins: Rc::new(vec![]),
+                available_plugins: PtrEqRc::new(vec![]),
             }
         }
     }

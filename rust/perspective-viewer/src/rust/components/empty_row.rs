@@ -19,9 +19,9 @@ use wasm_bindgen::JsCast;
 use web_sys::*;
 use yew::prelude::*;
 
+use crate::components::filter_dropdown::FilterDropDownElement;
 use crate::components::style::LocalStyle;
 use crate::css;
-use crate::custom_elements::FilterDropDownElement;
 
 #[derive(Properties, Derivative)]
 #[derivative(Debug)]

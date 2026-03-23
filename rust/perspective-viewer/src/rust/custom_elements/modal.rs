@@ -56,81 +56,6 @@ where
     on_blur: Option<Callback<()>>,
 }
 
-/// Anchor point enum, `ModalCornerTargetCorner`
-#[derive(Clone, Copy, Debug, Default)]
-enum ModalAnchor {
-    BottomRightTopLeft,
-    BottomRightBottomLeft,
-    BottomRightTopRight,
-    BottomLeftTopLeft,
-    TopRightTopLeft,
-    TopRightBottomRight,
-
-    #[default]
-    TopLeftBottomLeft,
-}
-
-impl ModalAnchor {
-    const fn is_rev_vert(&self) -> bool {
-        matches!(
-            self,
-            Self::BottomLeftTopLeft
-                | Self::BottomRightBottomLeft
-                | Self::BottomRightTopLeft
-                | Self::BottomRightTopRight
-        )
-    }
-}
-
-/// Given the bounds of the target element as previous computed, as well as the
-/// browser's viewport and the bounds of the already-connected
-/// `<perspectuve-style-menu>` element itself, determine a new (top, left)
-/// coordinates that keeps the element on-screen.
-fn calc_relative_position(
-    elem: &HtmlElement,
-    _top: f64,
-    left: f64,
-    height: f64,
-    width: f64,
-) -> ModalAnchor {
-    let window = global::window();
-    let rect = elem.get_bounding_client_rect();
-    let inner_width = window.inner_width().unwrap().as_f64().unwrap();
-    let inner_height = window.inner_height().unwrap().as_f64().unwrap();
-    let rect_top = rect.top();
-    let rect_height = rect.height();
-    let rect_width = rect.width();
-    let rect_left = rect.left();
-
-    let elem_over_y = inner_height < rect_top + rect_height;
-    let elem_over_x = inner_width < rect_left + rect_width;
-    let target_over_x = inner_width < rect_left + width;
-    let target_over_y = inner_height < rect_top + height;
-
-    // modal/target
-    match (elem_over_y, elem_over_x, target_over_x, target_over_y) {
-        (true, _, true, true) => ModalAnchor::BottomRightTopLeft,
-        (true, _, true, false) => ModalAnchor::BottomRightBottomLeft,
-        (true, true, false, _) => {
-            if left + width - rect_width > 0.0 {
-                ModalAnchor::BottomRightTopRight
-            } else {
-                ModalAnchor::BottomLeftTopLeft
-            }
-        },
-        (true, false, false, _) => ModalAnchor::BottomLeftTopLeft,
-        (false, true, true, _) => ModalAnchor::TopRightTopLeft,
-        (false, true, false, _) => {
-            if left + width - rect_width > 0.0 {
-                ModalAnchor::TopRightBottomRight
-            } else {
-                ModalAnchor::TopLeftBottomLeft
-            }
-        },
-        _ => ModalAnchor::TopLeftBottomLeft,
-    }
-}
-
 impl<T> ModalElement<T>
 where
     T: Component,
@@ -172,31 +97,10 @@ where
         }
     }
 
-    fn calc_anchor_position(&self, target: &HtmlElement) -> (f64, f64) {
-        let elem = target.unchecked_ref::<HtmlElement>();
-        let rect = elem.get_bounding_client_rect();
-        let height = rect.height();
-        let width = rect.width();
-        let top = rect.top();
-        let left = rect.left();
-
-        let self_rect = self.custom_element.get_bounding_client_rect();
-        let rect_height = self_rect.height();
-        let rect_width = self_rect.width();
-
-        match self.anchor.get() {
-            ModalAnchor::BottomRightTopLeft => (top - rect_height, left - rect_width + 1.0),
-            ModalAnchor::BottomRightBottomLeft => {
-                (top - rect_height + height, left - rect_width + 1.0)
-            },
-            ModalAnchor::BottomRightTopRight => {
-                (top - rect_height + 1.0, left + width - rect_width)
-            },
-            ModalAnchor::BottomLeftTopLeft => (top - rect_height + 1.0, left),
-            ModalAnchor::TopRightTopLeft => (top, left - rect_width + 1.0),
-            ModalAnchor::TopRightBottomRight => (top + height - 1.0, left + width - rect_width),
-            ModalAnchor::TopLeftBottomLeft => ((top + height - 1.0), left),
-        }
+    fn calc_anchor_pos(&self, target: &HtmlElement) -> (f64, f64) {
+        let target_rect = target.get_bounding_client_rect();
+        let modal_rect = self.custom_element.get_bounding_client_rect();
+        calc_anchor_position(self.anchor.get(), &target_rect, &modal_rect)
     }
 
     async fn open_within_viewport(&self, target: HtmlElement) -> ApiResult<()> {
@@ -229,7 +133,7 @@ where
             width,
         ));
 
-        let (top, left) = self.calc_anchor_position(&target);
+        let (top, left) = self.calc_anchor_pos(&target);
         let msg = ModalMsg::SetPos {
             top,
             left,
@@ -310,7 +214,7 @@ where
             let target = target.clone();
             let anchor = self.anchor.clone();
             *self.resize_sub.borrow_mut() = Some(resize.add_listener(move |()| {
-                let (top, left) = this.calc_anchor_position(&target);
+                let (top, left) = this.calc_anchor_pos(&target);
                 let msg = ModalMsg::SetPos {
                     top,
                     left,

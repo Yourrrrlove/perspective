@@ -10,12 +10,11 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::rc::Rc;
-
 use yew::prelude::*;
 
 use super::style::LocalStyle;
 use crate::css;
+use crate::utils::PtrEqRc;
 
 /// Pure value props — no engine handles, no PubSub subscriptions.
 /// The parent passes updated values whenever the renderer state changes.
@@ -25,7 +24,7 @@ pub struct PluginSelectorProps {
     pub plugin_name: Option<String>,
 
     /// Flat list of all registered plugin names (all categories merged).
-    pub available_plugins: Rc<Vec<String>>,
+    pub available_plugins: PtrEqRc<Vec<String>>,
 
     /// Called when the user selects a different plugin.
     pub on_select_plugin: Callback<String>,

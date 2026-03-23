@@ -18,9 +18,9 @@ use web_sys::*;
 use yew::prelude::*;
 
 use crate::components::form::highlight::highlight;
+use crate::components::function_dropdown::{FunctionDropDownElement, FunctionDropDownPortal};
 use crate::components::style::LocalStyle;
 use crate::css;
-use crate::custom_elements::FunctionDropDownElement;
 use crate::exprtk::{Cursor, tokenize};
 use crate::utils::*;
 
@@ -45,6 +45,10 @@ pub struct CodeEditorProps {
 
     #[prop_or_default]
     pub error: Option<ExprValidationError>,
+
+    /// Selected theme name, threaded for PortalModal consumers.
+    #[prop_or_default]
+    pub theme: String,
 }
 
 /// A syntax-highlighted text editor component.
@@ -128,6 +132,8 @@ pub fn code_editor(props: &CodeEditorProps) -> Html {
         |deps| scroll_sync(&deps.0, &deps.1, &deps.2),
     );
 
+    let portal_dropdown = filter_dropdown.clone();
+
     // Blur if this element is not in the tree
     use_effect_with(filter_dropdown.clone(), |filter_dropdown| {
         clone!(filter_dropdown);
@@ -191,6 +197,10 @@ pub fn code_editor(props: &CodeEditorProps) -> Html {
                     </pre>
                 </div>
             </div>
+            <FunctionDropDownPortal
+                element={(*portal_dropdown).clone()}
+                theme={props.theme.clone()}
+            />
         </>
     }
 }

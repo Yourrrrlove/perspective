@@ -78,7 +78,7 @@ where
             } => {
                 let opacity = if visible { "" } else { ";opacity:0" };
                 self.css = format!(":host{{top:{top}px;left:{left}px{opacity}}}");
-                self.rev_vert.0.set(rev_vert);
+                self.rev_vert.set(rev_vert);
                 true
             },
             ModalMsg::SubMsg(msg) => {
@@ -116,6 +116,12 @@ where
 pub struct ModalOrientation(Rc<Cell<bool>>);
 
 impl ImplicitClone for ModalOrientation {}
+
+impl ModalOrientation {
+    pub fn set(&self, value: bool) {
+        self.0.set(value);
+    }
+}
 
 impl From<ModalOrientation> for bool {
     fn from(x: ModalOrientation) -> Self {
