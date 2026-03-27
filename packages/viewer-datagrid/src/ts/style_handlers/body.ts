@@ -94,7 +94,7 @@ export function applyBodyCellStyles(
         } else if (type === "string") {
             cell_style_string.call(this, plugin as any, td, metadata as any);
         } else if (type === "date" || type === "datetime") {
-            cell_style_datetime.call(this, plugin as any, td, metadata as any);
+            cell_style_datetime.call(this, plugin as any, td, metadata);
         } else {
             td.style.backgroundColor = "";
             td.style.color = "";

@@ -79,12 +79,12 @@ theme-able variable to get a functional UI.
 ### Icons and Translation
 
 UI icons are defined by CSS variables provided by
-[`@perspective-dev/viewer/dist/css/icons.css`](https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/icons.less).
+[`@perspective-dev/viewer/dist/css/icons.css`](https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/icons.css).
 These variables must be defined for the UI icons to work - there are no default
 icons without a theme.
 
 UI text is also defined in CSS variables provided by
-[`@perspective-dev/viewer/dist/css/intl.css`](https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/intl.less),
+[`@perspective-dev/viewer/dist/css/intl.css`](https://github.com/perspective-dev/perspective/blob/master/rust/perspective-viewer/src/themes/intl.css),
 and has identical import requirements. Some _example definitions_
 (automatically-translated sans-editing) can be found
 [`@perspective-dev/viewer/dist/css/intl/` folder](https://github.com/perspective-dev/perspective/tree/master/rust/perspective-viewer/src/themes/intl).

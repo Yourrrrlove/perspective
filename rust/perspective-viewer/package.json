@@ -19,7 +19,8 @@
         "./src/*": "./src/*",
         "./test/*": "./test/*",
         "./package.json": "./package.json",
-        "./tsconfig.json": "./tsconfig.json"
+        "./tsconfig.json": "./tsconfig.json",
+        "./tools.mjs": "./tools.mjs"
     },
     "files": [
         "dist/**/*",
@@ -43,7 +44,7 @@
         "@perspective-dev/esbuild-plugin": "workspace:",
         "@perspective-dev/test": "workspace:",
         "@perspective-dev/metadata": "workspace:",
-        "@prospective.co/procss": "catalog:",
+        "lightningcss": "catalog:",
         "@playwright/test": "catalog:",
         "@playwright/experimental-ct-react": "catalog:",
         "@types/react": "catalog:",

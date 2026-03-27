@@ -35,6 +35,6 @@
     "devDependencies": {
         "@perspective-dev/esbuild-plugin": "workspace:",
         "@perspective-dev/test": "workspace:",
-        "@prospective.co/procss": "catalog:"
+        "lightningcss": "catalog:"
     }
 }

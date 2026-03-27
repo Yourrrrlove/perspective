@@ -45,7 +45,7 @@
     },
     "devDependencies": {
         "@perspective-dev/viewer": "workspace:",
-        "@prospective.co/procss": "catalog:",
+        "lightningcss": "catalog:",
         "@perspective-dev/esbuild-plugin": "workspace:",
         "@perspective-dev/test": "workspace:",
         "@types/lodash": "catalog:",

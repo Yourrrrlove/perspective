@@ -14,13 +14,17 @@ import { WasmPlugin } from "@perspective-dev/esbuild-plugin/wasm.js";
 import { WorkerPlugin } from "@perspective-dev/esbuild-plugin/worker.js";
 import { build } from "@perspective-dev/esbuild-plugin/build.js";
 import * as path from "node:path";
-import { BuildCss } from "@prospective.co/procss/target/cjs/procss.js";
+import { bundleAsync as bundleCss, composeVisitors } from "lightningcss";
 import * as fs from "node:fs";
 import * as url from "node:url";
-import { createRequire } from "node:module";
+// import { createRequire } from "node:module";
 import { execSync } from "node:child_process";
+import {
+    resolveNPM,
+    inlineUrlVisitor,
+} from "@perspective-dev/viewer/tools.mjs";
 
-const _require = createRequire(import.meta.url);
+// const _require = createRequire(import.meta.url);
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url)).slice(0, -1);
 
 const NBEXTENSION_PATH = path.resolve(
@@ -105,13 +109,6 @@ const NB_BUILDS = [
     // },
 ];
 
-function add(builder, path, path2) {
-    builder.add(
-        path,
-        fs.readFileSync(_require.resolve(path2 || path)).toString(),
-    );
-}
-
 const IS_TEST = process.argv.some((x) => x === "--test");
 const BUILD = IS_TEST
     ? [LAB_BUILD, ...NB_BUILDS, TEST_BUILD]
@@ -119,16 +116,17 @@ const BUILD = IS_TEST
 
 async function build_all() {
     fs.mkdirSync("dist/css", { recursive: true });
-    const builder3 = new BuildCss("");
-    add(builder3, "@perspective-dev/viewer/dist/css/themes.css");
-    add(builder3, "./index.less", "./src/less/index.less");
-    fs.writeFileSync(
-        "dist/css/perspective-jupyterlab.css",
-        builder3.compile().get("index.css"),
-    );
+    const filename = path.resolve(__dirname, "src/css/index.css");
+    const { code } = await bundleCss({
+        filename,
+        minify: true,
+        visitor: inlineUrlVisitor(filename),
+        resolver: resolveNPM(import.meta.url),
+    });
 
+    fs.writeFileSync("dist/css/perspective-jupyterlab.css", code);
     await Promise.all(BUILD.map(build)).catch(() => process.exit(1));
-    fs.cpSync("src/less", "dist/less", { recursive: true });
+    fs.cpSync("src/css", "dist/css/src", { recursive: true });
     execSync("jupyter labextension build .", {
         stdio: "inherit",
     });

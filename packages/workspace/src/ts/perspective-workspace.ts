@@ -22,7 +22,7 @@ export { PerspectiveViewerWidget } from "./workspace/widget";
 export * from "./extensions";
 import { PerspectiveWorkspace, PerspectiveWorkspaceConfig } from "./workspace";
 import { bindTemplate, CustomElementProto } from "./utils/custom_elements";
-import style from "../../build/css/workspace.css";
+import style from "../../dist/css/workspace.css";
 import template from "../html/workspace.html";
 
 export { PerspectiveWorkspaceConfig };

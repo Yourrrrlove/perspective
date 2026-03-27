@@ -12,9 +12,9 @@
 
 import { NodeModulesExternal } from "@perspective-dev/esbuild-plugin/external.js";
 import { build } from "@perspective-dev/esbuild-plugin/build.js";
-import { BuildCss } from "@prospective.co/procss/target/cjs/procss.js";
+import { bundle as bundleCss } from "lightningcss";
 import * as fs from "node:fs";
-import * as path_mod from "node:path";
+import { inlineUrlVisitor } from "@perspective-dev/viewer/tools.mjs";
 
 import "zx/globals";
 
@@ -47,32 +47,23 @@ const BUILD = [
     },
 ];
 
-function add(builder, path) {
-    builder.add(
-        path,
-        fs.readFileSync(path_mod.join("./src/less", path)).toString(),
-    );
-}
-
 async function compile_css() {
     fs.mkdirSync("dist/css", { recursive: true });
-    const builder1 = new BuildCss("");
-    add(builder1, "./pro.less");
-    add(builder1, "./mitered-headers.less");
-    add(builder1, "./row-hover.less");
-    add(builder1, "./sub-cell-scroll.less");
-    add(builder1, "./scrollbar.less");
-    add(builder1, "./regular_table.less");
-    fs.writeFileSync(
-        "dist/css/perspective-viewer-datagrid.css",
-        builder1.compile().get("regular_table.css"),
-    );
+    const { code: datagridCode } = bundleCss({
+        filename: "./src/css/perspective-viewer-datagrid.css",
+        minify: true,
+        visitor: inlineUrlVisitor("./src/css/perspective-viewer-datagrid.css"),
+    });
+    fs.writeFileSync("dist/css/perspective-viewer-datagrid.css", datagridCode);
 
-    const builder2 = new BuildCss("");
-    add(builder2, "./toolbar.less");
+    const { code: toolbarCode } = bundleCss({
+        filename: "./src/css/toolbar.css",
+        minify: true,
+        visitor: inlineUrlVisitor("./src/css/toolbar.css"),
+    });
     fs.writeFileSync(
         "dist/css/perspective-viewer-datagrid-toolbar.css",
-        builder2.compile().get("toolbar.css"),
+        toolbarCode,
     );
 }
 

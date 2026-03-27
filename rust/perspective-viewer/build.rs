@@ -10,37 +10,32 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-#![feature(exit_status_error)]
-
 use glob::glob;
-use procss::BuildCss;
-
-fn with_wd<T>(indir: &str, f: impl FnOnce() -> T) -> T {
-    let current_dir = std::env::current_dir().unwrap();
-    std::env::set_current_dir(indir).unwrap();
-    let res = f();
-    std::env::set_current_dir(current_dir).unwrap();
-    res
-}
-
-fn glob_with_wd(indir: &str, input: &str) -> Vec<String> {
-    with_wd(indir, || {
-        glob(input)
-            .unwrap()
-            .map(|x| x.unwrap().to_string_lossy().to_string())
-            .collect()
-    })
-}
+use lightningcss::bundler::{Bundler, FileProvider};
+use lightningcss::stylesheet::PrinterOptions;
 
 fn main() -> Result<(), anyhow::Error> {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let out_path = std::path::Path::new(&out_dir);
-    let mut build = BuildCss::new("./src/less");
-    let files = glob_with_wd("./src/less", "**/*.less");
-    for src in files.iter() {
-        build.add_file(src);
+    let fs: &'static FileProvider = Box::leak(Box::new(FileProvider::new()));
+    for entry in glob("./src/css/**/*.css")? {
+        let entry = entry?;
+        let relative = entry
+            .strip_prefix("./src/css/")
+            .or_else(|_| entry.strip_prefix("src/css/"))?;
+
+        let mut bundler = Bundler::new(fs, None, Default::default());
+        let stylesheet = bundler.bundle(&entry)?;
+        let output = stylesheet.to_css(PrinterOptions {
+            minify: true,
+            ..Default::default()
+        })?;
+
+        let out_file = out_path.join("css").join(relative);
+        std::fs::create_dir_all(out_file.parent().unwrap())?;
+        std::fs::write(&out_file, output.code)?;
+        println!("cargo:rerun-if-changed={}", entry.display());
     }
 
-    build.compile()?.write(out_path.join("css"))?;
     Ok(())
 }

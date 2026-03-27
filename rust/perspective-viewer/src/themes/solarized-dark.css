@@ -1,0 +1,135 @@
+/* ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ * ┃ ██████ ██████ ██████       █      █      █      █      █ █▄  ▀███ █       ┃
+ * ┃ ▄▄▄▄▄█ █▄▄▄▄▄ ▄▄▄▄▄█  ▀▀▀▀▀█▀▀▀▀▀ █ ▀▀▀▀▀█ ████████▌▐███ ███▄  ▀█ █ ▀▀▀▀▀ ┃
+ * ┃ █▀▀▀▀▀ █▀▀▀▀▀ █▀██▀▀ ▄▄▄▄▄ █ ▄▄▄▄▄█ ▄▄▄▄▄█ ████████▌▐███ █████▄   █ ▄▄▄▄▄ ┃
+ * ┃ █      ██████ █  ▀█▄       █ ██████      █      ███▌▐███ ███████▄ █       ┃
+ * ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+ * ┃ Copyright (c) 2017, the Perspective Authors.                              ┃
+ * ┃ ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ ┃
+ * ┃ This file is part of the Perspective library, distributed under the terms ┃
+ * ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
+ * ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ */
+
+@import "./defaults.css";
+
+perspective-viewer,
+perspective-viewer[theme="Solarized Dark"] {
+    --psp-theme-name: "Solarized Dark";
+}
+
+perspective-viewer[theme="Solarized Dark"] {
+    /* perspective-viewer-solarized--colors */
+    color: #586e75;
+    background-color: #eee8d5;
+    --psp--color: #586e75;
+    --psp-active--color: #268bd2;
+    --psp-error--color: #cb4b16;
+    --psp-inactive--color: #93a1a1;
+    --psp-inactive--border-color: var(--psp-inactive--color);
+    --psp--background-color: #fdf6e3;
+    --psp-column-type--float--color: #268bd2;
+    --psp-column-type--string--color: #cb4b16;
+    --psp-column-type--date--color: #2aa198;
+    --psp-column-type--boolean--color: #b58900;
+
+    /* perspective-viewer-solarized--datagrid */
+    --psp-datagrid--pos-cell--color: #268bd2 !important;
+    --psp-datagrid--neg-cell--color: #cb4b16 !important;
+    --psp-datagrid--hover--border-color: #ccc;
+    --psp-datagrid--border-color: #93a1a1;
+
+    /* perspective-viewer-solarized--d3fc */
+    --psp-d3fc--treemap--labels: black;
+    --psp-d3fc--treemap--hover-highlight: black;
+    --psp-d3fc--axis-ticks--color: #586e75;
+    --psp-d3fc--gridline--color: #eee8d5;
+    --psp-d3fc--series--color: #268bd2;
+    --psp-d3fc--series-1--color: #268bd2;
+    --psp-d3fc--series-2--color: #cb4b16;
+    --psp-d3fc--series-3--color: #b58900;
+    --psp-d3fc--series-4--color: #859900;
+    --psp-d3fc--series-5--color: #2aa198;
+    --psp-d3fc--series-6--color: #6c71c4;
+    --psp-d3fc--series-7--color: #d33682;
+    --psp-d3fc--pos-gradient--background: linear-gradient(
+        #268bd2 0%,
+        #2aa198,
+        #859900,
+        #b58900,
+        #cb4b16,
+        #dc322f,
+        #d33682 100%
+    );
+
+    /* perspective-viewer-solarized-dark--colors */
+    color: #93a1a1;
+    background-color: #002b36;
+
+    --psp-inactive--color: #586e75;
+    --psp-inactive--border-color: var(--psp-inactive--color);
+    --psp--background-color: #073642;
+
+    --psp-icon--select-arrow--mask-image: var(
+        --psp-icon--select-arrow-light--mask-image
+    );
+
+    --psp-icon--select-arrow-hover--mask-image: var(
+        --psp-icon--select-arrow-dark--mask-image
+    );
+
+    /* perspective-viewer-solarized-dark--d3fc */
+    --psp-d3fc--treemap--labels: white;
+    --psp-d3fc--treemap--hover-highlight: white;
+    --psp-d3fc--axis-ticks--color: #93a1a1;
+    --psp-d3fc--axis-lines--color: #93a1a1;
+    --psp-d3fc--gridline--color: #002b36;
+    --psp-d3fc--legend--color: #93a1a1;
+
+    --psp-d3fc--full-gradient--background: linear-gradient(
+        #cb4b16 0%,
+        #073642 50%,
+        #268bd2 100%
+    );
+
+    --psp-d3fc--neg-gradient--background: linear-gradient(
+        #cb4b16 0%,
+        #073642 100%
+    );
+}
+
+perspective-copy-menu[theme="Solarized Dark"],
+perspective-export-menu[theme="Solarized Dark"],
+perspective-dropdown[theme="Solarized Dark"],
+perspective-date-column-style[theme="Solarized Dark"],
+perspective-datetime-column-style[theme="Solarized Dark"],
+perspective-number-column-style[theme="Solarized Dark"],
+perspective-string-column-style[theme="Solarized Dark"] {
+    /* perspective-viewer-solarized--colors */
+    color: #586e75;
+    --psp--color: #586e75;
+    --psp-active--color: #268bd2;
+    --psp-error--color: #cb4b16;
+    --psp-inactive--color: #93a1a1;
+    --psp-inactive--border-color: var(--psp-inactive--color);
+    --psp--background-color: #fdf6e3;
+    --psp-column-type--float--color: #268bd2;
+    --psp-column-type--string--color: #cb4b16;
+    --psp-column-type--date--color: #2aa198;
+    --psp-column-type--boolean--color: #b58900;
+
+    /* perspective-viewer-solarized-dark--colors */
+    color: #93a1a1;
+    --psp-inactive--color: #586e75;
+    --psp-inactive--border-color: var(--psp-inactive--color);
+    --psp--background-color: #073642;
+
+    --psp-icon--select-arrow--mask-image: var(
+        --psp-icon--select-arrow-light--mask-image
+    );
+
+    --psp-icon--select-arrow-hover--mask-image: var(
+        --psp-icon--select-arrow-dark--mask-image
+    );
+
+    background-color: #073642;
+}

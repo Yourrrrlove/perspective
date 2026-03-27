@@ -152,15 +152,15 @@ export async function createModel(
         ]);
 
     const _plugin_background = chroma(
-        get_rule(regular, "--plugin--background", "#FFFFFF"),
+        get_rule(regular, "--psp--background-color", "#FFFFFF"),
     ).rgb();
 
     const _pos_fg_color = make_color_record(
-        get_rule(regular, "--rt-pos-cell--color", "#338DCD"),
+        get_rule(regular, "--psp-datagrid--pos-cell--color", "#338DCD"),
     );
 
     const _neg_fg_color = make_color_record(
-        get_rule(regular, "--rt-neg-cell--color", "#FF5942"),
+        get_rule(regular, "--psp-datagrid--neg-cell--color", "#FF5942"),
     );
 
     const _pos_bg_color = make_color_record(
@@ -172,7 +172,7 @@ export async function createModel(
     );
 
     const _color = make_color_record(
-        get_rule(regular, "--active--color", "#ff0000"),
+        get_rule(regular, "--psp-active--color", "#ff0000"),
     );
 
     const _schema: Schema = {

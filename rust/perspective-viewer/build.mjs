@@ -14,8 +14,14 @@ import { execSync } from "child_process";
 import { build } from "@perspective-dev/esbuild-plugin/build.js";
 import { NodeModulesExternal } from "@perspective-dev/esbuild-plugin/external.js";
 import * as fs from "node:fs";
-import { BuildCss } from "@prospective.co/procss/target/cjs/procss.js";
+import * as path from "node:path";
+import {
+    bundle as bundleCss,
+    composeVisitors,
+    bundleAsync as bundleAsyncCss,
+} from "lightningcss";
 import { compress } from "pro_self_extracting_wasm";
+import { get_host, inlineUrlVisitor, resolveNPM } from "./tools.mjs";
 
 const IS_DEBUG =
     !!process.env.PSP_DEBUG || process.argv.indexOf("--debug") >= 0;
@@ -25,19 +31,18 @@ const INHERIT = {
     stderr: "inherit",
 };
 
-function get_host() {
-    return /host\: (.+?)$/gm.exec(execSync(`rustc -vV`).toString())[1];
-}
-async function build_all() {
-    execSync(
-        `cargo bundle --target=${get_host()} -- perspective_viewer ${IS_DEBUG ? "" : "--release"}`,
-        INHERIT,
-    );
+export async function build_all() {
+    if (!process.env.PSP_SKIP_WASM) {
+        execSync(
+            `cargo bundle --target=${get_host()} -- perspective_viewer ${IS_DEBUG ? "" : "--release"}`,
+            INHERIT,
+        );
 
-    await compress(
-        "dist/wasm/perspective-viewer.wasm",
-        "dist/wasm/perspective-viewer.wasm",
-    );
+        await compress(
+            "dist/wasm/perspective-viewer.wasm",
+            "dist/wasm/perspective-viewer.wasm",
+        );
+    }
 
     // JavaScript
     const BUILD = [
@@ -109,41 +114,46 @@ async function build_all() {
     // Typecheck
     execSync("tsc --project tsconfig.json", INHERIT);
 
-    // Generate themes. `cargo` is not a great tool for this as there's no
-    // simple way to find the output artifact.
-    function add(builder, path) {
-        builder.add(path, fs.readFileSync(`./src/themes/${path}`).toString());
-    }
-
+    // Generate themes via lightningcss bundling.
     fs.mkdirSync("./dist/css/intl", { recursive: true });
-    const builder = new BuildCss("./src/themes");
-    add(builder, "variables.less");
-    add(builder, "intl.less");
-    add(builder, "icons.less");
-    add(builder, "pro.less");
-    add(builder, "pro-dark.less");
-    add(builder, "botanical.less");
-    add(builder, "monokai.less");
-    add(builder, "solarized.less");
-    add(builder, "solarized-dark.less");
-    add(builder, "vaporwave.less");
-    add(builder, "gruvbox.less");
-    add(builder, "gruvbox-dark.less");
-    add(builder, "dracula.less");
-    add(builder, "themes.less");
-    for (const [name, css] of builder.compile()) {
-        fs.writeFileSync(`dist/css/${name}`, css);
+    const themes = [
+        "icons",
+        "intl",
+        "pro",
+        "pro-dark",
+        "botanical",
+        "monokai",
+        "solarized",
+        "solarized-dark",
+        "vaporwave",
+        "gruvbox",
+        "gruvbox-dark",
+        "dracula",
+        "themes",
+    ];
+
+    for (const name of themes) {
+        const filename = `./src/themes/${name}.css`;
+        const { code } = await bundleAsyncCss({
+            filename,
+            minify: true,
+            visitor: inlineUrlVisitor(filename),
+            resolver: resolveNPM(import.meta.url),
+        });
+
+        fs.writeFileSync(`dist/css/${name}.css`, code);
     }
 
-    const intl_builder = new BuildCss("./src/themes/intl");
-    add(intl_builder, "intl/de.less");
-    add(intl_builder, "intl/es.less");
-    add(intl_builder, "intl/fr.less");
-    add(intl_builder, "intl/ja.less");
-    add(intl_builder, "intl/pt.less");
-    add(intl_builder, "intl/zh.less");
-    for (const [name, css] of intl_builder.compile()) {
-        fs.writeFileSync(`dist/css/intl/${name}`, css);
+    const intl_langs = ["de", "es", "fr", "ja", "pt", "zh"];
+    for (const lang of intl_langs) {
+        const filename = `./src/themes/intl/${lang}.css`;
+        const { code } = await bundleAsyncCss({
+            filename,
+            minify: true,
+            visitor: inlineUrlVisitor(filename),
+        });
+
+        fs.writeFileSync(`dist/css/intl/${lang}.css`, code);
     }
 }
 

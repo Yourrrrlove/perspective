@@ -12,13 +12,10 @@
 
 import { NodeModulesExternal } from "@perspective-dev/esbuild-plugin/external.js";
 import { build } from "@perspective-dev/esbuild-plugin/build.js";
-import { BuildCss } from "@prospective.co/procss/target/cjs/procss.js";
-import { promisify } from "node:util";
+import { bundle as bundleCss } from "lightningcss";
 import { execSync } from "node:child_process";
 import * as fs from "node:fs";
-import * as path_mod from "node:path";
-
-const exec = promisify(execSync);
+import { inlineUrlVisitor } from "@perspective-dev/viewer/tools.mjs";
 
 const BUILD = [
     {
@@ -74,21 +71,14 @@ const BUILD = [
     },
 ];
 
-function add(builder, path) {
-    builder.add(
-        path,
-        fs.readFileSync(path_mod.join("./src/less", path)).toString(),
-    );
-}
-
 async function compile_css() {
     fs.mkdirSync("dist/css", { recursive: true });
-    const builder = new BuildCss("");
-    add(builder, "./chart.less");
-    fs.writeFileSync(
-        "dist/css/perspective-viewer-d3fc.css",
-        builder.compile().get("chart.css"),
-    );
+    const { code } = bundleCss({
+        filename: "./src/css/chart.css",
+        minify: true,
+        visitor: inlineUrlVisitor("./src/css/chart.css"),
+    });
+    fs.writeFileSync("dist/css/perspective-viewer-d3fc.css", code);
 }
 
 async function build_all() {
@@ -100,7 +90,7 @@ async function build_all() {
     // esbuild can handle typescript files, and strips out types from the output,
     // but it is unable to check types, so we must run tsc as a separate step.
     try {
-        await exec("tsc", { stdio: "inherit" });
+        execSync("tsc", { stdio: "inherit" });
     } catch (error) {
         console.error(error);
         // tsc errors tend to get buried when running multiple package builds. If

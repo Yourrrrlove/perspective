@@ -61,7 +61,6 @@ async function initializeDuckDB() {
 }
 
 async function loadSampleData(db: duckdb.AsyncDuckDBConnection) {
-    // const c = await db.connect();
     try {
         const response = await fetch(SUPERSTORE_ARROW);
         const arrayBuffer = await response.arrayBuffer();
@@ -83,6 +82,6 @@ const client = await perspective.worker(server);
 const viewer = document.querySelector("perspective-viewer")!;
 viewer.load(client);
 viewer.restore({
-    table: "data_source_one",
+    table: "memory.data_source_one",
     group_by: ["State"],
 });

@@ -33,9 +33,9 @@ export function seriesColorRange(
     let gradient = settings.colorStyles.gradient.full;
 
     if (extent[0] >= 0) {
-        gradient = settings.colorStyles.gradient.positive;
+        gradient = settings.colorStyles.gradient.pos;
     } else if (extent[1] <= 0) {
-        gradient = settings.colorStyles.gradient.negative;
+        gradient = settings.colorStyles.gradient.neg;
     } else {
         const maxVal = Math.max(-extent[0], extent[1]);
         extent = [-maxVal, maxVal];

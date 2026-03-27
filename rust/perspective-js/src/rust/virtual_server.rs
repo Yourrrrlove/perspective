@@ -589,7 +589,6 @@ impl VirtualDataSlice {
 
     #[wasm_bindgen(js_name = "fromArrowIpc")]
     pub fn from_arrow_ipc(&self, ipc: Uint8Array) -> Result<(), JsValue> {
-        // tracing::error!("L {}", ipc.len());
         self.1
             .lock()
             .unwrap()

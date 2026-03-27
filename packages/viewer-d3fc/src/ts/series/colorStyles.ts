@@ -27,10 +27,10 @@ export const initialiseStyles = (
         };
 
         const computed = computedStyle(container);
-        styles["series"] = computed(`--d3fc-series`);
+        styles["series"] = computed(`--psp-d3fc--series--color`);
         for (let i = 1; ; i++) {
             const key = `series-${i}`;
-            const color = computed(`--d3fc-${key}`);
+            const color = computed(`--psp-d3fc--${key}--color`);
             if (!color) {
                 break;
             }
@@ -40,11 +40,11 @@ export const initialiseStyles = (
         }
 
         styles.opacity = getOpacityFromColor(styles.series);
-        styles.grid.gridLineColor = computed`--d3fc-gridline--color`;
+        styles.grid.gridLineColor = computed`--psp-d3fc--gridline--color`;
 
-        const gradients = ["full", "positive", "negative"];
+        const gradients = ["full", "pos", "neg"];
         gradients.forEach((g) => {
-            const gradient = computed(`--d3fc-${g}--gradient`);
+            const gradient = computed(`--psp-d3fc--${g}-gradient--background`);
             styles.gradient[g] = parseGradient(gradient, styles.opacity);
         });
 
