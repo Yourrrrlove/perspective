@@ -1,0 +1,73 @@
+<svg width="200" height="200" viewBox="-0 -0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <radialGradient id="spotlight">
+            <stop offset="60%" stop-color="white"/>
+            <stop offset="100%" stop-color="#afafaf"/>
+        </radialGradient>
+        <linearGradient id="main_color">
+            <stop stop-color="#e0dff5"/>
+        </linearGradient>
+        <linearGradient id="background_color">
+            <stop stop-color="#1A3038"/>
+        </linearGradient>
+        <linearGradient id="accent_color">
+            <stop stop-color="#264653"/>
+        </linearGradient>
+        <linearGradient id="highlight_color">
+            <stop stop-color="red"/>
+        </linearGradient>
+        <mask id="spotlight_mask" type="alpha">
+            <rect width="200" height="200" fill="url(#spotlight)" />
+        </mask>
+    </defs>
+    <g id="background">
+        <rect width="200" height="200" fill="#000000" />
+    </g>
+    <g mask="url(#spotlight_mask)">
+        <g id="background">
+            <rect width="200" height="200" fill="url(#background_color)" />
+        </g>
+        <g id="gridlines">
+            <polyline points="10,210 10,-10 55,-10 55,210 100,210 100,-10 145,-10 145,210 190,210 190,-10" stroke="url(#accent_color)" stroke-width="14" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="210,10 -10,10 -10,55 210,55 210,100 -10,100 -10,145 210,145 210,190 -10,190" stroke="url(#accent_color)" stroke-width="14" stroke-linejoin="miter" stroke-linecap="butt" />
+        </g>
+        <!-- <g id="gridlines" transform="translate(2, -2)">
+            <polyline points="10,210 10,-10 55,-10 55,210 100,210 100,-10 145,-10 145,210 190,210 190,-10" stroke="url(#highlight_color)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="210,10 -10,10 -10,55 210,55 210,100 -10,100 -10,145 210,145 210,190 -10,190" stroke="url(#highlight_color)" stroke-width="3" stroke-linejoin="miter" stroke-linecap="butt" />
+        </g> -->
+        <g id="gridlines">
+            <path transform="rotate(90, 100, 100)" d="M0 10 200 10 M0 55 L200 55 M200 100 0 100 M0 145 L200 145 M0 190 L200 190" stroke="url(#main_color)" stroke-width="4" stroke-linejoin="miter" stroke-linecap="butt" />
+            <path d="M0 10 200 10 M0 55 L200 55 M200 100 0 100 M0 145 L200 145 M0 190 L200 190" stroke="url(#main_color)" stroke-width="4" stroke-linejoin="miter" stroke-linecap="butt" />
+        </g>
+    </g>
+    <g>
+        <g id="diamond">
+            <polyline points="100,36 164,100 100,164 36,100 100,36" stroke="url(#accent_color)" stroke-width="14" fill="none" stroke-linejoin="miter" troke-linecap="butt" />
+            <!-- <polyline transform="translate(2.5, -2.5)" stroke="url(#highlight_color)" points="100,36 164,100 100,164 36,100 100,36" stroke-width="7" fill="none" stroke-linejoin="miter" troke-linecap="butt" /> -->
+            <polyline points="100,36 164,100 100,164 36,100 100,36" stroke="url(#main_color)" stroke-width="7" fill="none" stroke-linejoin="miter" troke-linecap="butt" />
+        </g>
+        <g id="square">
+            <rect x="55" y="55" width="90" height="90" stroke="url(#accent_color)" stroke-width="14" fill="none" stroke-linejoin="miter" />
+            <!-- <rect x="58.5" y="51.5" width="90" height="90" stroke="url(#highlight_color)" stroke-width="7" fill="none" stroke-linejoin="miter" /> -->
+            <rect x="55" y="55" width="90" height="90" stroke="url(#main_color)" stroke-width="7" fill="none" stroke-linejoin="miter" />
+        </g>
+        <g id="corners-shadows">
+            <polyline points="155,91 164,100 131,133" stroke="url(#accent_color)" stroke-width="14" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="109,155 100,164 67,131" stroke="url(#accent_color)" stroke-width="14" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="45,109 36,100 69,67" stroke="url(#accent_color)" stroke-width="14" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="91,45 100,36 133,69" stroke="url(#accent_color)" stroke-width="14" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+        </g>
+        <!-- <g id="corners-accents" transform="translate(2.5, -2.5)">
+            <polyline points="155,91 164,100 131,133" stroke="url(#highlight_color)" stroke-width="7" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="100,164 67,131" stroke="url(#highlight_color)" stroke-width="7" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="45,109 36,100" stroke="url(#highlight_color)" stroke-width="7" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="91,45 100,36 133,69" stroke="url(#highlight_color)" stroke-width="7" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+        </g> -->
+        <g id="corners">
+            <polyline points="155,91 164,100 131,133" stroke="url(#main_color)" stroke-width="7" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="109,155 100,164 67,131" stroke="url(#main_color)" stroke-width="7" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="45,109 36,100 69,67" stroke="url(#main_color)" stroke-width="7" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+            <polyline points="91,45 100,36 133,69" stroke="url(#main_color)" stroke-width="7" fill="none" stroke-linejoin="miter" stroke-linecap="butt" />
+        </g>
+    </g>
+</svg>
