@@ -124,7 +124,7 @@ pub enum PerspectiveViewerMsg {
     /// Update only stats-related fields of `session_props` without touching
     /// `config`.  This prevents `stats_changed` events (e.g. from `reset()`)
     /// from propagating a freshly-cleared config to the column selector.
-    UpdateSessionStats(Option<ViewStats>, bool),
+    UpdateSessionStats(Option<ViewStats>, Option<TableLoadState>),
 
     /// Increment/decrement the in-flight render counter threaded to
     /// `StatusIndicator` so it can show the "updating" spinner.
@@ -458,7 +458,9 @@ impl Component for PerspectiveViewer {
             ..
         } = ctx.props();
 
-        let is_settings_open = self.settings_open && self.session_props.has_table;
+        let is_settings_open = self.settings_open
+            && matches!(self.session_props.has_table, Some(TableLoadState::Loaded));
+
         let mut class = classes!();
         if !is_settings_open {
             class.push("settings-closed");
@@ -494,7 +496,7 @@ impl Component for PerspectiveViewer {
         let selected_tab = self.presentation_props.open_column_settings.tab;
         let plugin_name = self.renderer_props.plugin_name.clone();
         let available_plugins = self.renderer_props.available_plugins.clone();
-        let has_table = self.session_props.has_table;
+        let has_table = self.session_props.has_table.clone();
         let named_column_count = self
             .renderer_props
             .requirements
@@ -564,12 +566,13 @@ impl Component for PerspectiveViewer {
 
         let on_reset = ctx.link().callback(|all| Reset(all, None));
         let render_limits = self.renderer_props.render_limits;
-        let has_table = self.session_props.has_table;
+        let has_table = self.session_props.has_table.clone();
         let is_errored = self.session_props.error.is_some();
         let stats = self.session_props.stats.clone();
         let update_count = self.update_count;
         let error = self.session_props.error.clone();
-        let is_settings_open = self.settings_open && self.session_props.has_table;
+        let is_settings_open = self.settings_open
+            && matches!(self.session_props.has_table, Some(TableLoadState::Loaded));
         let title = self.session_props.title.clone();
         let selected_theme = self.presentation_props.selected_theme.clone();
         let available_themes = self.presentation_props.available_themes.clone();

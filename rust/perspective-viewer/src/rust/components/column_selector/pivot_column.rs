@@ -99,6 +99,7 @@ impl Component for PivotColumn {
                 ondragend={dragend}
             >
                 <div class="pivot-column-border">
+                    <span class="drag-handle icon" />
                     <TypeIcon ty={col_type} />
                     <span class="column_name">{ ctx.props().column.clone() }</span>
                 </div>

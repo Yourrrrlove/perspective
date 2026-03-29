@@ -350,6 +350,7 @@ impl Component for FilterColumn {
             >
                 <LocalStyle href={css!("filter-item")} />
                 <div class="pivot-column-border">
+                    <span class="drag-handle icon" />
                     // <TypeIcon ty={ColumnType::String} />
                     <TypeIcon ty={final_col_type} />
                     <span class="column_name">{ filter.column().to_owned() }</span>

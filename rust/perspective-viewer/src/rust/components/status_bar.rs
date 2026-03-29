@@ -44,7 +44,7 @@ pub struct StatusBarProps {
 
     // Value props threaded from the root's `SessionProps`.
     // Using these avoids PubSub subscriptions for table_loaded / table_errored.
-    pub has_table: bool,
+    pub has_table: Option<TableLoadState>,
     pub is_errored: bool,
     pub stats: Option<ViewStats>,
     /// In-flight render counter and full error, threaded to `StatusIndicator`.
@@ -274,7 +274,7 @@ impl Component for StatusBar {
             ..
         } = ctx.props();
 
-        let has_table = ctx.props().has_table;
+        let has_table = ctx.props().has_table.clone();
         let is_errored = ctx.props().is_errored;
         let is_settings_open = ctx.props().is_settings_open;
         let title = &ctx.props().title;
@@ -288,7 +288,7 @@ impl Component for StatusBar {
             is_updating_class_name.push(["settings-closed", "titled"]);
         };
 
-        if !has_table {
+        if !matches!(has_table, Some(TableLoadState::Loaded)) {
             is_updating_class_name.push("updating");
         }
 
@@ -307,7 +307,8 @@ impl Component for StatusBar {
             .link()
             .callback(|_: InputEvent| StatusBarMsg::TitleInputEvent);
 
-        let is_menu = has_table && ctx.props().on_settings.as_ref().is_none();
+        let is_menu = matches!(has_table, Some(TableLoadState::Loaded))
+            && ctx.props().on_settings.as_ref().is_none();
         let is_title = is_menu
             || ctx.props().is_workspace
             || title.is_some()
@@ -316,7 +317,7 @@ impl Component for StatusBar {
 
         let is_settings = title.is_some()
             || ctx.props().is_workspace
-            || !has_table
+            || !matches!(has_table, Some(TableLoadState::Loaded))
             || is_errored
             || is_settings_open
             || presentation.is_active(&self.input_ref.cast::<Element>());
@@ -374,7 +375,7 @@ impl Component for StatusBar {
                             {session}
                             update_count={ctx.props().update_count}
                             error={ctx.props().error.clone()}
-                            has_table={ctx.props().has_table}
+                            has_table={ctx.props().has_table.clone()}
                             stats={ctx.props().stats.clone()}
                         />
                         if is_title {
@@ -409,7 +410,8 @@ impl Component for StatusBar {
                                 <div id="plugin-settings"><slot name="statusbar-extra" /></div>
                                 <span class="hover-target">
                                     <span id="reset" class="button" onmousedown={&onreset}>
-                                        <span />
+                                        <span class="icon" />
+                                        <span class="icon-label" />
                                     </span>
                                 </span>
                                 <span
@@ -417,14 +419,20 @@ impl Component for StatusBar {
                                     class="hover-target"
                                     onmousedown={onexport}
                                 >
-                                    <span id="export" class="button"><span /></span>
+                                    <span id="export" class="button">
+                                        <span class="icon" />
+                                        <span class="icon-label" />
+                                    </span>
                                 </span>
                                 <span
                                     ref={&self.copy_ref}
                                     class="hover-target"
                                     onmousedown={oncopy}
                                 >
-                                    <span id="copy" class="button"><span /></span>
+                                    <span id="copy" class="button">
+                                        <span class="icon" />
+                                        <span class="icon-label" />
+                                    </span>
                                 </span>
                             </div>
                         }
@@ -433,8 +441,12 @@ impl Component for StatusBar {
                                 id="settings_button"
                                 class="noselect"
                                 onmousedown={x.reform(|_| ())}
-                            />
-                            <div id="close_button" class="noselect" onmousedown={onclose} />
+                            >
+                                <span class="icon" />
+                            </div>
+                            <div id="close_button" class="noselect" onmousedown={onclose}>
+                                <span class="icon" />
+                            </div>
                         }
                     </div>
                     <PortalModal
@@ -465,7 +477,9 @@ impl Component for StatusBar {
             let class = classes!(is_updating_class_name, "floating");
             html! {
                 <div id={ctx.props().id.clone()} {class}>
-                    <div id="settings_button" class="noselect" onmousedown={x.reform(|_| ())} />
+                    <div id="settings_button" class="noselect" onmousedown={x.reform(|_| ())}>
+                        <span class="icon" />
+                    </div>
                     <div id="close_button" class="noselect" onmousedown={&onclose} />
                 </div>
             }
@@ -512,6 +526,7 @@ fn ThemeSelector(props: &ThemeSelectorProps) -> Html {
                             onclick={props.on_reset.reform(|_| ())}
                         />
                         <span id="theme" class="button">
+                            <span class="icon" />
                             <Select<String>
                                 id="theme_selector"
                                 class="invert"

@@ -412,6 +412,7 @@ impl ResizingState {
                     Orientation::Vertical => event.client_y(),
                 })
             });
+
             move |x| cb.emit(x)
         });
 

@@ -18,7 +18,7 @@ use yew::prelude::*;
 
 use crate::custom_events::CustomEvents;
 use crate::renderer::Renderer;
-use crate::session::{Session, TableErrorState, ViewStats};
+use crate::session::{Session, TableErrorState, TableLoadState, ViewStats};
 use crate::utils::*;
 
 /// Value-prop version: no PubSub subscriptions, no reducer.
@@ -35,7 +35,7 @@ pub struct StatusIndicatorProps {
     /// Full error state (if any), used for the error dialog and reconnect.
     pub error: Option<TableErrorState>,
     /// Whether a table has been loaded.
-    pub has_table: bool,
+    pub has_table: Option<TableLoadState>,
     /// Row/column statistics — used to distinguish "loading" from "connected".
     pub stats: Option<ViewStats>,
 }
@@ -45,15 +45,6 @@ pub struct StatusIndicatorProps {
 /// reconnect callback when in an error state.
 #[function_component]
 pub fn StatusIndicator(props: &StatusIndicatorProps) -> Html {
-    // Derive the icon state directly from value props — no subscriptions needed.
-    //
-    // The precedence matches master's `Reducible` implementation:
-    // - Error always wins.
-    // - "Loading" is sticky: once stats lack `num_table_cells`, neither increment
-    //   nor decrement can leave `Loading`.  This matters when `load()` is called
-    //   with the same `Table` (no `create_view()`, so `view_created` never fires
-    //   and `update_count` never decrements).
-    // - "Updating" only shows when stats already have cells (normal operation).
     let has_table_cells = props
         .stats
         .as_ref()
@@ -67,7 +58,7 @@ pub fn StatusIndicator(props: &StatusIndicatorProps) -> Html {
             err.kind(),
             err.is_reconnect(),
         )
-    } else if !has_table_cells && props.has_table {
+    } else if !has_table_cells && matches!(props.has_table, Some(TableLoadState::Loading)) {
         StatusIconState::Loading
     } else if props.update_count > 0 {
         StatusIconState::Updating

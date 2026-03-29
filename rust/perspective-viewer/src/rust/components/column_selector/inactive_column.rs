@@ -171,6 +171,7 @@ impl Component for InactiveColumn {
                     {ondragend}
                 >
                     <div class="column-selector-column-border">
+                        <span class="drag-handle icon" />
                         <TypeIcon ty={col_type} />
                         <span class="column_name">{ ctx.props().name.clone() }</span>
                         <span class="column-selector--spacer" />

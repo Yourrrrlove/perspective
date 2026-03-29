@@ -106,12 +106,25 @@ pub fn color_chooser_component(props: &ColorRangeProps) -> Html {
 }
 
 fn infer_fg(color: &str) -> &'static str {
-    let r = i32::from_str_radix(&color[1..3], 16).unwrap_or(255) as f64;
-    let g = i32::from_str_radix(&color[3..5], 16).unwrap_or(0) as f64;
-    let b = i32::from_str_radix(&color[5..7], 16).unwrap_or(0) as f64;
-    if (r * r * 0.299 + g * g * 0.587 + b * b * 0.114).sqrt() > 130.0 {
-        "--sign--color:#161616"
+    if color.len() >= 7 {
+        let r = i32::from_str_radix(&color[1..3], 16).unwrap_or(255) as f64;
+        let g = i32::from_str_radix(&color[3..5], 16).unwrap_or(0) as f64;
+        let b = i32::from_str_radix(&color[5..7], 16).unwrap_or(0) as f64;
+        if (r * r * 0.299 + g * g * 0.587 + b * b * 0.114).sqrt() > 130.0 {
+            "--sign--color:var(--psp--color)"
+        } else {
+            "--sign--color:var(--psp--background-color)"
+        }
+    } else if color.len() == 4 {
+        let r = i32::from_str_radix(&color[1..2], 16).unwrap_or(15) as f64;
+        let g = i32::from_str_radix(&color[2..3], 16).unwrap_or(0) as f64;
+        let b = i32::from_str_radix(&color[3..4], 16).unwrap_or(0) as f64;
+        if (r * r * 0.299 + g * g * 0.587 + b * b * 0.114).sqrt() > 8.0 {
+            "--sign--color:var(--psp--color)"
+        } else {
+            "--sign--color:var(--psp--background-color)"
+        }
     } else {
-        "--sign--color:#FFFFFF"
+        "--sign--color:var(--psp--color)"
     }
 }

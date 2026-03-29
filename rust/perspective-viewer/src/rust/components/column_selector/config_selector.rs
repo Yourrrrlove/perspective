@@ -615,6 +615,7 @@ impl Component for ConfigSelector {
                             <Select<GroupRollupMode>
                                 id="group_rollup_mode_selector"
                                 wrapper_class="group_rollup_wrapper"
+                                is_autosize=true
                                 values={Rc::new(
                                 group_rollups
                                     .iter()

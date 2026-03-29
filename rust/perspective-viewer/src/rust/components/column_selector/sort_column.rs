@@ -132,6 +132,7 @@ impl Component for SortColumn {
                 ondragend={dragend}
             >
                 <div class="pivot-column-border">
+                    <span class="drag-handle icon" />
                     <TypeIcon ty={col_type} />
                     // <TypeIcon ty={ColumnType::String} />
                     <span class="column_name">{ ctx.props().sort.0.to_owned() }</span>

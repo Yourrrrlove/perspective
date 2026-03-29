@@ -20,7 +20,7 @@ use crate::custom_events::CustomEvents;
 use crate::presentation::Presentation;
 use crate::renderer::limits::RenderLimits;
 use crate::renderer::*;
-use crate::session::{Session, TableErrorState, ViewStats};
+use crate::session::{Session, TableErrorState, TableLoadState, ViewStats};
 use crate::utils::*;
 
 #[derive(Clone, Properties)]
@@ -39,7 +39,7 @@ pub struct MainPanelProps {
 
     /// Value props from root's `SessionProps`, threaded to `StatusBar` /
     /// `StatusIndicator`.
-    pub has_table: bool,
+    pub has_table: Option<TableLoadState>,
     pub is_errored: bool,
     pub stats: Option<ViewStats>,
     pub update_count: u32,
@@ -133,7 +133,8 @@ impl Component for MainPanel {
             ..
         } = ctx.props();
 
-        let is_settings_open = ctx.props().is_settings_open && ctx.props().has_table;
+        let is_settings_open = ctx.props().is_settings_open
+            && matches!(ctx.props().has_table, Some(TableLoadState::Loaded));
 
         let on_settings = (!is_settings_open).then(|| ctx.props().on_settings.clone());
 
@@ -165,7 +166,7 @@ impl Component for MainPanel {
                     id="status_bar"
                     {on_settings}
                     on_reset={ctx.props().on_reset.clone()}
-                    has_table={ctx.props().has_table}
+                    has_table={ctx.props().has_table.clone()}
                     is_errored={ctx.props().is_errored}
                     stats={ctx.props().stats.clone()}
                     update_count={ctx.props().update_count}

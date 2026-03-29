@@ -10,7 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -20,6 +20,7 @@ use web_sys::*;
 use yew::html::ImplicitClone;
 use yew::prelude::*;
 
+use crate::js::{IntersectionObserver, IntersectionObserverEntry};
 use crate::utils::*;
 use crate::*;
 
@@ -57,7 +58,8 @@ impl DragState {
     }
 }
 
-#[derive(Default)]
+pub type DragEndCallback = Closure<dyn FnMut(DragEvent)>;
+
 pub struct DragDropState {
     drag_state: RefCell<DragState>,
     pub drop_received: PubSub<(String, DragTarget, DragEffect, usize)>,
@@ -69,13 +71,38 @@ pub struct DragDropState {
     /// Injected callback from the root component, replacing the former
     /// `dragend_received: PubSub` field.
     pub on_dragend: RefCell<Option<Callback<()>>>,
+
+    /// The host `<perspective-viewer>` element, used to attach the fallback
+    /// `dragend` listener on a stable DOM node outside the virtual DOM.
+    elem: HtmlElement,
+
+    /// Host-level `dragend` listener closure, stored so it can be removed
+    /// when a new drag starts.  Attached to `elem` rather than `document`
+    /// to keep the listener scoped to this component instance.
+    host_dragend: RefCell<Option<DragEndCallback>>,
+
+    drag_target: RefCell<Option<DragTargetState>>,
 }
 
 /// The `<perspective-viewer>` drag/drop service, which manages drag/drop user
 /// interactions across components.  It is a component-level service, since only
 /// one drag/drop action can be executed by the user at a time.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct DragDrop(Rc<DragDropState>);
+
+impl DragDrop {
+    pub fn new(elem: &HtmlElement) -> Self {
+        Self(Rc::new(DragDropState {
+            drag_state: Default::default(),
+            drop_received: Default::default(),
+            on_dragstart: Default::default(),
+            on_dragend: Default::default(),
+            elem: elem.clone(),
+            host_dragend: Default::default(),
+            drag_target: Default::default(),
+        }))
+    }
+}
 
 impl Deref for DragDrop {
     type Target = Rc<DragDropState>;
@@ -132,7 +159,7 @@ impl DragDrop {
         event.stop_propagation();
         if let Some(dt) = event.data_transfer() {
             dt.set_drop_effect("move");
-            dt.set_data("text/plain", "{}").unwrap();
+            // dt.set_data("text/plain", "{}").unwrap();
         }
 
         let original: HtmlElement = event.target().into_apierror()?.unchecked_into();
@@ -151,6 +178,10 @@ impl DragDrop {
             event.offset_y(),
         );
 
+        *self.drag_target.borrow_mut() =
+            Some(DragTargetState::new(self.elem.clone(), original.clone()));
+
+        // Drag image does not register correctly unless we wait.
         ApiFuture::spawn(async move {
             request_animation_frame().await;
             original.remove_child(&elem)?;
@@ -174,6 +205,7 @@ impl DragDrop {
     pub fn notify_drop(&self, event: &DragEvent) {
         event.prevent_default();
         event.stop_propagation();
+
         let action = match &*self.drag_state.borrow() {
             DragState::DragOverInProgress(
                 DragFrom { column, effect },
@@ -182,6 +214,7 @@ impl DragDrop {
             _ => None,
         };
 
+        self.drag_target.borrow_mut().take();
         *self.drag_state.borrow_mut() = DragState::NoDrag;
         if let Some(action) = action {
             self.drop_received.emit(action);
@@ -191,6 +224,7 @@ impl DragDrop {
     /// Start the drag/drop action with the name of the column being dragged.
     pub fn notify_drag_start(&self, column: String, effect: DragEffect) {
         *self.drag_state.borrow_mut() = DragState::DragInProgress(DragFrom { column, effect });
+        self.register_host_dragend();
         let emit = self.on_dragstart.borrow().clone();
         ApiFuture::spawn(async move {
             request_animation_frame().await;
@@ -205,11 +239,36 @@ impl DragDrop {
     /// End the drag/drop action by resetting the state to default.
     pub fn notify_drag_end(&self) {
         if self.drag_state.borrow().is_drag_in_progress() {
+            self.drag_target.borrow_mut().take();
             *self.drag_state.borrow_mut() = DragState::NoDrag;
             if let Some(cb) = self.on_dragend.borrow().as_ref() {
                 cb.emit(());
             }
         }
+    }
+
+    /// Register a `dragend` listener on the host `<perspective-viewer>`
+    /// element so that drag-end cleanup fires even when Yew re-renders
+    /// remove the original dragged element from the shadow DOM.  The host
+    /// element is outside the virtual DOM and therefore stable.
+    fn register_host_dragend(&self) {
+        // Remove any previously registered listener.
+        if let Some(prev) = self.host_dragend.borrow_mut().take() {
+            let _ = self
+                .elem
+                .remove_event_listener_with_callback("dragend", prev.as_ref().unchecked_ref());
+        }
+
+        let this = self.clone();
+        let closure = Closure::wrap(Box::new(move |_event: DragEvent| {
+            this.notify_drag_end();
+        }) as Box<dyn FnMut(DragEvent)>);
+
+        self.elem
+            .add_event_listener_with_callback("dragend", closure.as_ref().unchecked_ref())
+            .unwrap();
+
+        *self.host_dragend.borrow_mut() = Some(closure);
     }
 
     /// Leave the `action` zone.
@@ -363,6 +422,60 @@ impl DragDropContainer {
             dragenter: dragenter_helper(ondragenter, noderef.clone()),
             dragleave: dragleave_helper(ondragleave, noderef.clone()),
             noderef,
+        }
+    }
+}
+
+/// A really, really unfortunate hack that is needed to guarantee that `dragend`
+/// is called even under aggressive DOM mutation after `dragstart` is fired.
+struct DragTargetState {
+    target: HtmlElement,
+    shadow_root: ShadowRoot,
+    alive: Rc<Cell<bool>>,
+    observer: IntersectionObserver,
+}
+
+impl DragTargetState {
+    fn new(host: HtmlElement, target: HtmlElement) -> Self {
+        let shadow_root = host.shadow_root().unwrap();
+        let alive = Rc::new(Cell::new(true));
+        let observer = IntersectionObserver::new(
+            &Closure::<dyn FnMut(js_sys::Array)>::new({
+                clone!(target, shadow_root, alive);
+                move |records: js_sys::Array| {
+                    if !alive.get() {
+                        return;
+                    }
+
+                    for record in records.iter() {
+                        let record: IntersectionObserverEntry = record.unchecked_into();
+                        if !record.is_intersecting() {
+                            shadow_root.append_child(&target).unwrap();
+                            return;
+                        }
+                    }
+                }
+            })
+            .into_js_value()
+            .unchecked_into(),
+        );
+
+        observer.observe(target.as_ref());
+        Self {
+            target,
+            shadow_root,
+            alive,
+            observer,
+        }
+    }
+}
+
+impl Drop for DragTargetState {
+    fn drop(&mut self) {
+        self.alive.set(false);
+        self.observer.unobserve(&self.target);
+        if self.target.is_connected() {
+            let _ = self.shadow_root.remove_child(&self.target);
         }
     }
 }

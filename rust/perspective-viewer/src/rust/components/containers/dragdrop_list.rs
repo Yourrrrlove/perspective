@@ -309,6 +309,7 @@ where
                             if ctx.props().disabled && ctx.props().is_dragover.is_none() {
                                 <div class="pivot-column">
                                     <div class="pivot-column-border pivot-column-total">
+                                        <span class="drag-handle icon" />
                                         <TypeIcon ty={ColumnType::Integer} />
                                         <span class="column_name">{ "TOTAL" }</span>
                                     </div>
