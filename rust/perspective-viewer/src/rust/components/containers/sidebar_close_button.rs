@@ -24,7 +24,7 @@ pub fn SidebarCloseButton(p: &SidebarCloseButtonProps) -> Html {
     let id = &p.id;
     html! {
         <div {onclick} {id} class="sidebar_close_button">
-            <div class="sidebar_close_button_inner" />
+            <div class="sidebar_close_button_inner"><span class="icon" /></div>
         </div>
     }
 }

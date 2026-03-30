@@ -33,7 +33,7 @@ use yew::prelude::*;
 
 use self::metadata::*;
 pub use self::metadata::{MetadataRef, SessionMetadata, SessionMetadataRc};
-pub use self::props::SessionProps;
+pub use self::props::{SessionProps, TableLoadState};
 pub use self::view_subscription::ViewStats;
 use self::view_subscription::*;
 use crate::js::plugin::*;
@@ -78,6 +78,7 @@ pub struct SessionData {
     config: ViewConfig,
     view_sub: Option<ViewSubscription>,
     stats: Option<ViewStats>,
+    is_loading: bool,
     is_clean: bool,
     is_paused: bool,
     error: Option<TableErrorState>,
@@ -119,6 +120,13 @@ impl TableErrorState {
     }
 }
 
+#[derive(Debug, Default)]
+pub enum TableIntermediateState {
+    #[default]
+    Ejected,
+    Reloaded,
+}
+
 /// Options for [`Session::reset`]
 #[derive(Default)]
 pub struct ResetOptions {
@@ -126,7 +134,7 @@ pub struct ResetOptions {
     pub expressions: bool,
 
     /// Reset the [`Table`]
-    pub table: bool,
+    pub table: Option<TableIntermediateState>,
 
     /// Reset the [`ViewConfig`]
     pub config: bool,
@@ -200,16 +208,27 @@ impl Session {
             self.borrow_mut().config.reset(options.expressions);
         }
 
-        if options.table {
-            self.borrow_mut().table = None;
-            self.borrow_mut().metadata = SessionMetadata::default();
-        }
+        match options.table {
+            Some(TableIntermediateState::Ejected) => {
+                self.borrow_mut().is_loading = false;
+                self.borrow_mut().table = None;
+                self.borrow_mut().metadata = SessionMetadata::default();
+            },
+            Some(TableIntermediateState::Reloaded) => {
+                self.borrow_mut().is_loading = true;
+                self.borrow_mut().table = None;
+                self.borrow_mut().metadata = SessionMetadata::default();
+            },
+            _ => {
+                self.borrow_mut().is_loading = false;
+            },
+        };
 
         let table_unloaded = self.table_unloaded.callback();
         self.borrow_mut().is_clean = false;
         async move {
             let res = view.delete().await;
-            if options.table {
+            if options.table.is_some() {
                 table_unloaded.emit(true)
             }
 
@@ -217,8 +236,15 @@ impl Session {
         }
     }
 
-    pub(crate) fn has_table(&self) -> bool {
-        self.borrow().table.is_some()
+    pub(crate) fn has_table(&self) -> Option<TableLoadState> {
+        let data = self.borrow();
+        if data.table.is_some() {
+            Some(TableLoadState::Loaded)
+        } else if data.is_loading {
+            Some(TableLoadState::Loading)
+        } else {
+            None
+        }
     }
 
     pub fn get_table(&self) -> Option<perspective_client::Table> {
@@ -289,6 +315,7 @@ impl Session {
                 let sub = self.borrow_mut().view_sub.take();
                 self.borrow_mut().metadata = metadata;
                 self.borrow_mut().table = Some(table);
+                self.borrow_mut().is_loading = false;
                 self.borrow_mut().is_clean = false;
                 sub.delete().await?;
                 self.table_loaded.emit(());
@@ -381,6 +408,7 @@ impl Session {
         let err = self.borrow().error.clone();
         if let Some(TableErrorState(_, Some(reconnect))) = err {
             reconnect().await?;
+            self.borrow_mut().is_loading = false;
             self.borrow_mut().error = None;
             self.borrow_mut().is_clean = false;
             self.borrow_mut().view_sub = None;
@@ -748,7 +776,13 @@ impl Session {
         SessionProps {
             config: PtrEqRc::new(data.config.clone()),
             stats: data.stats.clone(),
-            has_table: data.table.is_some(),
+            has_table: if data.table.is_some() {
+                Some(TableLoadState::Loaded)
+            } else if data.is_loading {
+                Some(TableLoadState::Loading)
+            } else {
+                None
+            },
             error: data.error.clone(),
             title: data.title.clone(),
             metadata: PtrEqRc::new(data.metadata.clone()),

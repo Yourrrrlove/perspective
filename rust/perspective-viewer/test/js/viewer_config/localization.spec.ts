@@ -47,7 +47,7 @@ test.describe("Localization", function () {
     });
 
     const intl = fs
-        .readFileSync(`${__dirname}/../../../src/themes/intl.less`)
+        .readFileSync(`${__dirname}/../../../src/themes/intl.css`)
         .toString();
 
     const keys = Array.from(intl.matchAll(/--[a-zA-Z0-9\-]+/g)).flat();

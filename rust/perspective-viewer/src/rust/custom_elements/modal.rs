@@ -286,7 +286,7 @@ where
 fn get_theme(elem: &HtmlElement) -> Option<String> {
     let styles = global::window().get_computed_style(elem).unwrap().unwrap();
     styles
-        .get_property_value("--theme-name")
+        .get_property_value("--psp-theme-name")
         .ok()
         .and_then(|x| {
             let trimmed = x.trim();

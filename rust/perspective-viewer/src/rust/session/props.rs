@@ -20,6 +20,13 @@ use crate::session::replace_expression_update::ViewConfigExt as ReplaceExprExt;
 use crate::session::{TableErrorState, ViewStats};
 use crate::utils::*;
 
+#[derive(Clone, Debug, PartialEq, Default)]
+pub enum TableLoadState {
+    #[default]
+    Loaded,
+    Loading,
+}
+
 /// Value-semantic snapshot of the session state read by the root component.
 ///
 /// This does not hold any async handles (`Table`, `View`, `Client`).  Those
@@ -34,7 +41,7 @@ pub struct SessionProps {
     pub stats: Option<ViewStats>,
 
     /// `true` if a `Table` has been loaded into this session.
-    pub has_table: bool,
+    pub has_table: Option<TableLoadState>,
 
     /// Non-`None` when the session is in an error state (e.g. table load
     /// failure or client disconnection).

@@ -10,20 +10,18 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import sh from "../../tools/scripts/sh.mjs";
+import { execSync } from "child_process";
 
 let flags = "--release";
 if (!!process.env.PSP_DEBUG) {
     flags = "";
 }
 
-const cmd = sh();
+const env = { ...process.env };
 
 // if not windows
 if (process.platform !== "win32") {
-    cmd.env({
-        PSP_ROOT_DIR: "../..",
-    });
+    env.PSP_ROOT_DIR = "../..";
 }
 
 let target = "";
@@ -40,5 +38,4 @@ if (process.env.PSP_ARCH === "x86_64" && process.platform === "darwin") {
     target = "--target=aarch64-unknown-linux-gnu";
 }
 
-cmd.sh(`cargo build ${flags} ${target}`);
-cmd.runSync();
+execSync(`cargo build ${flags} ${target}`, { stdio: "inherit", env });

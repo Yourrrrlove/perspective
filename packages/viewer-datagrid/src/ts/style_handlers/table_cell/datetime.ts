@@ -17,20 +17,23 @@ import {
 } from "../../color_utils.js";
 import type { DatagridModel, ColumnConfig, ColorRecord } from "../../types.js";
 
+interface PluginWithColor extends Omit<ColumnConfig, "color"> {
+    color?: ColorRecord;
+}
+
 export function cell_style_datetime(
     this: DatagridModel,
-    plugin: ColumnConfig,
+    plugin: PluginWithColor,
     td: HTMLElement,
     metadata: CellMetadata,
 ): void {
-    const colorRecord: ColorRecord = //(() => {
-        // if (plugin?.color !== undefined) {
-        //     return plugin.color;
-        // } else {
-        // return
-        this._color;
-    // }
-    //  })();
+    const colorRecord: ColorRecord = (() => {
+        if (plugin?.color !== undefined) {
+            return plugin.color;
+        } else {
+            return this._color;
+        }
+    })();
 
     const [hex, r, g, b] = colorRecord;
 

@@ -11,7 +11,7 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import * as fs from "node:fs";
-import sh from "../../tools/scripts/sh.mjs";
+import { execSync } from "child_process";
 import * as url from "url";
 import * as toml from "@iarna/toml";
 import * as tar from "tar";
@@ -38,22 +38,20 @@ fs.mkdirSync(`./perspective_python-${version}.data`, { recursive: true });
 fs.copyFileSync("../../LICENSE.md", "./LICENSE.md");
 
 const cwd = process.cwd();
-const cmd = sh();
+const env = { ...process.env };
 
+let emsdk_prefix = "";
 if (is_pyodide) {
-    const emsdkdir = sh.path`${__dirname}/../../.emsdk`;
+    const emsdkdir = path.resolve(__dirname, "../../.emsdk");
     const { emscripten } = JSON.parse(
-        fs.readFileSync(sh.path`${__dirname}/../../package.json`),
+        fs.readFileSync(path.resolve(__dirname, "../../package.json")),
     );
-    cmd.sh`cd ${emsdkdir}`.sh`. ./emsdk_env.sh`
-        .sh`./emsdk activate ${emscripten}`.sh`cd ${cwd}`;
+    emsdk_prefix = `cd ${emsdkdir} && . ./emsdk_env.sh && ./emsdk activate ${emscripten} && cd ${cwd} && `;
 }
 
 // if not windows
 if (process.platform !== "win32") {
-    cmd.env({
-        PSP_ROOT_DIR: "../..",
-    });
+    env.PSP_ROOT_DIR = "../..";
 }
 
 const build_wheel = !!process.env.PSP_BUILD_WHEEL || is_pyodide;
@@ -101,7 +99,7 @@ if (build_wheel) {
         features.push(...standard_features);
     }
 
-    cmd.sh(`maturin build ${flags} --features=${features.join(",")} ${target}`);
+    execSync(`${emsdk_prefix}maturin build ${flags} --features=${features.join(",")} ${target}`, { stdio: "inherit", env });
 }
 
 if (build_sdist) {
@@ -154,15 +152,10 @@ if (process.env["PSP_UV"] === "1") {
 
 if (!build_wheel && !build_sdist) {
     const dev_features = ["abi3"];
-    cmd.sh(
-        `maturin develop --features=${dev_features.join(
-            ",",
-        )} ${flags} ${target}`,
+    execSync(
+        `${emsdk_prefix}maturin develop --features=${dev_features.join(",")} ${flags} ${target}`,
+        { stdio: "inherit", env },
     );
-}
-
-if (!cmd.isEmpty()) {
-    cmd.runSync();
 }
 
 // Generates version 2.3 according to https://packaging.python.org/en/latest/specifications/core-metadata/

@@ -330,7 +330,7 @@ impl Component for ActiveColumn {
                     }))
                 };
 
-                let ondragend = &ctx.props().ondragend.reform(|_| tracing::error!("dragend"));
+                let ondragend = &ctx.props().ondragend.reform(|_| ());
                 let ondragstart = ctx.link().callback({
                     let event_name = name.to_owned();
                     let dragdrop = ctx.props().dragdrop.clone();
@@ -375,6 +375,7 @@ impl Component for ActiveColumn {
                             {ondragend}
                         >
                             <div class="column-selector-column-border">
+                                <span class="drag-handle icon" />
                                 <TypeIcon ty={col_type} />
                                 if ctx.props().is_aggregated {
                                     <AggregateSelector

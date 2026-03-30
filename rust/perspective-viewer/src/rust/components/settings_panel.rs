@@ -39,7 +39,7 @@ pub struct SettingsPanelProps {
     /// Value props threaded from the root's `RendererProps` / `SessionProps`.
     pub plugin_name: Option<String>,
     pub available_plugins: PtrEqRc<Vec<String>>,
-    pub has_table: bool,
+    pub has_table: Option<TableLoadState>,
     pub named_column_count: usize,
     pub view_config: PtrEqRc<ViewConfig>,
     /// Column currently being dragged (if any) — threaded to show drag
@@ -171,7 +171,7 @@ pub fn SettingsPanel(props: &SettingsPanelProps) -> Html {
                 on_resize={&props.on_resize}
                 on_open_expr_panel={&props.on_select_column}
                 {selected_column}
-                has_table={props.has_table}
+                has_table={props.has_table.clone()}
                 named_column_count={props.named_column_count}
                 view_config={props.view_config.clone()}
                 drag_column={props.drag_column.clone()}

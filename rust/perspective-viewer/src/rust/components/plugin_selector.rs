@@ -90,7 +90,9 @@ impl Component for PluginSelector {
                     <PluginSelect name={plugin_name} on_click={callback} />
                     <div id="plugin_selector_border" />
                     if self.is_open {
-                        <div class="plugin-selector-options">{ items.collect::<Html>() }</div>
+                        <div class="plugin-selector-options scrollable">
+                            { items.collect::<Html>() }
+                        </div>
                     }
                 </div>
             </>
@@ -123,9 +125,10 @@ fn PluginSelect(props: &PluginSelectProps) -> Html {
         <div
             class="plugin-select-item"
             data-plugin={name.clone()}
-            style={format!("--default-column-title:var(--plugin-name-{}--content, \"{}\")", path, props.name)}
+            style={format!("--default-column-title:var(--psp-plugin-name--{}--content, \"{}\")", path, props.name)}
             onclick={props.on_click.reform(move |_| name.clone())}
         >
+            <span class="icon" />
             <span class="plugin-select-item-name" />
         </div>
     }

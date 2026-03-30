@@ -149,7 +149,7 @@ export class PerspectiveDockPanel extends DockPanel {
             parseInt(
                 window
                     .getComputedStyle(this._workspace.element)
-                    .getPropertyValue("--workspace-spacing"),
+                    .getPropertyValue("--psp-workspace--spacing"),
             ) || 0;
         1;
     }

@@ -1,0 +1,102 @@
+/* ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+ * ┃ ██████ ██████ ██████       █      █      █      █      █ █▄  ▀███ █       ┃
+ * ┃ ▄▄▄▄▄█ █▄▄▄▄▄ ▄▄▄▄▄█  ▀▀▀▀▀█▀▀▀▀▀ █ ▀▀▀▀▀█ ████████▌▐███ ███▄  ▀█ █ ▀▀▀▀▀ ┃
+ * ┃ █▀▀▀▀▀ █▀▀▀▀▀ █▀██▀▀ ▄▄▄▄▄ █ ▄▄▄▄▄█ ▄▄▄▄▄█ ████████▌▐███ █████▄   █ ▄▄▄▄▄ ┃
+ * ┃ █      ██████ █  ▀█▄       █ ██████      █      ███▌▐███ ███████▄ █       ┃
+ * ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
+ * ┃ Copyright (c) 2017, the Perspective Authors.                              ┃
+ * ┃ ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌ ┃
+ * ┃ This file is part of the Perspective library, distributed under the terms ┃
+ * ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
+ * ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛ */
+
+perspective-viewer,
+perspective-dropdown {
+    /* Config */
+    --psp-label--group-by--content: "Agrupar por";
+    --psp-label--split-by--content: "Dividir por";
+    --psp-label--sort--content: "Ordenar por";
+    --psp-label--filter--content: "Dónde";
+    --psp-label--transpose-button--content: "Intercambio";
+    --psp-label--config-button--content: "Configurar";
+    --psp-label--all-columns--content: "Todas las columnas";
+    --psp-label--untitled--content: "Intitulado";
+
+    /* Plugin names */
+    --psp-plugin-name--datagrid--content: "Cuadrícula de datos";
+    --psp-plugin-name--treemap--content: "Mapa de árbol";
+    --psp-plugin-name--sunburst--content: "resplandor solar";
+    --psp-plugin-name--heatmap--content: "Mapa de calor";
+    --psp-plugin-name--x-bar--content: "Barra X";
+    --psp-plugin-name--y-bar--content: "Y Bar";
+    --psp-plugin-name--y-line--content: "Y Line";
+    --psp-plugin-name--x-y-line--content: "Línea X/Y";
+    --psp-plugin-name--x-y-scatter--content: "Dispersión X/Y";
+    --psp-plugin-name--y-scatter--content: "Dispersión Y";
+    --psp-plugin-name--y-area--content: "Y Area";
+    --psp-plugin-name--ohlc--content: "Ay";
+    --psp-plugin-name--candlestick--content: "Candelero";
+
+    /* Column Selector names */
+    --psp-label--column-columns--content: "columnas";
+    --psp-label--column-x-axis--content: "Eje X";
+    --psp-label--column-y-axis--content: "Y Axis";
+    --psp-label--column-color--content: "Color";
+    --psp-label--column-size--content: "Tamaño";
+    --psp-label--column-symbol--content: "Símbolo";
+    --psp-label--column-label--content: "Etiqueta";
+    --psp-label--column-tooltip--content: "Información sobre herramientas";
+    --psp-label--add-expression-button--content: "Nueva columna";
+
+    /* Toolbar */
+    --psp-label--no-results--content: "Columna no válida";
+    --psp-datagrid--column-edit-button--content: "Editar";
+    --psp-label--copy-button--content: "Copiar";
+    --psp-label--export-button--content: "Exportar";
+    --psp-label--reset-button--content: "Reiniciar";
+    --psp-label--edit-mode-read-only--content: "Read Only";
+    --psp-label--edit-mode-edit--content: "Text Edit";
+    --psp-label--edit-mode-select-row--content: "Select Row";
+    --psp-label--edit-mode-select-column--content: "Select Column";
+    --psp-label--edit-mode-select-region--content: "Select Region";
+    --psp-label--scroll-lock-toggle--content: "Desplazamiento libre";
+    --psp-label--scroll-lock-alt-toggle--content: "Alinear desplazamiento";
+
+    /* Column Settings */
+    --psp-label--color--content: "Color";
+    --psp-label--format--content: "Formato";
+    --psp-label--timezone--content: "Zona horaria";
+    --psp-label--date-style--content: "Estilo de fecha";
+    --psp-label--time-style--content: "Estilo de hora";
+    --psp-label--foreground--content: "Primer plano";
+    --psp-label--background--content: "Fondo";
+    --psp-label--series--content: "Serie";
+    --psp-label--color-range--content: "Gama de colores";
+    --psp-label--style--content: "Estilo";
+    --psp-label--minimum-integer-digits--content: "Dígitos enteros mínimos";
+    --psp-label--rounding-increment--content: "Incremento de redondeo";
+    --psp-label--notation--content: "Notación";
+    --psp-label--use-grouping--content: "Usar agrupación";
+    --psp-label--sign-display--content: "Visualización de letreros";
+    --psp-label--max-value--content: "Valor máximo";
+    --psp-label--rounding-priority--content: "Prioridad de redondeo";
+    --psp-label--rounding-mode--content: "Modo de redondeo";
+    --psp-label--trailing-zero-display--content: "Visualización del cero final";
+    --psp-label--fractional-digits--content: "Dígitos fraccionarios";
+    --psp-label--significant-digits--content: "Dígitos significantes";
+    --psp-label--year--content: "Año";
+    --psp-label--month--content: "Mes";
+    --psp-label--day--content: "Día";
+    --psp-label--weekday--content: "Día laborable";
+    --psp-label--hour--content: "Hora";
+    --psp-label--minute--content: "Minuto";
+    --psp-label--second--content: "Segundo";
+    --psp-label--fractional-seconds--content: "Segundos fraccionarios";
+    --psp-label--hours--content: "12/24 Horas";
+    --psp-label--aggregate-depth--content: "Profundidad agregada";
+
+    /* Tabs */
+    --psp-label--style-tab--content: "Estilo";
+    --psp-label--attributes-tab--content: "Atributos";
+    --psp-label--debug-tab--content: "Debug JSON";
+}

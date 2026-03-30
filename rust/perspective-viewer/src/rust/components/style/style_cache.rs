@@ -24,7 +24,11 @@ type CSSResource = (&'static str, &'static str);
 /// A dictionary of CSS fragments for native HTML elements which should always
 /// be loaded (and perhaps lack yew components wrappers from which to have
 /// their styles registered).
-static DOM_STYLES: &[CSSResource] = &[css!("dom/checkbox"), css!("dom/select")];
+static DOM_STYLES: &[CSSResource] = &[
+    css!("dom/checkbox"),
+    css!("dom/scrollbar"),
+    css!("dom/select"),
+];
 
 thread_local! {
     /// Cache of `CssStyleSheet` objects, which can safely be re-used across

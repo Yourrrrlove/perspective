@@ -95,7 +95,7 @@ impl<T: ColumnTab> Component for TabList<T> {
                         <div class="tab-border" />
                     </span>
                 </div>
-                <div id="format-tab" class="tab-content">
+                <div id="format-tab" class="tab-content scrollable">
                     { ctx.props().children.iter().nth(self.selected_idx) }
                 </div>
             </>

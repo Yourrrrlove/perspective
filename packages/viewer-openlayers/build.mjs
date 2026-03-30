@@ -12,12 +12,12 @@
 
 import { NodeModulesExternal } from "@perspective-dev/esbuild-plugin/external.js";
 import { build } from "@perspective-dev/esbuild-plugin/build.js";
-import { BuildCss } from "@prospective.co/procss/target/cjs/procss.js";
+import { bundleAsync as bundleCssAsync } from "lightningcss";
 import * as fs from "node:fs";
-import * as path_mod from "node:path";
-import { createRequire } from "node:module";
-
-const _require = createRequire(import.meta.url);
+import {
+    resolveNPM,
+    inlineUrlVisitor,
+} from "@perspective-dev/viewer/tools.mjs";
 
 const BUILD = [
     {
@@ -42,19 +42,14 @@ const BUILD = [
 
 async function compile_css() {
     fs.mkdirSync("dist/css", { recursive: true });
-    const builder = new BuildCss("");
-    builder.add(
-        "ol/ol.css",
-        fs.readFileSync(_require.resolve("ol/ol.css")).toString(),
-    );
-    builder.add(
-        "./plugin.less",
-        fs.readFileSync("./src/less/plugin.less").toString(),
-    );
-    fs.writeFileSync(
-        "dist/css/perspective-viewer-openlayers.css",
-        builder.compile().get("plugin.css"),
-    );
+    const filename = "./src/css/perspective-viewer-openlayers.css";
+    const { code } = await bundleCssAsync({
+        filename,
+        minify: true,
+        resolver: resolveNPM(import.meta.url),
+        visitor: inlineUrlVisitor(filename),
+    });
+    fs.writeFileSync("dist/css/perspective-viewer-openlayers.css", code);
 }
 
 async function build_all() {

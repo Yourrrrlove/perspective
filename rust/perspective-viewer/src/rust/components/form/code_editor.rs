@@ -166,7 +166,11 @@ pub fn code_editor(props: &CodeEditorProps) -> Html {
         ))
         .collect::<Html>();
 
-    let class = if props.wordwrap { "wordwrap" } else { "" };
+    let class = if props.wordwrap {
+        "wordwrap scrollable"
+    } else {
+        "scrollable"
+    };
     clone!(props.disabled);
     html! {
         <>
@@ -177,6 +181,7 @@ pub fn code_editor(props: &CodeEditorProps) -> Html {
                     <textarea
                         {disabled}
                         id="textarea_editable"
+                        class="scrollable"
                         ref={textarea_ref}
                         spellcheck="false"
                         {oninput}

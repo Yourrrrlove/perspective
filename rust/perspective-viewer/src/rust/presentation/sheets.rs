@@ -21,7 +21,7 @@ macro_rules! iter_index {
 }
 
 /// Search the document's `styleSheets` for rules which apply to `elem` and
-/// provide the `--theme-name` CSS custom property.
+/// provide the `--psp-theme-name` CSS custom property.
 pub fn get_theme_names(elem: &HtmlElement) -> Result<Vec<String>, JsValue> {
     let sheets = global::document().style_sheets();
     let mut themes: Vec<String> = vec![];
@@ -43,8 +43,8 @@ fn fill_rule_theme_names(
             let style = rule.style();
             let x = (0..style.length()).map(|x| style.item(x));
             for property in x {
-                if property == "--theme-name" {
-                    let name = style.get_property_value("--theme-name")?;
+                if property == "--psp-theme-name" {
+                    let name = style.get_property_value("--psp-theme-name")?;
                     let trimmed = name.trim();
                     let theme = &trimmed[1..trimmed.len() - 1];
                     if themes.iter().find(|x| x == &theme).is_none() {

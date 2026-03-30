@@ -24,7 +24,7 @@ import type {
 } from "@perspective-dev/viewer";
 import type * as psp from "@perspective-dev/client";
 import type * as psp_viewer from "@perspective-dev/viewer";
-import injectedStyles from "../../../build/css/injected.css";
+import injectedStyles from "../../../dist/css/injected.css";
 import { PerspectiveDockPanel } from "./dockpanel";
 import { WorkspaceMenu } from "./menu";
 import { createCommands } from "./commands";

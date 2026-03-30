@@ -34,7 +34,7 @@ use crate::js::*;
 use crate::presentation::*;
 use crate::renderer::*;
 use crate::root::Root;
-use crate::session::{ResetOptions, Session};
+use crate::session::{ResetOptions, Session, TableLoadState};
 use crate::tasks::*;
 use crate::utils::*;
 use crate::*;
@@ -152,7 +152,7 @@ impl PerspectiveViewerElement {
             session: session.clone(),
             renderer: renderer.clone(),
             presentation: presentation.clone(),
-            dragdrop: DragDrop::default(),
+            dragdrop: DragDrop::new(&elem),
             custom_events: custom_events.clone(),
         });
 
@@ -286,28 +286,18 @@ impl PerspectiveViewerElement {
             .unwrap_or_else(|_| js_sys::Promise::resolve(&table));
 
         let _plugin = self.renderer.get_active_plugin()?;
-        let task = self.session.reset(ResetOptions {
+        let reset_task = self.session.reset(ResetOptions {
             config: true,
             expressions: true,
             stats: true,
-            ..ResetOptions::default()
+            table: Some(session::TableIntermediateState::Reloaded),
         });
 
-        let mut config = ViewConfigUpdate {
-            columns: Some(self.session.get_view_config().columns.clone()),
-            ..ViewConfigUpdate::default()
-        };
-
-        let metadata = self.renderer.metadata();
-        self.session
-            .set_update_column_defaults(&mut config, &metadata);
-
-        self.session.update_view_config(config)?;
         clone!(self.renderer, self.session);
         Ok(ApiFuture::new_throttled(async move {
             let task = async {
                 // Ignore this error, which is blown away by the table anyway.
-                let _ = task.await;
+                let _ = reset_task.await;
                 let jstable = JsFuture::from(promise)
                     .await
                     .map_err(|x| apierror!(TableError(x)))?;
@@ -381,7 +371,7 @@ impl PerspectiveViewerElement {
     /// again, or alternatively `Self::delete` if this viewer is no longer
     /// needed.
     pub fn eject(&mut self) -> ApiFuture<()> {
-        if self.session.has_table() {
+        if matches!(self.session.has_table(), Some(TableLoadState::Loaded)) {
             let mut state = Self::new_from_shadow(
                 self.elem.clone(),
                 self.elem.shadow_root().unwrap().unchecked_into(),
@@ -964,7 +954,7 @@ impl PerspectiveViewerElement {
     /// # JavaScript Examples
     ///
     /// ```javascript
-    /// viewer.style = "--icon--color: red";
+    /// viewer.style = "--psp--color: red";
     /// await viewer.restyleElement();
     /// ```
     #[wasm_bindgen]

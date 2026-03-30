@@ -16,7 +16,7 @@ use yew::Component;
 use super::{HasRenderer, HasSession};
 use crate::ApiFuture;
 use crate::root::Root;
-use crate::session::ResetOptions;
+use crate::session::{ResetOptions, TableIntermediateState};
 
 pub trait DeleteAll: HasSession + HasRenderer {
     fn delete_all<T: Component>(&self, root: &Root<T>) -> ApiFuture<()> {
@@ -29,7 +29,7 @@ pub trait DeleteAll: HasSession + HasRenderer {
                 .reset(ResetOptions {
                     config: true,
                     expressions: true,
-                    table: true,
+                    table: Some(TableIntermediateState::Ejected),
                     ..ResetOptions::default()
                 })
                 .await?;

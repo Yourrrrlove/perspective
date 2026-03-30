@@ -58,6 +58,7 @@ pub fn AddExpressionButton(p: &AddExpressionButtonProps) -> Html {
 
     html! {
         <div id="add-expression" data-index="-1" {class} {onmouseover} {onmouseout} {onmousedown}>
+            <span class="icon" />
             <span id="add-expression-button" />
         </div>
     }

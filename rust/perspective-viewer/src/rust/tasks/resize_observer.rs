@@ -21,7 +21,7 @@ use crate::js::*;
 use crate::presentation::Presentation;
 use crate::renderer::*;
 use crate::root::Root;
-use crate::session::Session;
+use crate::session::{Session, TableLoadState};
 use crate::tasks::*;
 use crate::utils::*;
 
@@ -132,7 +132,10 @@ impl ResizeObserverState {
                         .clone()
                         .with_lock(async {
                             Ok(!state.renderer().is_plugin_activated()?
-                                && state.session().has_table())
+                                && matches!(
+                                    state.session().has_table(),
+                                    Some(TableLoadState::Loaded)
+                                ))
                         })
                         .await?;
 

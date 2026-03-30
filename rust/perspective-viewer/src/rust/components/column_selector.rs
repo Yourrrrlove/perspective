@@ -62,7 +62,7 @@ pub struct ColumnSelectorProps {
     pub selected_column: Option<ColumnLocator>,
 
     /// Value props threaded from root's `SessionProps` / `RendererProps`.
-    pub has_table: bool,
+    pub has_table: Option<TableLoadState>,
     pub named_column_count: usize,
     pub view_config: PtrEqRc<ViewConfig>,
     pub drag_column: Option<String>,
@@ -285,7 +285,7 @@ impl Component for ColumnSelector {
             move |_| dragdrop.notify_drag_end()
         });
 
-        let mut active_classes = classes!();
+        let mut active_classes = classes!("scrollable");
         if ctx.props().drag_column.is_some() {
             active_classes.push("dragdrop-highlight");
         };
@@ -491,6 +491,7 @@ impl Component for ColumnSelector {
                 <ScrollPanel
                     id="sub-columns"
                     key="__sub_columns__"
+                    class={classes!("scrollable")}
                     on_resize={&ctx.props().on_resize}
                     on_dimensions_reset={&self.on_reset}
                     children={inactive_children}

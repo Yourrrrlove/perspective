@@ -19,7 +19,7 @@ perspective-viewer {
 
 perspective-viewer[theme="Pro Light"],
 perspective-viewer[theme="Pro Dark"] {
-    --d3fc-positive--gradient: linear-gradient(
+    --psp-d3fc--pos-gradient--background: linear-gradient(
         #94d0ff,
         #8795e8,
         #966bff,

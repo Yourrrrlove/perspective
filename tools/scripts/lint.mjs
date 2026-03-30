@@ -21,7 +21,8 @@ export async function lint_js(is_fix = false) {
     await $`prettier ${prettier_flags} "examples/**/*.js" "examples/**/*.tsx" "tools/scripts/*.mjs" "rust/**/*.ts" "rust/**/*.js" "packages/**/*.js" "packages/**/*.ts"`.verbose();
     await $`prettier --prose-wrap=always ${prettier_flags} "rust/*/docs/**/*.md"`.verbose();
     // cmd.sh`prettier ${prettier_flags} "**/*.yaml"`;
-    await $`prettier ${prettier_flags} "**/less/*.less"`.verbose();
+    await $`prettier ${prettier_flags} "**/css/**/*.css"`.verbose();
+    await $`prettier ${prettier_flags} "**/themes/**/*.css"`.verbose();
     await $`prettier ${prettier_flags} "**/html/*.html"`.verbose();
     await $`prettier ${prettier_flags} "packages/**/package.json" "rust/**/package.json" "examples/**/package.json" "docs/package.json"`.verbose();
 

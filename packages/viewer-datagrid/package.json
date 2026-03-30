@@ -39,7 +39,7 @@
         "regular-table": "catalog:"
     },
     "devDependencies": {
-        "@prospective.co/procss": "catalog:",
+        "lightningcss": "catalog:",
         "@perspective-dev/esbuild-plugin": "workspace:",
         "@perspective-dev/test": "workspace:",
         "@types/chroma-js": "catalog:",
