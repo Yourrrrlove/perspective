@@ -108,6 +108,7 @@ const CONTENT_TYPES: Record<string, string> = {
     ".arrow": "arraybuffer",
     ".feather": "arraybuffer",
     ".wasm": "application/wasm",
+    ".svg": "image/svg+xml",
 };
 
 /**

@@ -10,12 +10,18 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-const puppeteer = require("puppeteer");
-const fs = require("fs");
-const cp = require("child_process");
-const path = require("node:path");
-const mkdirp = require("mkdirp");
-const EXAMPLES = require("./src/components/ExampleGallery/features.js").default;
+import puppeteer from "puppeteer";
+import * as fs from "node:fs";
+import * as cp from "node:child_process";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import EXAMPLES from "./src/data/features.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// features.js uses CJS exports.default, import it dynamically
+// const EXAMPLES = (await import("./src/data/features.ts")).default;
 
 const perspective = import(
     "@perspective-dev/client/dist/esm/perspective.node.js"
@@ -26,27 +32,7 @@ const DEFAULT_VIEWPORT = {
     height: 300,
 };
 
-function shuffle(array) {
-    let currentIndex = array.length,
-        randomIndex;
-
-    // While there remain elements to shuffle.
-    while (currentIndex != 0) {
-        // Pick a remaining element.
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-
-        // And swap it with the current element.
-        [array[currentIndex], array[randomIndex]] = [
-            array[randomIndex],
-            array[currentIndex],
-        ];
-    }
-
-    return array;
-}
-
-async function run_with_theme(page, is_dark = false) {
+async function run_with_theme(page, is_dark = false, order) {
     await page.goto("http://localhost:8080/");
     await page.setContent(template(is_dark));
     await page.setViewport(DEFAULT_VIEWPORT);
@@ -55,16 +41,16 @@ async function run_with_theme(page, is_dark = false) {
             await new Promise((resolve) => setTimeout(resolve, 10));
         }
     });
+
     await page.evaluate(async function () {
         const viewer = document.querySelector("perspective-viewer");
         await viewer.flush();
         await viewer.toggleConfig();
     });
 
-    const files = [];
     for (const idx in EXAMPLES) {
         const { config, viewport } = EXAMPLES[idx];
-        await await page.setViewport(viewport || DEFAULT_VIEWPORT);
+        await page.setViewport(viewport || DEFAULT_VIEWPORT);
         const new_config = Object.assign(
             {
                 plugin: "Datagrid",
@@ -93,18 +79,20 @@ async function run_with_theme(page, is_dark = false) {
             is_dark ? "_dark" : ""
         }.png`;
 
-        files.push(name);
         fs.writeFileSync(name, screenshot);
         cp.execSync(`convert ${name} -resize 200x150 ${name}`);
     }
 
+    const suffix = is_dark ? "_dark" : "";
+    const montage_files = order.map(
+        (idx) => `static/features/feature_${idx}${suffix}.png`,
+    );
+
     cp.execSync(
-        `montage -mode concatenate -tile 5x ${shuffle(files).join(
+        `montage -mode concatenate -background none -tile 5x ${montage_files.join(
             " ",
         )} static/features/montage${is_dark ? "_dark" : "_light"}.png`,
     );
-
-    // fs.writeFileSync("features/index.html", `<html><style>img{width:200px;height:150px;</style><body>${html.join("")}</body></html>`);
 }
 
 async function run() {
@@ -116,6 +104,7 @@ async function run() {
         fs.mkdirSync(path.join(__dirname, "static/features"), {
             recursive: true,
         });
+
         const x = await perspective;
         const server = new x.WebSocketServer({
             assets: [
@@ -124,16 +113,31 @@ async function run() {
             ],
         });
 
+        const indices = Array.from({ length: EXAMPLES.length }, (_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+
         const browser = await puppeteer.launch({ headless: true });
         const page = await browser.newPage();
-        await run_with_theme(page);
-        await run_with_theme(page, true);
+        await run_with_theme(page, false, indices);
+        await run_with_theme(page, true, indices);
         await page.close();
         await browser.close();
         await server.close();
+
+        fs.writeFileSync(
+            path.join(__dirname, "static/features/montage_map.json"),
+            JSON.stringify({
+                tile_width: 200,
+                tile_height: 150,
+                columns: 5,
+                order: indices,
+            }),
+        );
     }
 
-    // TODO There is a typescript module annoyingly called `blocks`.
     if (!fs.existsSync("static/blocks")) {
         fs.mkdirSync("static/blocks");
     }

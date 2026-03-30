@@ -10,7 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-export const LAYOUTS = {
+export const LAYOUTS: Record<string, any> = {
     sparkgrid: {
         plugin: "Datagrid",
         plugin_config: {
@@ -77,7 +77,6 @@ export const LAYOUTS = {
         group_rollup_mode: "flat",
         plugin: "Y Line",
         group_by: ["lastUpdate"],
-        split_by: [],
         sort: [["lastUpdate", "desc"]],
         split_by: ["client"],
         columns: ["bid"],

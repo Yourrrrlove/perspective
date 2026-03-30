@@ -10,51 +10,16 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-const webpack = require("webpack");
+import { WebSocketServer } from "@perspective-dev/client";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 
-module.exports = function (context, options) {
-    return {
-        name: "perspective",
-        configureWebpack(config, isServer) {
-            if (config.optimization.minimizer) {
-                config.optimization.minimizer[0].options.minimizer.options.module = true;
-            }
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
-            config.experiments = config.experiments || {
-                asyncWebAssembly: false,
-                syncWebAssembly: false,
-            };
-
-            config.experiments.topLevelAwait = true;
-            config.module.rules.map((x) => {
-                if (x.test.toString() === "/\\.css$/i") {
-                    x.exclude = [/\.module\.css$/i, /@perspective-dev/i];
-                }
-            });
-
-            config.module.rules.push({
-                test: /arrow$/i,
-                type: "asset/resource",
-            });
-
-            config.module.rules.push({
-                test: /\.wasm$/,
-                type: "asset/resource",
-            });
-
-            return {
-                node: {
-                    __filename: false,
-                },
-                plugins: isServer
-                    ? [
-                          new webpack.NormalModuleReplacementPlugin(
-                              /@perspective-dev\/perspective/,
-                              "@perspective-dev/client/dist/esm/perspective.js",
-                          ),
-                      ]
-                    : [],
-            };
-        },
-    };
-};
+new WebSocketServer({
+    assets: [
+        `${__dirname}/dist`,
+        `${__dirname}/static`,
+        `${__dirname}/../node_modules`,
+    ],
+});

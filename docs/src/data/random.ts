@@ -10,23 +10,66 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import React, { useEffect } from "react";
-import DocItem from "@theme/DocItem";
-import { useColorMode } from "@docusaurus/theme-common";
-import ExecutionEnvironment from "@docusaurus/ExecutionEnvironment";
-import _styles from "./styles.module.css";
+const SECURITIES = [
+    "AAPL.N",
+    "MSFT.N",
+    "AMZN.N",
+    "GOOGL.N",
+    "FB.N",
+    "TSLA.N",
+    "BABA.N",
+    "TSM.N",
+    "V.N",
+    "NVDA.N",
+    "JPM.N",
+    "JNJ.N",
+    "WMT.N",
+    "UNH.N",
+    "MA.N",
+    "BAC.N",
+    "DIS.N",
+    "ASML.N",
+    "ADBE.N",
+    "CMCSA.N",
+    "NKE.N",
+    "XOM.N",
+    "TM.N",
+    "KO.N",
+    "ORCL.N",
+    "NFLX.N",
+];
 
-export default function PerspectiveDocItem(props) {
-    if (ExecutionEnvironment.canUseDOM) {
-        const { colorMode } = useColorMode();
+const CLIENTS = [
+    "Homer",
+    "Marge",
+    "Bart",
+    "Lisa",
+    "Maggie",
+    "Barney",
+    "Ned",
+    "Moe",
+];
 
-        useEffect(() => {
-            (async () => {
-                const { main } = await import("./browser.js");
-                main(colorMode);
-            })();
-        }, [colorMode]);
-    }
+let id = 0;
 
-    return <DocItem {...props} />;
+function randn_bm(): number {
+    let u = 0,
+        v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+export function random_row() {
+    id = id % 1000;
+    return {
+        name: SECURITIES[Math.floor(Math.random() * SECURITIES.length)],
+        client: CLIENTS[Math.floor(Math.random() * CLIENTS.length)],
+        lastUpdate: new Date(),
+        chg: randn_bm() * 10,
+        bid: randn_bm() * 5 + 95,
+        ask: randn_bm() * 5 + 105,
+        vol: randn_bm() * 5 + 105,
+        id: id++,
+    };
 }

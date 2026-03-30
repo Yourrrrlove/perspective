@@ -10,16 +10,19 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-exports.default = [
+export default [
     {
         name: "Default",
         description: "Data grid",
-        config: {},
+        config: {
+            title: "Default",
+        },
     },
     {
         name: "Group By 1",
         description: "Data grid with 1 level of groups for rows",
         config: {
+            title: "Group By 1",
             group_by: ["Sub-Category"],
         },
         aggregates: "dominant",
@@ -28,6 +31,7 @@ exports.default = [
         name: "Group By 2",
         description: "Data grid with 2 levels of groups for rows",
         config: {
+            title: "Group By 2",
             group_by: ["Category", "Sub-Category"],
         },
     },
@@ -35,6 +39,7 @@ exports.default = [
         name: "Split By",
         description: "Data grid with 1 level of categories for columns",
         config: {
+            title: "Split By",
             split_by: ["Category"],
             columns: ["Sales", "Quantity", "Discount", "Profit"],
         },
@@ -43,6 +48,7 @@ exports.default = [
         name: "Split By 2",
         description: "Data grid with 2 levels of categories and columns",
         config: {
+            title: "Split By 2",
             split_by: ["Category", "Sub-Category"],
             columns: ["Sales", "Quantity", "Discount", "Profit"],
         },
@@ -51,6 +57,7 @@ exports.default = [
         name: "Both",
         description: "Data grid with grouped rows and categorized columns",
         config: {
+            title: "Both",
             group_by: ["Region"],
             split_by: ["Category"],
             columns: ["Sales", "Quantity", "Discount", "Profit"],
@@ -61,9 +68,54 @@ exports.default = [
         description:
             "Data grid with 2 levels of groups and 2 levels of categories",
         config: {
+            title: "Both 2",
             group_by: ["Region", "State"],
             split_by: ["Category", "Sub-Category"],
             columns: ["Sales", "Quantity", "Discount", "Profit"],
+        },
+    },
+    {
+        name: "Flat Group By 1",
+        description:
+            "Flat data grid with 1 level of groups for rows, no rollup rows",
+        config: {
+            title: "Flat Group By 1",
+            group_by: ["Sub-Category"],
+            group_rollup_mode: "flat",
+        },
+    },
+    {
+        name: "Flat Group By 2",
+        description:
+            "Flat data grid with 2 levels of groups for rows, no rollup rows",
+        config: {
+            title: "Flat Group By 2",
+            group_by: ["Category", "Sub-Category"],
+            group_rollup_mode: "flat",
+        },
+    },
+    {
+        name: "Flat Both",
+        description:
+            "Flat data grid with grouped rows and categorized columns, no rollup rows",
+        config: {
+            title: "Flat Both",
+            group_by: ["Region"],
+            split_by: ["Category"],
+            columns: ["Sales", "Quantity", "Discount", "Profit"],
+            group_rollup_mode: "flat",
+        },
+    },
+    {
+        name: "Flat Both 2",
+        description:
+            "Flat data grid with 2 levels of groups and 2 levels of categories, no rollup rows",
+        config: {
+            title: "Flat Both 2",
+            group_by: ["Region", "State"],
+            split_by: ["Category", "Sub-Category"],
+            columns: ["Sales", "Quantity", "Discount", "Profit"],
+            group_rollup_mode: "flat",
         },
     },
     {
@@ -71,16 +123,14 @@ exports.default = [
         description:
             "Data grid with groups, categories, and solid color conditional highlighting",
         config: {
+            title: "Background Row And Split By",
             group_by: ["State"],
             split_by: ["Sub-Category"],
             columns: ["Profit"],
             sort: [["Profit", "col asc"]],
-            plugin_config: {
-                columns: {
-                    Profit: {
-                        number_color_mode: "background",
-                        // gradient: 600,
-                    },
+            columns_config: {
+                Profit: {
+                    number_bg_mode: "color",
                 },
             },
         },
@@ -90,16 +140,15 @@ exports.default = [
         description:
             "Data grid with groups, categories, and gradient conditional highlighting",
         config: {
+            title: "Gradient Row And Split By",
             group_by: ["State"],
             split_by: ["Sub-Category"],
             columns: ["Profit"],
             sort: [["Profit", "col asc"]],
-            plugin_config: {
-                columns: {
-                    Profit: {
-                        number_color_mode: "gradient",
-                        gradient: 1600,
-                    },
+            columns_config: {
+                Profit: {
+                    number_bg_mode: "gradient",
+                    bg_gradient: 1600,
                 },
             },
         },
@@ -108,16 +157,15 @@ exports.default = [
         name: "Background Row And Split By",
         description: "Data grid with groups, categories, and a bar chart",
         config: {
+            title: "Background Row And Split By",
             group_by: ["State"],
             split_by: ["Sub-Category"],
             columns: ["Sales"],
             aggregates: { Sales: "avg" },
-            plugin_config: {
-                columns: {
-                    Sales: {
-                        number_color_mode: "bar",
-                        gradient: 600,
-                    },
+            columns_config: {
+                Sales: {
+                    number_fg_mode: "bar",
+                    fg_gradient: 600,
                 },
             },
         },
@@ -127,6 +175,7 @@ exports.default = [
         description:
             "Data grid with 6 categories. 3 categories have conditional formatting using foreground colors.",
         config: {
+            title: "Foreground Colors",
             columns: [
                 "Category",
                 "Sales",
@@ -135,20 +184,18 @@ exports.default = [
                 "Sub-Category",
                 "Order Date",
             ],
-            plugin_config: {
-                columns: {
-                    Profit: {
-                        pos_color: "#32cd82",
-                        neg_color: "#f50fed",
-                    },
-                    Sales: {
-                        pos_color: "#780aff",
-                        neg_color: "#f5ac0f",
-                    },
-                    Discount: {
-                        pos_color: "#f5ac0f",
-                        neg_color: "#780aff",
-                    },
+            columns_config: {
+                Profit: {
+                    pos_fg_color: "#32cd82",
+                    neg_fg_color: "#f50fed",
+                },
+                Sales: {
+                    pos_fg_color: "#780aff",
+                    neg_fg_color: "#f5ac0f",
+                },
+                Discount: {
+                    pos_fg_color: "#f5ac0f",
+                    neg_fg_color: "#780aff",
                 },
             },
             sort: [["Sub-Category", "desc"]],
@@ -159,29 +206,29 @@ exports.default = [
         description:
             "Data grid with 6 categories. 3 categories have custom, solid color conditional formatting.",
         config: {
+            title: "Background Colors",
             plugin: "Datagrid",
-            plugin_config: {
-                columns: {
-                    Discount: {
-                        neg_bg_color: "#780aff",
-                        number_bg_mode: "color",
-                        number_fg_mode: "disabled",
-                        pos_bg_color: "#f5ac0f",
-                    },
-                    Profit: {
-                        neg_bg_color: "#f50fed",
-                        number_bg_mode: "color",
-                        number_fg_mode: "disabled",
-                        pos_bg_color: "#32cd82",
-                    },
-                    Sales: {
-                        neg_bg_color: "#f5ac0f",
-                        number_bg_mode: "color",
-                        number_fg_mode: "disabled",
-                        pos_bg_color: "#780aff",
-                    },
+            columns_config: {
+                Discount: {
+                    neg_bg_color: "#780aff",
+                    number_bg_mode: "color",
+                    number_fg_mode: "disabled",
+                    pos_bg_color: "#f5ac0f",
                 },
-                editable: false,
+                Profit: {
+                    neg_bg_color: "#f50fed",
+                    number_bg_mode: "color",
+                    number_fg_mode: "disabled",
+                    pos_bg_color: "#32cd82",
+                },
+                Sales: {
+                    neg_bg_color: "#f5ac0f",
+                    number_bg_mode: "color",
+                    number_fg_mode: "disabled",
+                    pos_bg_color: "#780aff",
+                },
+            },
+            plugin_config: {
                 scroll_lock: true,
             },
             columns: [
@@ -201,6 +248,7 @@ exports.default = [
         description:
             "Data grid with 6 categories. 3 categories have custom, gradient color conditional formatting.",
         config: {
+            title: "Gradient Colors",
             columns: [
                 "Category",
                 "Sales",
@@ -209,26 +257,24 @@ exports.default = [
                 "Sub-Category",
                 "Order Date",
             ],
-            plugin_config: {
-                columns: {
-                    Profit: {
-                        number_color_mode: "gradient",
-                        gradient: 600,
-                        pos_color: "#32cd82",
-                        neg_color: "#f50fed",
-                    },
-                    Sales: {
-                        number_color_mode: "gradient",
-                        gradient: 2268,
-                        pos_color: "#780aff",
-                        neg_color: "#f5ac0f",
-                    },
-                    Discount: {
-                        number_color_mode: "gradient",
-                        gradient: 0.8,
-                        pos_color: "#f5ac0f",
-                        neg_color: "#780aff",
-                    },
+            columns_config: {
+                Profit: {
+                    number_bg_mode: "gradient",
+                    bg_gradient: 600,
+                    pos_bg_color: "#32cd82",
+                    neg_bg_color: "#f50fed",
+                },
+                Sales: {
+                    number_bg_mode: "gradient",
+                    bg_gradient: 2268,
+                    pos_bg_color: "#780aff",
+                    neg_bg_color: "#f5ac0f",
+                },
+                Discount: {
+                    number_bg_mode: "gradient",
+                    bg_gradient: 0.8,
+                    pos_bg_color: "#f5ac0f",
+                    neg_bg_color: "#780aff",
                 },
             },
             sort: [["Sub-Category", "desc"]],
@@ -239,6 +285,7 @@ exports.default = [
         description:
             "Data grid with 6 categories. 3 categories have custom colored bars.",
         config: {
+            title: "Bar Colors",
             columns: [
                 "Category",
                 "Sales",
@@ -247,26 +294,92 @@ exports.default = [
                 "Sub-Category",
                 "Order Date",
             ],
-            plugin_config: {
-                columns: {
-                    Profit: {
-                        number_color_mode: "bar",
-                        gradient: 600,
-                        pos_color: "#32cd82",
-                        neg_color: "#f50fed",
-                    },
-                    Sales: {
-                        number_color_mode: "bar",
-                        gradient: 2268,
-                        pos_color: "#780aff",
-                        neg_color: "#f5ac0f",
-                    },
-                    Discount: {
-                        number_color_mode: "bar",
-                        gradient: 0.8,
-                        pos_color: "#f5ac0f",
-                        neg_color: "#780aff",
-                    },
+            columns_config: {
+                Profit: {
+                    number_fg_mode: "bar",
+                    fg_gradient: 600,
+                    pos_fg_color: "#32cd82",
+                    neg_fg_color: "#f50fed",
+                },
+                Sales: {
+                    number_fg_mode: "bar",
+                    fg_gradient: 2268,
+                    pos_fg_color: "#780aff",
+                    neg_fg_color: "#f5ac0f",
+                },
+                Discount: {
+                    number_fg_mode: "bar",
+                    fg_gradient: 0.8,
+                    pos_fg_color: "#f5ac0f",
+                    neg_fg_color: "#780aff",
+                },
+            },
+            sort: [["Sub-Category", "desc"]],
+        },
+    },
+    {
+        name: "Label Bar",
+        description:
+            "Data grid with 6 categories. 3 categories have label bars showing the value overlaid on the bar.",
+        config: {
+            title: "Label Bar",
+            columns: [
+                "Category",
+                "Sales",
+                "Discount",
+                "Profit",
+                "Sub-Category",
+                "Order Date",
+            ],
+            columns_config: {
+                Profit: {
+                    number_fg_mode: "label-bar",
+                    fg_gradient: 600,
+                },
+                Sales: {
+                    number_fg_mode: "label-bar",
+                    fg_gradient: 2268,
+                },
+                Discount: {
+                    number_fg_mode: "label-bar",
+                    fg_gradient: 0.8,
+                },
+            },
+            sort: [["Sub-Category", "desc"]],
+        },
+    },
+    {
+        name: "Label Bar Colors",
+        description:
+            "Data grid with 6 categories. 3 categories have custom colored label bars.",
+        config: {
+            title: "Label Bar Colors",
+            columns: [
+                "Category",
+                "Sales",
+                "Discount",
+                "Profit",
+                "Sub-Category",
+                "Order Date",
+            ],
+            columns_config: {
+                Profit: {
+                    number_fg_mode: "label-bar",
+                    fg_gradient: 600,
+                    pos_fg_color: "#32cd82",
+                    neg_fg_color: "#f50fed",
+                },
+                Sales: {
+                    number_fg_mode: "label-bar",
+                    fg_gradient: 2268,
+                    pos_fg_color: "#780aff",
+                    neg_fg_color: "#f5ac0f",
+                },
+                Discount: {
+                    number_fg_mode: "label-bar",
+                    fg_gradient: 0.8,
+                    pos_fg_color: "#f5ac0f",
+                    neg_fg_color: "#780aff",
                 },
             },
             sort: [["Sub-Category", "desc"]],
@@ -277,22 +390,21 @@ exports.default = [
         description:
             "Data grid with 1 group and 3 columns. 2 columns use bars and 1 column uses gradient conditional highlighting.",
         config: {
+            title: "Thermometer",
             group_by: ["State"],
             columns: ["Profit (-)", "Profit", "Profit (+)"],
-            plugin_config: {
-                columns: {
-                    "Profit (-)": {
-                        number_color_mode: "bar",
-                        gradient: 10000,
-                    },
-                    Profit: {
-                        number_color_mode: "gradient",
-                        gradient: 10000,
-                    },
-                    "Profit (+)": {
-                        number_color_mode: "bar",
-                        gradient: 10000,
-                    },
+            columns_config: {
+                "Profit (-)": {
+                    number_fg_mode: "bar",
+                    fg_gradient: 10000,
+                },
+                Profit: {
+                    number_bg_mode: "gradient",
+                    bg_gradient: 10000,
+                },
+                "Profit (+)": {
+                    number_fg_mode: "bar",
+                    fg_gradient: 10000,
                 },
             },
             expressions: {
@@ -309,6 +421,7 @@ exports.default = [
         description:
             "Bar chart with 17 bars. X is 'Sub-Category', and Y is 'Sales'.",
         config: {
+            title: "Y Bar",
             plugin: "Y Bar",
             group_by: ["Sub-Category"],
             columns: ["Sales"],
@@ -319,6 +432,7 @@ exports.default = [
         description:
             "Bar chart with 17 bars sorted descending. X is 'Sub-Category', and Y is 'Sales'.",
         config: {
+            title: "Y Bar, Sorted Desc By Y-Axis",
             plugin: "Y Bar",
             group_by: ["Sub-Category"],
             columns: ["Sales"],
@@ -330,6 +444,7 @@ exports.default = [
         description:
             "Stacked bar chart with 17 bars. X is 'Sub-Category', Y is 'Sales', and subgroup is 'Ship Mode'",
         config: {
+            title: "Y Bar - Row And Split By",
             plugin: "Y Bar",
             group_by: ["Sub-Category"],
             split_by: ["Ship Mode"],
@@ -342,6 +457,7 @@ exports.default = [
         description:
             "Bar chart with 3 categories and 17 total subcategories, sorted descending within each category.",
         config: {
+            title: "Y Bar - Group By 2 Sorted",
             plugin: "Y Bar",
             group_by: ["Category", "Sub-Category"],
             columns: ["Sales"],
@@ -353,6 +469,7 @@ exports.default = [
         description:
             "Bar chart with 3 colored categories and 17 total subcategories, sorted descending within each category.",
         config: {
+            title: "Y Bar - Group By 2 And Split By Sorted",
             plugin: "Y Bar",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Category"],
@@ -365,6 +482,7 @@ exports.default = [
         description:
             "Stacked bar chart with 3 categories and 17 total subcategories, sorted descending within each category. X is 'Category, Sub-Category', y is 'Sales', subgroup is 'Region'",
         config: {
+            title: "Y Bar - Group By 2 And 2 Split By Sorted",
             plugin: "Y Bar",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Category", "Region"],
@@ -377,6 +495,7 @@ exports.default = [
         description:
             "Bar chart. X is 'State', Y is 'Profit'. Each state has, when applicable, 2 bars: Profit and Loss. States are sorted by Net.",
         config: {
+            title: "Y Bar - Group By 2 And 2 Split By Sorted 2",
             plugin: "Y Bar",
             group_by: ["State"],
             split_by: ["Profit (-/+)"],
@@ -394,6 +513,7 @@ exports.default = [
         description:
             "Groupd bar chart. X is 'Sub-Category', Y is 'Quantity' and 'Sales'. Each X value has 2 bars.",
         config: {
+            title: "Y Bar Multi Axis",
             plugin: "Y Bar",
             group_by: ["Sub-Category"],
             columns: ["Quantity", "Sales"],
@@ -406,6 +526,7 @@ exports.default = [
         description:
             "Groupd bar chart. X is 'Sub-Category', Y is 'Quantity', and the second Y is 'Sales'. Each X value has 2 bars.",
         config: {
+            title: "Y Bar Multi Axis - SPlit",
             plugin: "Y Bar",
             group_by: ["Sub-Category"],
             columns: ["Quantity", "Sales"],
@@ -422,6 +543,7 @@ exports.default = [
         description:
             "Horizontal bar chart with 17 bars. X is 'Sub-Category' and Y is 'Sales'.",
         config: {
+            title: "X Bar",
             plugin: "X Bar",
             group_by: ["Sub-Category"],
             columns: ["Sales"],
@@ -432,6 +554,7 @@ exports.default = [
         description:
             "Grouped horizontal bar chart. X is 'Sub-Category' and Y is 'Quantity, Profit'.",
         config: {
+            title: "X Bar",
             plugin: "X Bar",
             group_by: ["Sub-Category"],
             columns: ["Quantity", "Profit"],
@@ -442,6 +565,7 @@ exports.default = [
         description:
             "Sorted horizontal bar chart. X is 'Sub-Category' and Y is 'Sales'.",
         config: {
+            title: "X Bar, Sorted Desc By X-Axis",
             plugin: "X Bar",
             group_by: ["Sub-Category"],
             columns: ["Sales"],
@@ -453,6 +577,7 @@ exports.default = [
         description:
             "Stacked horizontal bar chart. X is 'Sub-Category', Y is 'Sales', and subgroup is 'Region'",
         config: {
+            title: "X Bar - Row And Split By",
             plugin: "X Bar",
             group_by: ["Sub-Category"],
             split_by: ["Region"],
@@ -464,6 +589,7 @@ exports.default = [
         description:
             "Sorted stacked horizontal bar chart. X is 'Sub-Category', Y is 'Sales', and subgroup is 'Region'",
         config: {
+            title: "X Bar - Row And Split By",
             plugin: "X Bar",
             group_by: ["Sub-Category"],
             split_by: ["Region"],
@@ -479,6 +605,7 @@ exports.default = [
         description:
             "Line chart. X is Order Date from January 2014 to December 2017. Y is 'Sales'.",
         config: {
+            title: "Y Line - Datetime Axis",
             plugin: "Y Line",
             group_by: ["Order Date"],
             columns: ["Sales"],
@@ -489,6 +616,7 @@ exports.default = [
         description:
             "Line chart with 3 lines. X is Order Date, Y is Sales, and the lines are 'Consumer', 'Corporate', and 'Home Office'.",
         config: {
+            title: "Y Line - Datetime Axis",
             plugin: "Y Line",
             group_by: ["Order Date"],
             split_by: ["Segment"],
@@ -500,6 +628,7 @@ exports.default = [
         description:
             "Line Chart. X is 'Order Date', summarized by month. Y is 'Sales'",
         config: {
+            title: "Y Line - Datetime Axis Computed",
             plugin: "Y Line",
             group_by: ["bucket(\"Order Date\", 'M')"],
             expressions: {
@@ -513,6 +642,7 @@ exports.default = [
         description:
             "Line Chart with 4 lines. X is 'Order Date' from January 2014 to December 2017. Y is 'Sales'. Each line is for each year.",
         config: {
+            title: "Y Line - Datetime Axis",
             plugin: "Y Line",
             group_by: ["bucket(\"Order Date\", 'M')"],
             split_by: ["bucket(\"Order Date\", 'Y')"],
@@ -528,6 +658,7 @@ exports.default = [
         description:
             "Line Chart with 4 lines. X is Order Date, Y is Sales, and the lines track different regions.",
         config: {
+            title: "Y Line - Datetime Axis And Split By",
             plugin: "Y Line",
             group_by: ["bucket(\"Order Date\", 'M')"],
             split_by: ["Region"],
@@ -541,6 +672,7 @@ exports.default = [
         name: "Y Line - Category Axis",
         description: "Line Chart. X is State and Y is Sales.",
         config: {
+            title: "Y Line - Category Axis",
             plugin: "Y Line",
             group_by: ["State"],
             columns: ["Sales"],
@@ -552,6 +684,7 @@ exports.default = [
         description:
             "Line Chart. X is State and Y is Sales. Sorted descending.",
         config: {
+            title: "Y Line - Category Axis",
             plugin: "Y Line",
             group_by: ["State"],
             columns: ["Sales"],
@@ -564,6 +697,7 @@ exports.default = [
         description:
             "Line chart with 3 lines. X is State, Y is Sales, and each line tracks a customer segment. States are sorted descending by total sales.",
         config: {
+            title: "Y Line - Row and Split By",
             plugin: "Y Line",
             group_by: ["State"],
             split_by: ["Segment"],
@@ -577,6 +711,7 @@ exports.default = [
         description:
             "Line chart with 2 lines. X is State, Y is Profit, and second Y is Sales. States are sorted descending by Sales.",
         config: {
+            title: "Y Line - Multi Axis Split",
             plugin: "Y Line",
             group_by: ["State"],
             columns: ["Sales", "Profit"],
@@ -590,6 +725,7 @@ exports.default = [
         description:
             "Line chart with 2 lines. X is State, Y is Profit, second Y is Sales, and each line is profit/sales for each customer segment. States are sorted descending by total Sales.",
         config: {
+            title: "Y Line - Multi Axis Split",
             plugin: "Y Line",
             group_by: ["State"],
             split_by: ["Segment"],
@@ -607,6 +743,7 @@ exports.default = [
         description:
             "Area chart. X is 'Order Date', bucketed by month. Y is Sales.",
         config: {
+            title: "Y Area - Datetime Axis Computed",
             plugin: "Y Area",
             group_by: ["bucket(\"Order Date\", 'M')"],
             expressions: {
@@ -620,6 +757,7 @@ exports.default = [
         description:
             "Area chart. X is 'Order Date', bucketed by month. Y is sales. Each year is its own color and area.",
         config: {
+            title: "Y Area - Datetime Axis",
             plugin: "Y Area",
             group_by: ["bucket(\"Order Date\", 'M')"],
             split_by: ["bucket(\"Order Date\", 'Y')"],
@@ -635,6 +773,7 @@ exports.default = [
         description:
             "Stacked area chart. X is 'Order Date', bucketed by month. Y is sales. Subgroup is Region.",
         config: {
+            title: "Y Area - Datetime Axis And Split By",
             plugin: "Y Area",
             group_by: ["bucket(\"Order Date\", 'M')"],
             split_by: ["Region"],
@@ -648,6 +787,7 @@ exports.default = [
         name: "Y Area - Category Axis",
         description: "Area chart. X is 'State'. Y is Sales.",
         config: {
+            title: "Y Area - Category Axis",
             plugin: "Y Area",
             group_by: ["State"],
             columns: ["Sales"],
@@ -659,6 +799,7 @@ exports.default = [
         description:
             "Stacked area chart. X is 'State'. Y is 'Sales'. Subgroup is customer segment.",
         config: {
+            title: "Y Area - Row and Split By",
             plugin: "Y Area",
             group_by: ["State"],
             split_by: ["Ship Mode"],
@@ -671,6 +812,7 @@ exports.default = [
         description:
             "Grouped area chart. X is State, grouped by Region. Y is sales. Sorted descending by Sales for each region.",
         config: {
+            title: "Y Area - 2 Group By",
             plugin: "Y Area",
             group_by: ["Region", "State"],
             columns: ["Sales"],
@@ -683,6 +825,7 @@ exports.default = [
         description:
             "Grouped area chart. X is State, grouped by Region. Y is sales. Sorted descending by Sales for each region. Each group is a different color.",
         config: {
+            title: "Y Area - Row and Split By",
             plugin: "Y Area",
             group_by: ["Region", "State"],
             split_by: ["Region"],
@@ -696,6 +839,7 @@ exports.default = [
         description:
             "Stacked grouped area chart. X is State, grouped by Region. Y is sales. Subgroup is customer segment. Sorted descending by total sales.",
         config: {
+            title: "Y Area - Row and Split By 2",
             plugin: "Y Area",
             group_by: ["Region", "State"],
             split_by: ["Ship Mode"],
@@ -711,6 +855,7 @@ exports.default = [
         name: "X/Y Scatter",
         description: "Scatter plot. X is Sales. Y is Quantity.",
         config: {
+            title: "X/Y Scatter",
             plugin: "X/Y Scatter",
             group_by: ["City"],
             columns: ["Sales", "Quantity"],
@@ -722,6 +867,7 @@ exports.default = [
         description:
             "Grouped Scatter plot. X is Sales. Y is Quantity. Group is Region.",
         config: {
+            title: "X/Y Scatter - Split By",
             plugin: "X/Y Scatter",
             group_by: ["City"],
             split_by: ["Region"],
@@ -734,6 +880,7 @@ exports.default = [
         description:
             "Scatter plot. X is Sales. Y is Quantity. Each dot is colored by Profit.",
         config: {
+            title: "X/Y Scatter - Color By Float",
             plugin: "X/Y Scatter",
             group_by: ["State"],
             columns: ["Sales", "Quantity", "Profit"],
@@ -745,6 +892,7 @@ exports.default = [
         name: "X/Y Scatter - Bubble",
         description: "Bubble plot. X is Sales. Y is Quantity. Size is Profit.",
         config: {
+            title: "X/Y Scatter - Bubble",
             plugin: "X/Y Scatter",
             group_by: ["Sub-Category"],
             columns: ["Sales", "Quantity", null, "Profit"],
@@ -757,6 +905,7 @@ exports.default = [
         description:
             "Grouped bubble plot. X is Sales. Y is Quantity. Size is Profit. Group is Product Sub-Category.",
         config: {
+            title: "X/Y Scatter - Bubble",
             plugin: "X/Y Scatter",
             group_by: ["Sub-Category"],
             split_by: ["Category"],
@@ -770,6 +919,7 @@ exports.default = [
         description:
             "Colored bubble plot. X is Sales. Y is Quantity. Size is Row ID. Color is Profit.",
         config: {
+            title: "X/Y Scatter - Bubble",
             plugin: "X/Y Scatter",
             group_by: ["Sub-Category"],
             columns: ["Sales", "Quantity", "Profit", "Row ID"],
@@ -789,6 +939,7 @@ exports.default = [
         description:
             "Horizontal Bubble plot. X is State. Y is Profit. Size is Quantity.",
         config: {
+            title: "X/Y Scatter - Category Y Axis",
             plugin: "X/Y Scatter",
             columns: ["Profit", "State", null, "Quantity"],
             group_by: ["City"],
@@ -804,6 +955,7 @@ exports.default = [
         description:
             "Colored Bubble plot. X is State. Y is product sub-category. Size is Sales. Color is Quantity.",
         config: {
+            title: "X/Y Scatter - Category Y Axis And Size And Color",
             plugin: "X/Y Scatter",
             columns: ["State", "Sub-Category", "Quantity", "Sales", null],
             group_by: ["State", "Sub-Category"],
@@ -816,6 +968,68 @@ exports.default = [
         viewport: { width: 600, height: 450 },
     },
 
+    {
+        name: "X/Y Scatter - Label",
+        description:
+            "Labeled scatter plot. X is Sales. Y is Quantity. Each dot is labeled by Sub-Category.",
+        config: {
+            title: "X/Y Scatter - Label",
+            plugin: "X/Y Scatter",
+            group_by: ["Sub-Category"],
+            columns: ["Sales", "Quantity", null, null, null, "Sub-Category"],
+            aggregates: {
+                Sales: "avg",
+                Quantity: "avg",
+                "Sub-Category": "dominant",
+            },
+        },
+        viewport: { width: 600, height: 450 },
+    },
+    {
+        name: "X/Y Scatter - Label And Color",
+        description:
+            "Labeled colored scatter plot. X is Sales. Y is Quantity. Color is Profit. Each dot is labeled by State.",
+        config: {
+            title: "X/Y Scatter - Label And Color",
+            plugin: "X/Y Scatter",
+            group_by: ["State"],
+            columns: ["Sales", "Quantity", "Profit", null, null, "State"],
+            aggregates: {
+                Sales: "avg",
+                Profit: "avg",
+                Quantity: "avg",
+                State: "dominant",
+            },
+            sort: [["Profit", "desc"]],
+        },
+        viewport: { width: 600, height: 450 },
+    },
+    {
+        name: "X/Y Scatter - Label And Size",
+        description:
+            "Labeled bubble plot. X is Sales. Y is Quantity. Size is Profit. Each bubble is labeled by Sub-Category.",
+        config: {
+            title: "X/Y Scatter - Label And Size",
+            plugin: "X/Y Scatter",
+            group_by: ["Sub-Category"],
+            columns: [
+                "Sales",
+                "Quantity",
+                null,
+                "Profit",
+                null,
+                "Sub-Category",
+            ],
+            aggregates: {
+                Sales: "avg",
+                Profit: "avg",
+                Quantity: "avg",
+                "Sub-Category": "dominant",
+            },
+        },
+        viewport: { width: 600, height: 450 },
+    },
+
     // X/Y Line
 
     {
@@ -823,6 +1037,7 @@ exports.default = [
         description:
             "Line chart with 4 lines. X is Sales. Y is Profit. Each line represents a region.",
         config: {
+            title: "X/Y Line",
             columns: ["Sales", "Profit"],
             plugin: "X/Y Line",
             aggregates: {
@@ -846,6 +1061,7 @@ exports.default = [
         description:
             "Treemap with 1-level hierarchy and 17 tiles. Each tile is a product sub-category, and the tile's size represents sales",
         config: {
+            title: "Treemap",
             plugin: "Treemap",
             group_by: ["Sub-Category"],
             columns: ["Sales"],
@@ -856,6 +1072,7 @@ exports.default = [
         description:
             "Treemap with 2-level hierarchies for Category and Sub-Category. Size is Sales.",
         config: {
+            title: "Treemap - 2 Group By",
             plugin: "Treemap",
             group_by: ["Category", "Sub-Category", "Segment"],
             columns: ["Sales"],
@@ -866,6 +1083,7 @@ exports.default = [
         description:
             "Colored treemap with 2-level hierarchies for Category and Sub-Category. Size is Sales. Color is Quantity.",
         config: {
+            title: "Treemap - Float Color",
             plugin: "Treemap",
             group_by: ["Category", "Sub-Category"],
             columns: ["Sales", "Quantity"],
@@ -877,6 +1095,7 @@ exports.default = [
         description:
             "Treemap with 2-level hierarchies for Category and Sub-Category, with each Category colored differently. Size is Sales.",
         config: {
+            title: "Treemap - Category Color",
             plugin: "Treemap",
             group_by: ["Category", "Sub-Category"],
             columns: ["Sales", "Category"],
@@ -888,6 +1107,7 @@ exports.default = [
         description:
             "Colored treemap with 3-level hierarchies for Region, Category, and Sub-Category. Size is Sales. Color is Quantity.",
         config: {
+            title: "Treemap - Row And Split By Float Color",
             plugin: "Treemap",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Region"],
@@ -901,6 +1121,7 @@ exports.default = [
         description:
             "Treemap with 3-level hierarchies for Region, Category, and Sub-Category, with each Region colored differently. Size is Sales.",
         config: {
+            title: "Treemap - Row And Split By Category Color",
             plugin: "Treemap",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Region"],
@@ -914,6 +1135,7 @@ exports.default = [
         description:
             "Treemap with 3-level hierarchies for Region, Category, and Sub-Category, with each Category colored differently. Size is Sales.",
         config: {
+            title: "Treemap - Row And Split By Category Color 2",
             plugin: "Treemap",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Region"],
@@ -929,6 +1151,7 @@ exports.default = [
         description:
             "Sunburst with 1-level hierarchy. Hierarchy is Category. Size is Sales.",
         config: {
+            title: "Sunburst",
             plugin: "Sunburst",
             group_by: ["Sub-Category"],
             columns: ["Sales"],
@@ -939,6 +1162,7 @@ exports.default = [
         description:
             "Sunburst with 3-level hierarchy. Hierarchies are Category, Sub-category, and Customer Segment.",
         config: {
+            title: "Sunburst - 2 Group By",
             plugin: "Sunburst",
             group_by: ["Category", "Sub-Category", "Segment"],
             columns: ["Sales"],
@@ -949,6 +1173,7 @@ exports.default = [
         description:
             "Colored sunburst with 2-level hierarchy. Hierarchies are Category and Sub-category. Size is Quantity. Color is Sales.",
         config: {
+            title: "Sunburst - Float Color",
             plugin: "Sunburst",
             group_by: ["Category", "Sub-Category"],
             columns: ["Quantity", "Sales"],
@@ -960,6 +1185,7 @@ exports.default = [
         description:
             "Colored sunburst with 2-level hierarchy. Hierarchies are Category and Sub-category. Size is Sales. Color is also Category.",
         config: {
+            title: "Sunburst - Category Color",
             plugin: "Sunburst",
             group_by: ["Category", "Sub-Category"],
             columns: ["Sales", "Category"],
@@ -971,6 +1197,7 @@ exports.default = [
         description:
             "Grouped sunbursts with 2-level hierarchy. Hierarchies are Category and Sub-category. Size is Sales. Each sunburst is a different region.",
         config: {
+            title: "Sunburst - Row And Split By",
             plugin: "Sunburst",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Region"],
@@ -983,6 +1210,7 @@ exports.default = [
         description:
             "Grouped colored sunbursts with 2-level hierarchy. Hierarchies are Category and Sub-category. Size is Sales. Color is Quantity. Each sunburst is a different region.",
         config: {
+            title: "Sunburst - Row And Split By Float Color",
             plugin: "Sunburst",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Region"],
@@ -995,6 +1223,7 @@ exports.default = [
         description:
             "Grouped sunbursts with 2-level hierarchy. Hierarchies are Category and Sub-category. Size is Sales. Each sunburst is a different region and color.",
         config: {
+            title: "Sunburst - Row And Split By Category Color",
             plugin: "Sunburst",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Region"],
@@ -1008,6 +1237,7 @@ exports.default = [
         description:
             "Grouped sunbursts with 2-level hierarchy. Hierarchies are Category and Sub-category. Size is Sales. Each sunburst is a different region, and each category is colored.",
         config: {
+            title: "Sunburst - Row And Split By Category Color 2",
             plugin: "Sunburst",
             group_by: ["Category", "Sub-Category"],
             split_by: ["Region"],
@@ -1024,6 +1254,7 @@ exports.default = [
         description:
             "Heatmap. Columns are Sub-Category. Rows are Region. Color is Profit.",
         config: {
+            title: "Heatmap",
             plugin: "Heatmap",
             group_by: ["Sub-Category"],
             split_by: ["Region"],
@@ -1041,6 +1272,7 @@ exports.default = [
         description:
             "Heatmap. Columns are State. Rows are Sub-Category. Color is Profit.",
         config: {
+            title: "Heatmap 2",
             plugin: "Heatmap",
             group_by: ["State"],
             split_by: ["Sub-Category"],
@@ -1058,6 +1290,7 @@ exports.default = [
         description:
             "Heatmaps. Columns are order date, bucketed by month. Rows are Sub-Category. Color is Discount.",
         config: {
+            title: "Heatmap 3",
             columns: ["Discount"],
             plugin: "Heatmap",
             expressions: {
@@ -1078,6 +1311,7 @@ exports.default = [
         description:
             "Heatmap. Columns are order date, bucketed by month. Rows are Profit, bucketed by 100. Color is Profit.",
         config: {
+            title: "Heatmap 4",
             plugin: "Heatmap",
             columns: ["Profit"],
             expressions: {
@@ -1086,7 +1320,6 @@ exports.default = [
             },
             group_by: ["bucket(\"Order Date\", 'M')"],
             split_by: ['bucket("Profit", 100)'],
-            plugin_config: {},
         },
         viewport: { width: 600, height: 450 },
     },

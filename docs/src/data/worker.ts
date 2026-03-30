@@ -10,31 +10,25 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import React from "react";
-import clsx from "clsx";
-
-export default (props) => {
-    const url = props.url;
-
-    return (
-        <div
-            className={clsx({
-                imageAlignRight: true,
-                // imageAlignLeft: !!beforeImage,
-                imageAlignSide: true,
-            })}
-            key={props.title}
-        >
-            <div className="blockImage col col--4">
-                <div className="youtube">
-                    <iframe
-                        width="500"
-                        height="294"
-                        src={url}
-                        frameBorder="0"
-                    ></iframe>
-                </div>
-            </div>
-        </div>
+const WORKER = (async () => {
+    const perspective = await import("@perspective-dev/client");
+    const perspective_viewer = await import("@perspective-dev/viewer");
+    const server_wasm = import(
+        "@perspective-dev/server/dist/wasm/perspective-server.wasm"
     );
-};
+
+    const client_wasm = import(
+        "@perspective-dev/viewer/dist/wasm/perspective-viewer.wasm"
+    );
+
+    await Promise.all([
+        perspective.init_server(server_wasm.then((x: any) => x.default)),
+        perspective_viewer.init_client(client_wasm.then((x: any) => x.default)),
+    ]);
+
+    return await perspective.worker();
+})();
+
+export function worker() {
+    return WORKER;
+}
