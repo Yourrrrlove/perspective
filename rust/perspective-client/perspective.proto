@@ -337,11 +337,19 @@ message MakeTableReq {
 }
 message MakeTableResp {}
 
-// `Client::join` — create a read-only table from an INNER JOIN of two tables.
+enum JoinType {
+    INNER = 0;
+    LEFT = 1;
+    OUTER = 2;
+}
+
+// `Client::join` — create a read-only table from a JOIN of two tables.
 message MakeJoinTableReq {
     string left_table_id = 1;
     string right_table_id = 2;
     string on_column = 3;
+    JoinType join_type = 4;
+    string right_on_column = 5;
 }
 message MakeJoinTableResp {}
 

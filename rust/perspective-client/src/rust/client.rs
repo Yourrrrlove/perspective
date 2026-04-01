@@ -26,11 +26,12 @@ use crate::proto::request::ClientReq;
 use crate::proto::response::ClientResp;
 use crate::proto::{
     ColumnType, GetFeaturesReq, GetFeaturesResp, GetHostedTablesReq, GetHostedTablesResp,
-    HostedTable, MakeJoinTableReq, MakeTableReq, RemoveHostedTablesUpdateReq, Request, Response,
-    ServerError, ServerSystemInfoReq,
+    HostedTable, JoinType, MakeJoinTableReq, MakeTableReq, RemoveHostedTablesUpdateReq, Request,
+    Response, ServerError, ServerSystemInfoReq,
 };
-use crate::table::{Table, TableInitOptions, TableOptions};
+use crate::table::{JoinOptions, Table, TableInitOptions, TableOptions};
 use crate::table_data::{TableData, UpdateData};
+use crate::table_ref::TableRef;
 use crate::utils::*;
 use crate::view::{OnUpdateData, ViewWindow};
 use crate::{OnUpdateMode, OnUpdateOptions, asyncfn, clone};
@@ -589,32 +590,36 @@ impl Client {
         }
     }
 
-    /// Create a new read-only [`Table`] by performing an INNER JOIN on two
-    /// source tables. The resulting table is reactive: when either source
-    /// table is updated, the join is automatically recomputed.
+    /// Create a new read-only [`Table`] by performing a JOIN on two source
+    /// tables. The resulting table is reactive: when either source table is
+    /// updated, the join is automatically recomputed.
     ///
     /// # Arguments
     ///
-    /// * `left` - The left source table.
-    /// * `right` - The right source table.
+    /// * `left` - The left source table (as a [`Table`] or name string).
+    /// * `right` - The right source table (as a [`Table`] or name string).
     /// * `on` - The column name to join on. Must exist in both tables with the
     ///   same type.
-    /// * `name` - Optional name for the resulting table.
+    /// * `options` - Join configuration (join type, table name).
     pub async fn join(
         &self,
-        left: &Table,
-        right: &Table,
+        left: TableRef,
+        right: TableRef,
         on: &str,
-        name: Option<String>,
+        options: JoinOptions,
     ) -> ClientResult<Table> {
-        let entity_id = name.unwrap_or_else(randid);
+        let entity_id = options.name.unwrap_or_else(randid);
+        let join_type: JoinType = options.join_type.unwrap_or_default();
+        let right_on_column = options.right_on.unwrap_or_default();
         let msg = Request {
             msg_id: self.gen_id(),
             entity_id: entity_id.clone(),
             client_req: Some(ClientReq::MakeJoinTableReq(MakeJoinTableReq {
-                left_table_id: left.get_name().to_owned(),
-                right_table_id: right.get_name().to_owned(),
+                left_table_id: left.table_name().to_owned(),
+                right_table_id: right.table_name().to_owned(),
                 on_column: on.to_owned(),
+                join_type: join_type.into(),
+                right_on_column,
             })),
         };
 

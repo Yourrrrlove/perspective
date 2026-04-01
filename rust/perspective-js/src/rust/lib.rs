@@ -59,11 +59,15 @@ export type * from "../../src/ts/ts-rs/SystemInfo.d.ts";
 export type * from "../../src/ts/ts-rs/SortDir.d.ts";
 export type * from "../../src/ts/ts-rs/Filter.d.ts";
 export type * from "../../src/ts/ts-rs/ViewConfig.d.ts";
+export type * from "../../src/ts/ts-rs/JoinOptions.ts";
+export type * from "../../src/ts/ts-rs/JoinType.ts";
 
 import type {ColumnWindow} from "../../src/ts/ts-rs/ColumnWindow.d.ts";
 import type {ColumnType} from "../../src/ts/ts-rs/ColumnType.d.ts";
 import type {ViewWindow} from "../../src/ts/ts-rs/ViewWindow.d.ts";
 import type {TableInitOptions} from "../../src/ts/ts-rs/TableInitOptions.d.ts";
+import type {JoinOptions} from "../../src/ts/ts-rs/JoinOptions.ts";
+import type {JoinType} from "../../src/ts/ts-rs/JoinType.ts";
 import type {ViewConfigUpdate} from "../../src/ts/ts-rs/ViewConfigUpdate.d.ts";
 import type * as on_update_args from "../../src/ts/ts-rs/ViewOnUpdateResp.d.ts";
 import type {OnUpdateOptions} from "../../src/ts/ts-rs/OnUpdateOptions.d.ts";

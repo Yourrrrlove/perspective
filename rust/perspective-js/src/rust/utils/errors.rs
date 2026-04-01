@@ -97,6 +97,9 @@ pub enum ApiErrorType {
     #[error("Invalid `expressions` {}", format_valid_exprs(.0))]
     InvalidViewerConfigExpressionsError(Rc<ExprValidationResult>),
 
+    #[error("Expected a Table or string table name")]
+    TableRefError,
+
     #[error("No `Table` attached")]
     NoTableError,
 
@@ -134,6 +137,7 @@ impl ApiError {
             ApiErrorType::ProstError(_) => "[ProstError]",
             ApiErrorType::InvalidViewerConfigError(..) => "[InvalidViewerConfigError]",
             ApiErrorType::InvalidViewerConfigExpressionsError(_) => "[InvalidViewerConfigError]",
+            ApiErrorType::TableRefError => "[TableRefError]",
             ApiErrorType::NoTableError => "[NoTableError]",
             ApiErrorType::SerdeWasmBindgenError(_) => "[SerdeWasmBindgenError]",
             ApiErrorType::Utf8Error(_) => "[FromUtf8Error]",

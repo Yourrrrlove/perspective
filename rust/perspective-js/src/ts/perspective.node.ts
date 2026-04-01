@@ -274,20 +274,20 @@ export function on_error(callback: Function) {
 }
 
 /**
- * Create a read-only table from an INNER JOIN of two source tables.
- * @param left
- * @param right
+ * Create a read-only table from a JOIN of two source tables.
+ * @param left - The left source table (a Table instance or a table name string).
+ * @param right - The right source table (a Table instance or a table name string).
  * @param on
- * @param name
+ * @param options - Optional join configuration: { join_type?: "inner"|"left"|"outer", name?: string }
  * @returns
  */
 export function join(
-    left: perspective_client.Table,
-    right: perspective_client.Table,
+    left: perspective_client.Table | string,
+    right: perspective_client.Table | string,
     on: string,
-    name?: string,
+    options?: perspective_client.JoinOptions,
 ) {
-    return SYNC_CLIENT.join(left, right, on, name);
+    return SYNC_CLIENT.join(left as any, right as any, on, options);
 }
 
 /**
