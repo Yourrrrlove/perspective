@@ -361,7 +361,7 @@
         }
 
         .icon {
-            display: inline-block;
+            display: inline-flex;
             mask-size: cover;
             -webkit-mask-size: cover;
             background-repeat: no-repeat;
@@ -372,6 +372,8 @@
             );
 
             &:before {
+                line-height: 0;
+                display: inline-flex;
                 content: var(--psp-icon--drawer-tab-inverted--mask-image);
                 visibility: hidden;
             }

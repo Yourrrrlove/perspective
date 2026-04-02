@@ -342,6 +342,7 @@ regular-table table tbody td {
 }
 
 regular-table table {
+    font-size: 1em;
     user-select: none;
     color: inherit;
     border-collapse: separate;

@@ -143,7 +143,9 @@ impl Component for ExpressionEditor {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, old_props: &Self::Properties) -> bool {
-        if ctx.props().alias != old_props.alias || ctx.props().reset_count != old_props.reset_count
+        if ctx.props().alias != old_props.alias
+            || ctx.props().reset_count != old_props.reset_count
+            || (ctx.props().alias.is_some() && ctx.props().metadata != old_props.metadata)
         {
             ctx.link()
                 .send_message(ExpressionEditorMsg::SetExpr(initial_expr(
