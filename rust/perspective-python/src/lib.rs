@@ -72,6 +72,7 @@ fn perspective(py: Python, m: &Bound<PyModule>) -> PyResult<()> {
     m.add_class::<client::client_async::AsyncView>()?;
     m.add_class::<client::proxy_session::ProxySession>()?;
     m.add_class::<server::virtual_server_sync::PyVirtualServer>()?;
+    m.add_class::<server::virtual_server_sync::PyVirtualDataSlice>()?;
     m.add_class::<server::generic_sql_model::PyGenericSQLVirtualServerModel>()?;
     m.add("PerspectiveError", py.get_type::<PyPerspectiveError>())?;
     m.add_function(wrap_pyfunction!(num_cpus, m)?)?;

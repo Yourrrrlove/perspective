@@ -22,6 +22,7 @@ __all__ = [
     "AsyncClient",
     "AsyncServer",
     "GenericSQLVirtualServerModel",
+    "VirtualDataSlice",
     "VirtualServer",
     "num_cpus",
     "set_num_cpus",
@@ -354,6 +355,7 @@ from .perspective import (
     AsyncServer,
     AsyncClient,
     VirtualServer,
+    VirtualDataSlice,
     GenericSQLVirtualServerModel,
     # NOTE: these are classes without constructors,
     # so we import them just for type hinting

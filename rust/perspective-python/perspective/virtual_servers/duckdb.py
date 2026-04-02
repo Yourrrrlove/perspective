@@ -10,8 +10,10 @@
 #  ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 #  ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+import io
 import duckdb
 import perspective
+import pyarrow.ipc as ipc
 
 from datetime import datetime
 import logging
@@ -179,14 +181,13 @@ class DuckDBVirtualServerHandler(VirtualServerHandler):
         return (row[0], row[1])
 
     def view_get_data(self, view_name, config, schema, viewport, data):
-        group_by = config["group_by"]
         query = self.sql_builder.view_get_data(view_name, config, viewport, schema)
-        results, columns, dtypes = run_query(self.db, query, columns=True)
-        for cidx, col in enumerate(columns):
-            dtype = duckdb_type_to_psp(str(dtypes[cidx]))
-            for ridx, row in enumerate(results):
-                grouping_id = row[0] if len(group_by) > 0 else None
-                data.set_col(dtype, col, ridx, row[cidx], grouping_id)
+        result = self.db.sql(query)
+        arrow_table = result.fetch_arrow_table()
+        buf = io.BytesIO()
+        with ipc.new_stream(buf, arrow_table.schema) as writer:
+            writer.write_table(arrow_table)
+        data.from_arrow_ipc(buf.getvalue())
 
 
 ################################################################################
