@@ -16,6 +16,50 @@ import {
     new_superstore_table,
 } from "./src/js/superstore.mjs";
 
+export async function join_suite(perspective, metadata) {
+    if (check_version_gte(metadata.version, "4.3.0")) {
+        async function before_all() {
+            const left = await perspective.table(
+                new_superstore_table(metadata),
+            );
+
+            const columns = await left.columns();
+            const expressions = Object.fromEntries(
+                columns
+                    .filter((x) => x !== "Row ID")
+                    .map((x) => [`${x}_2`, `"${x}"`]),
+            );
+
+            const view = await left.view({
+                columns: ["Row ID", ...Object.keys(expressions)],
+                expressions,
+            });
+
+            const right = await perspective.table(await view.to_arrow());
+            await view.delete();
+            return { left, right };
+        }
+
+        async function after_all({ left, right }) {
+            await left.delete();
+            await right.delete();
+        }
+
+        await benchmark({
+            name: `.join()`,
+            before_all,
+            after_all,
+            metadata,
+            async after(_, joined) {
+                await joined.delete();
+            },
+            async test({ left, right }) {
+                return await perspective.join(left, right, "Row ID");
+            },
+        });
+    }
+}
+
 export async function to_data_suite(perspective, metadata) {
     async function before_all() {
         const table = await perspective.table(new_superstore_table(metadata));
@@ -152,7 +196,7 @@ export async function view_suite(perspective, metadata) {
         async test({ table, schema }) {
             const columns = ["Sales", "Quantity", "City"];
             const aggregates = Object.fromEntries(
-                Object.keys(schema).map((x) => [x, "median"])
+                Object.keys(schema).map((x) => [x, "median"]),
             );
 
             if (check_version_gte(metadata.version, "1.2.0")) {
@@ -176,7 +220,7 @@ export async function table_suite(perspective, metadata) {
     async function before_all() {
         try {
             const table = await perspective.table(
-                new_superstore_table(metadata)
+                new_superstore_table(metadata),
             );
 
             const view = await table.view();
