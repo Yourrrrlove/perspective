@@ -392,6 +392,32 @@ pub struct PyVirtualDataSlice(Arc<Mutex<VirtualDataSlice>>);
 
 #[pymethods]
 impl PyVirtualDataSlice {
+    #[new]
+    pub fn py_new() -> Self {
+        use perspective_client::config::{GroupRollupMode, ViewConfig};
+        let config = ViewConfig {
+            group_rollup_mode: GroupRollupMode::Total,
+            ..Default::default()
+        };
+        PyVirtualDataSlice(Arc::new(Mutex::new(VirtualDataSlice::new(config))))
+    }
+
+    pub fn from_arrow_ipc(&self, ipc: &[u8]) -> PyResult<()> {
+        self.0
+            .lock()
+            .unwrap()
+            .from_arrow_ipc(ipc)
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
+    pub fn render_to_columns_json(&self) -> PyResult<String> {
+        self.0
+            .lock()
+            .unwrap()
+            .render_to_columns_json()
+            .map_err(|e| PyValueError::new_err(e.to_string()))
+    }
+
     #[pyo3(signature=(dtype, name, index, val, grouping_id = None))]
     pub fn set_col(
         &self,

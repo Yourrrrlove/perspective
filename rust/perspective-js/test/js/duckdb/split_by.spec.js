@@ -65,6 +65,50 @@ describeDuckDB("split_by", (getClient) => {
         await view.delete();
     });
 
+    // https://github.com/perspective-dev/perspective/issues/3148
+    test("split_by with group_by and count aggregate", async function () {
+        const table = await getClient().open_table("memory.superstore");
+        const view = await table.view({
+            columns: ["Row ID"],
+            split_by: ["Region"],
+            group_by: ["Category"],
+            aggregates: { "Row ID": "count" },
+        });
+
+        const json = await view.to_json({ start_row: 0, end_row: 4 });
+        expect(json).toEqual([
+            {
+                __ROW_PATH__: [],
+                "Central|Row ID": 2323,
+                "East|Row ID": 2848,
+                "South|Row ID": 1620,
+                "West|Row ID": 3203,
+            },
+            {
+                __ROW_PATH__: ["Furniture"],
+                "Central|Row ID": 481,
+                "East|Row ID": 601,
+                "South|Row ID": 332,
+                "West|Row ID": 707,
+            },
+            {
+                __ROW_PATH__: ["Office Supplies"],
+                "Central|Row ID": 1422,
+                "East|Row ID": 1712,
+                "South|Row ID": 995,
+                "West|Row ID": 1897,
+            },
+            {
+                __ROW_PATH__: ["Technology"],
+                "Central|Row ID": 420,
+                "East|Row ID": 535,
+                "South|Row ID": 293,
+                "West|Row ID": 599,
+            },
+        ]);
+        await view.delete();
+    });
+
     test.skip("split_by without group_by", async function () {
         const table = await getClient().open_table("memory.superstore");
         const view = await table.view({

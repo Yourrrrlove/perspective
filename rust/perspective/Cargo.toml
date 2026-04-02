@@ -23,7 +23,6 @@ keywords = []
 include = ["src/**/*", "tests/**/*", "Cargo.toml"]
 
 [lib]
-crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
 
