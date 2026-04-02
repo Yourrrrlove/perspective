@@ -14,6 +14,7 @@
 
 #include "perspective/base.h"
 #include "perspective/exports.h"
+#include "perspective/join_engine.h"
 #include "perspective/raw_types.h"
 #include "perspective/schema.h"
 #include "perspective/view.h"
@@ -682,6 +683,7 @@ namespace server {
             m_cpu_time_start;
         std::atomic<long long> m_cpu_time;
         ServerResources m_resources;
+        JoinEngine m_join_engine;
         t_computed_expression_parser m_computed_expression_parser;
     };
 

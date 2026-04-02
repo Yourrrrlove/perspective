@@ -22,6 +22,10 @@
         - [Selection and Ordering](./explanation/view/config/selection_and_ordering.md)
         - [`expressions`](./explanation/view/config/expressions.md)
     - [Advanced View Operations](./explanation/view/advanced.md)
+- [`Join`](./explanation/join.md)
+    - [Join Types](./explanation/join/join_types.md)
+    - [Join Options](./explanation/join/options.md)
+    - [Reactivity and Constraints](./explanation/join/reactivity.md)
 
 # JavaScript
 
@@ -32,6 +36,7 @@
     - [Cleaning up resources](./how_to/javascript/deleting.md)
     - [Hosting a `WebSocketServer` in Node.js](./how_to/javascript/nodejs_server.md)
     - [Customizing `perspective.worker()`](./how_to/javascript/custom_worker.md)
+    - [Joining Tables](./how_to/javascript/join.md)
 - [`perspective-viewer` Custom Element library](./how_to/javascript/viewer.md)
     - [Loading data](./how_to/javascript/loading_data.md)
     - [Theming](./how_to/javascript/theming.md)
@@ -52,6 +57,7 @@
 - [Callbacks and events](./how_to/python/callbacks.md)
 - [Multithreading](./how_to/python/multithreading.md)
 - [Hosting a WebSocket server](./how_to/python/websocket.md)
+- [Joining Tables](./how_to/python/join.md)
 - [`PerspectiveWidget` for JupyterLab](./how_to/python/jupyterlab.md)
 - [Virtual Servers](./how_to/python/virtual_server.md)
     - [DuckDB](./how_to/python/virtual_server/duckdb.md)

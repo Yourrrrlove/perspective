@@ -20,7 +20,7 @@ use js_sys::{Function, Uint8Array};
 #[cfg(doc)]
 use perspective_client::SystemInfo;
 use perspective_client::{
-    ClientError, ReconnectCallback, Session, TableData, TableInitOptions, asyncfn,
+    ClientError, ReconnectCallback, Session, TableData, TableInitOptions, TableRef, asyncfn,
 };
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_derive::TryFromJsValue;
@@ -35,6 +35,35 @@ extern "C" {
     #[derive(Clone)]
     #[wasm_bindgen(typescript_type = "TableInitOptions")]
     pub type JsTableInitOptions;
+
+    #[derive(Clone)]
+    #[wasm_bindgen(typescript_type = "JoinOptions")]
+    pub type JsJoinOptions;
+}
+
+async fn js_to_table_ref(val: &JsValue) -> ApiResult<TableRef> {
+    if let Some(name) = val.as_string() {
+        Ok(TableRef::from(name))
+    } else {
+        let get_name = js_sys::Reflect::get(val, &wasm_bindgen::intern("get_name").into())
+            .map_err(|_| apierror!(TableRefError))?
+            .dyn_into::<js_sys::Function>()
+            .map_err(|_| apierror!(TableRefError))?;
+
+        let promise = get_name
+            .call0(val)
+            .map_err(|_| apierror!(TableRefError))?
+            .dyn_into::<js_sys::Promise>()
+            .map_err(|_| apierror!(TableRefError))?;
+
+        let name = wasm_bindgen_futures::JsFuture::from(promise)
+            .await
+            .map_err(|_| apierror!(TableRefError))?
+            .as_string()
+            .ok_or_else(|| apierror!(TableRefError))?;
+
+        Ok(TableRef::from(name))
+    }
 }
 
 #[wasm_bindgen]
@@ -380,6 +409,46 @@ impl Client {
 
         let args = TableData::from_js_value(value, options.format)?;
         Ok(Table(self.client.table(args, options).await?))
+    }
+
+    /// Creates a new read-only [`Table`] by performing an INNER JOIN on two
+    /// source tables. The resulting table is reactive: when either source
+    /// table is updated, the join is automatically recomputed.
+    ///
+    /// # Arguments
+    ///
+    /// - `left` - The left source table (a [`Table`] instance or a table name
+    ///   string).
+    /// - `right` - The right source table (a [`Table`] instance or a table name
+    ///   string).
+    /// - `on` - The column name to join on. Must exist in both tables with the
+    ///   same type.
+    /// - `options` - Optional join configuration: `{ join_type?: "inner" |
+    ///   "left" | "outer", name?: string }`.
+    ///
+    /// # JavaScript Examples
+    ///
+    /// ```javascript
+    /// const joined = await client.join(orders_table, products_table, "Product ID", { join_type: "left" });
+    /// const joined = await client.join("orders", "products", "Product ID", { join_type: "left" });
+    /// ```
+    #[wasm_bindgen]
+    pub async fn join(
+        &self,
+        left: JsValue,
+        right: JsValue,
+        on: &str,
+        options: Option<JsJoinOptions>,
+    ) -> ApiResult<Table> {
+        let options = options
+            .into_serde_ext::<Option<perspective_client::JoinOptions>>()?
+            .unwrap_or_default();
+
+        let left_ref = js_to_table_ref(&left).await?;
+        let right_ref = js_to_table_ref(&right).await?;
+        Ok(Table(
+            self.client.join(left_ref, right_ref, on, options).await?,
+        ))
     }
 
     /// Terminates this [`Client`], cleaning up any [`crate::View`] handles the

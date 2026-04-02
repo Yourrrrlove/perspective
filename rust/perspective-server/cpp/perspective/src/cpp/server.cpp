@@ -1077,6 +1077,7 @@ needs_poll(const proto::Request::ClientReqCase proto_case) {
         case ReqCase::kViewRemoveOnUpdateReq:
         case ReqCase::kServerSystemInfoReq:
         case ReqCase::kGetFeaturesReq:
+        case ReqCase::kMakeJoinTableReq:
             return false;
         case proto::Request::CLIENT_REQ_NOT_SET:
             throw std::runtime_error("Unhandled request type 2");
@@ -1104,6 +1105,7 @@ entity_type_is_table(const proto::Request::ClientReqCase proto_case) {
         case ReqCase::kTableReplaceReq:
         case ReqCase::kTableDeleteReq:
         case ReqCase::kTableMakeViewReq:
+        case ReqCase::kMakeJoinTableReq:
             return true;
         case ReqCase::kViewOnDeleteReq:
         case ReqCase::kViewRemoveDeleteReq:
@@ -1667,6 +1669,90 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
 
             break;
         }
+        case proto::Request::kMakeJoinTableReq: {
+            const auto& r = req.make_join_table_req();
+            if (m_resources.has_table(entity_id)) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                std::stringstream ss;
+                ss << "Table \"" << entity_id << "\" already exists";
+                *err = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            if (!m_resources.has_table(r.left_table_id())) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                std::stringstream ss;
+                ss << "Table \"" << r.left_table_id() << "\" not found";
+                *err = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            if (!m_resources.has_table(r.right_table_id())) {
+                proto::Response resp;
+                auto* err = resp.mutable_server_error()->mutable_message();
+                std::stringstream ss;
+                ss << "Table \"" << r.right_table_id() << "\" not found";
+                *err = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            auto left_table = m_resources.get_table(r.left_table_id());
+            auto right_table = m_resources.get_table(r.right_table_id());
+
+            auto result = m_join_engine.make_join_table(
+                r.on_column(), r.right_on_column(), r.join_type(), left_table, right_table
+            );
+
+            if (!result.ok()) {
+                proto::Response resp;
+                *resp.mutable_server_error()->mutable_message() = result.error;
+                push_resp(std::move(resp));
+                break;
+            }
+
+            m_resources.host_table(entity_id, result.table);
+            m_join_engine.register_join(
+                entity_id,
+                r.left_table_id(),
+                r.right_table_id(),
+                r.on_column(),
+                r.right_on_column(),
+                r.join_type()
+            );
+
+            // Compute initial join
+            m_join_engine.recompute(
+                entity_id, left_table, right_table, result.table
+            );
+
+            // Process the join table so its gnode state is up to date
+            auto jt = m_resources.get_table(entity_id);
+            jt->get_pool()->_process();
+            m_resources.mark_table_dirty(entity_id);
+            m_resources.mark_table_clean(entity_id);
+
+            proto::Response resp;
+            resp.mutable_make_join_table_resp();
+            push_resp(std::move(resp));
+
+            // Notify on_hosted_tables_update listeners
+            auto subscriptions = m_resources.get_on_hosted_tables_update_sub();
+            for (auto& subscription : subscriptions) {
+                Response out;
+                out.set_msg_id(subscription.id);
+                ProtoServerResp<ProtoServer::Response> resp2;
+                resp2.data = std::move(out);
+                resp2.client_id = subscription.client_id;
+                proto_resp.emplace_back(std::move(resp2));
+            }
+
+            break;
+        }
         case proto::Request::kTableSizeReq: {
             auto table = m_resources.get_table(req.entity_id());
             proto::Response resp;
@@ -1768,6 +1854,13 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             break;
         }
         case proto::Request::kTableReplaceReq: {
+            if (m_join_engine.is_join_table(req.entity_id())) {
+                proto::Response resp;
+                *resp.mutable_server_error()->mutable_message() =
+                    "Cannot update a read-only join table";
+                push_resp(std::move(resp));
+                break;
+            }
             auto table = m_resources.get_table(req.entity_id());
             table->clear();
             const auto& r = req.table_replace_req();
@@ -1802,6 +1895,13 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             break;
         }
         case proto::Request::kTableRemoveReq: {
+            if (m_join_engine.is_join_table(req.entity_id())) {
+                proto::Response resp;
+                *resp.mutable_server_error()->mutable_message() =
+                    "Cannot update a read-only join table";
+                push_resp(std::move(resp));
+                break;
+            }
             const auto& r = req.table_remove_req();
             auto table = m_resources.get_table(req.entity_id());
             switch (r.data().data_case()) {
@@ -1831,6 +1931,13 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             break;
         }
         case proto::Request::kTableUpdateReq: {
+            if (m_join_engine.is_join_table(req.entity_id())) {
+                proto::Response resp;
+                *resp.mutable_server_error()->mutable_message() =
+                    "Cannot update a read-only join table";
+                push_resp(std::move(resp));
+                break;
+            }
             const auto& r = req.table_update_req();
             auto table = m_resources.get_table(req.entity_id());
             switch (r.data().data_case()) {
@@ -2624,6 +2731,25 @@ ProtoServer::_handle_request(std::uint32_t client_id, Request&& req) {
             break;
         }
         case proto::Request::kTableDeleteReq: {
+            // Prevent deleting a source table that feeds a join table
+            auto dependents =
+                m_join_engine.get_dependent_join_tables(req.entity_id());
+            if (!dependents.empty()
+                && !m_join_engine.is_join_table(req.entity_id())) {
+                proto::Response resp;
+                std::stringstream ss;
+                ss << "Cannot delete table: it is a source for join table \""
+                   << dependents[0] << "\"";
+                *resp.mutable_server_error()->mutable_message() = ss.str();
+                push_resp(std::move(resp));
+                break;
+            }
+
+            // If this is a join table being deleted, clean up join metadata
+            if (m_join_engine.is_join_table(req.entity_id())) {
+                m_join_engine.unregister_join(req.entity_id());
+            }
+
             const auto is_immediate = req.table_delete_req().is_immediate();
             if (is_immediate
                 || m_resources.get_table_view_count(req.entity_id()) == 0) {
@@ -2904,6 +3030,65 @@ ProtoServer::_poll() {
     }
 
     m_resources.mark_all_tables_clean();
+
+    // Build the set of dirty source table IDs so we can tell the join
+    // engine which side(s) changed, allowing it to skip rebuilding the
+    // right-side index when only the left table was updated.
+    tsl::hopscotch_set<ServerResources::t_id> dirty_ids;
+    for (auto& [_, table_id] : tables) {
+        dirty_ids.insert(table_id);
+    }
+
+    // Recompute join tables whose sources were dirty, using a worklist
+    // to handle chained joins (join of join) in dependency order.
+    tsl::hopscotch_set<ServerResources::t_id> processed_joins;
+    std::vector<ServerResources::t_id> worklist;
+    for (auto& [_, table_id] : tables) {
+        auto dependents = m_join_engine.get_dependent_join_tables(table_id);
+        for (auto& join_id : dependents) {
+            if (processed_joins.find(join_id) == processed_joins.end()) {
+                worklist.push_back(join_id);
+            }
+        }
+    }
+
+    while (!worklist.empty()) {
+        auto join_id = worklist.back();
+        worklist.pop_back();
+        if (!processed_joins.insert(join_id).second) {
+            continue;
+        }
+
+        const auto& def = m_join_engine.get_join_def(join_id);
+        bool left_changed = dirty_ids.contains(def.left_table_id);
+        bool right_changed = dirty_ids.contains(def.right_table_id);
+        auto left_table = m_resources.get_table(def.left_table_id);
+        auto right_table = m_resources.get_table(def.right_table_id);
+        auto join_table = m_resources.get_table(join_id);
+        m_join_engine.recompute(
+            join_id,
+            left_table,
+            right_table,
+            join_table,
+            left_changed,
+            right_changed
+        );
+
+        _process_table_unchecked(join_table, join_id, resp_envs);
+        m_resources.mark_table_clean(join_id);
+
+        // The recomputed join table is itself "dirty" for chained joins.
+        dirty_ids.insert(join_id);
+
+        // Check for chained joins (join tables that depend on this join)
+        auto chained = m_join_engine.get_dependent_join_tables(join_id);
+        for (auto& chained_id : chained) {
+            if (processed_joins.find(chained_id) == processed_joins.end()) {
+                worklist.push_back(chained_id);
+            }
+        }
+    }
+
     return resp_envs;
 }
 

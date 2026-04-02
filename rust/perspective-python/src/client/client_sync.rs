@@ -12,18 +12,45 @@
 
 use std::collections::HashMap;
 use std::future::Future;
+use std::sync::Arc;
 
 use perspective_client::config::Scalar;
+use perspective_client::{JoinType, TableRef, assert_table_api, assert_view_api};
 #[cfg(doc)]
 use perspective_client::{TableInitOptions, UpdateOptions, config::ViewConfigUpdate};
-use perspective_client::{assert_table_api, assert_view_api};
 use pyo3::exceptions::PyTypeError;
 use pyo3::marker::Ungil;
 use pyo3::prelude::*;
 use pyo3::types::*;
 
 use super::client_async::*;
+use crate::py_err::ResultTClientErrorExt;
 use crate::server::Server;
+
+pub(crate) fn py_to_table_ref(val: &Bound<'_, PyAny>) -> PyResult<TableRef> {
+    if let Ok(t) = val.downcast::<Table>() {
+        let table_ref = t.borrow();
+        Ok(TableRef::from(&*table_ref.0.table))
+    } else if let Ok(name) = val.extract::<String>() {
+        Ok(TableRef::from(name))
+    } else {
+        Err(PyTypeError::new_err(
+            "Expected a Table or string table name",
+        ))
+    }
+}
+
+pub(crate) fn parse_join_type(join_type: Option<&str>) -> PyResult<JoinType> {
+    match join_type {
+        Some("left") => Ok(JoinType::Left),
+        Some("outer") => Ok(JoinType::Outer),
+        None | Some("inner") => Ok(JoinType::Inner),
+        Some(other) => Err(pyo3::exceptions::PyValueError::new_err(format!(
+            "Unknown join type: \"{}\"",
+            other
+        ))),
+    }
+}
 
 pub(crate) fn scalar_to_py(py: Python<'_>, scalar: &Scalar) -> PyObject {
     match scalar {
@@ -171,6 +198,47 @@ impl Client {
         let client = self.0.clone();
         let table = client.open_table(name).py_block_on(py)?;
         Ok(Table(table))
+    }
+
+    /// Creates a new read-only [`Table`] by performing a JOIN on two
+    /// source tables. The resulting table is reactive: when either source
+    /// table is updated, the join is automatically recomputed.
+    ///
+    /// # Python Examples
+    ///
+    /// ```python
+    /// joined = client.join(orders_table, products_table, "Product ID", "left")
+    /// ```
+    #[pyo3(signature = (left, right, on, join_type=None, name=None, right_on=None))]
+    #[allow(clippy::too_many_arguments, reason = "This is a Python API")]
+    pub fn join(
+        &self,
+        py: Python<'_>,
+        left: &Bound<'_, PyAny>,
+        right: &Bound<'_, PyAny>,
+        on: String,
+        join_type: Option<String>,
+        name: Option<String>,
+        right_on: Option<String>,
+    ) -> PyResult<Table> {
+        let left_ref = py_to_table_ref(left)?;
+        let right_ref = py_to_table_ref(right)?;
+        let jt = parse_join_type(join_type.as_deref())?;
+        let options = perspective_client::JoinOptions {
+            join_type: Some(jt),
+            name,
+            right_on,
+        };
+        let table = self
+            .0
+            .client
+            .join(left_ref, right_ref, &on, options)
+            .py_block_on(py)
+            .into_pyerr()?;
+        Ok(Table(AsyncTable {
+            table: Arc::new(table),
+            client: self.0.clone(),
+        }))
     }
 
     /// Retrieves the names of all tables that this client has access to.

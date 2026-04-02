@@ -18,8 +18,8 @@ use std::sync::Arc;
 use futures::FutureExt;
 use perspective_client::{
     Client, ColumnWindow, DeleteOptions, OnUpdateData, OnUpdateMode, OnUpdateOptions, Table,
-    TableData, TableInitOptions, TableReadFormat, UpdateData, UpdateOptions, View, ViewWindow,
-    assert_table_api, assert_view_api, asyncfn,
+    TableData, TableInitOptions, TableReadFormat, TableRef, UpdateData, UpdateOptions, View,
+    ViewWindow, assert_table_api, assert_view_api, asyncfn,
 };
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -33,6 +33,23 @@ use super::update_data::UpdateDataExt;
 use super::{pandas, polars, pyarrow};
 use crate::py_async::{self, AllowThreads};
 use crate::py_err::{PyPerspectiveError, ResultTClientErrorExt};
+
+fn py_to_table_ref_async(val: &Bound<'_, PyAny>) -> PyResult<TableRef> {
+    if let Ok(t) = val.extract::<AsyncTable>() {
+        Ok(TableRef::from(t.table.as_ref()))
+    } else if let Ok(name) = val.extract::<String>() {
+        Ok(TableRef::from(name))
+    } else {
+        Err(pyo3::exceptions::PyTypeError::new_err(
+            "Expected a Table or string table name",
+        ))
+    }
+}
+
+fn py_to_table_ref_from_owned(py: Python<'_>, val: &Py<PyAny>) -> PyResult<TableRef> {
+    let bound = val.bind(py);
+    py_to_table_ref_async(bound)
+}
 
 /// An instance of a [`Client`] is a connection to a single
 /// `perspective_server::Server`, whether locally in-memory or remote over some
@@ -234,6 +251,48 @@ impl AsyncClient {
         })
     }
 
+    /// Creates a new read-only [`Table`] by performing an INNER JOIN on two
+    /// source tables. The resulting table is reactive: when either source
+    /// table is updated, the join is automatically recomputed.
+    ///
+    /// # Python Examples
+    ///
+    /// ```python
+    /// joined = await client.join(orders_table, products_table, "Product ID", "left")
+    /// ```
+    #[pyo3(signature = (left, right, on, join_type=None, name=None, right_on=None))]
+    pub async fn join(
+        &self,
+        left: Py<PyAny>,
+        right: Py<PyAny>,
+        on: String,
+        join_type: Option<String>,
+        name: Option<String>,
+        right_on: Option<String>,
+    ) -> PyResult<AsyncTable> {
+        let (left_ref, right_ref) = Python::with_gil(|py| {
+            let left_ref = py_to_table_ref_from_owned(py, &left)?;
+            let right_ref = py_to_table_ref_from_owned(py, &right)?;
+            Ok::<_, PyErr>((left_ref, right_ref))
+        })?;
+        let jt = super::client_sync::parse_join_type(join_type.as_deref())?;
+        let options = perspective_client::JoinOptions {
+            join_type: Some(jt),
+            name,
+            right_on,
+        };
+        let py_client = self.clone();
+        let table = self
+            .client
+            .join(left_ref, right_ref, &on, options)
+            .await
+            .into_pyerr()?;
+        Ok(AsyncTable {
+            table: Arc::new(table),
+            client: py_client,
+        })
+    }
+
     /// Retrieves the names of all tables that this client has access to.
     ///
     /// `name` is a string identifier unique to the [`Table`] (per [`Client`]),
@@ -325,8 +384,8 @@ impl AsyncClient {
 #[pyclass]
 #[derive(Clone)]
 pub struct AsyncTable {
-    table: Arc<Table>,
-    client: AsyncClient,
+    pub(super) table: Arc<Table>,
+    pub(super) client: AsyncClient,
 }
 
 assert_table_api!(AsyncTable);

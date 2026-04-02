@@ -158,6 +158,7 @@ public:
     t_data_table* get_table();
 
     std::shared_ptr<t_data_table> get_table_sptr() const;
+    std::shared_ptr<t_data_table> get_pkeyed_table() const;
 
     t_data_table* _get_otable(t_uindex port_id);
     t_data_table* _get_itable(t_uindex port_id);

@@ -70,5 +70,6 @@ perspective_bench.suite(
         await all_benchmarks.table_suite(client, metadata);
         await all_benchmarks.view_suite(client, metadata);
         await all_benchmarks.to_data_suite(client, metadata);
+        await all_benchmarks.join_suite(client, metadata);
     },
 );

@@ -67,6 +67,7 @@ import type {
     ColumnWindow,
     ViewWindow, 
     OnUpdateOptions,
+    JoinOptions,
     UpdateOptions,
     DeleteOptions,
     ViewConfigUpdate,
