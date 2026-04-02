@@ -1,6 +1,31 @@
+# [v4.4.0](https://github.com/perspective-dev/perspective/releases/tag/v4.4.0)
+
+_2 April 2026_ ([Full changelog](https://github.com/finos/perspective/compare/v4.4.0...v4.4.0))
+
+**Breaking**
+
+- Redesign theme support [#3146](https://github.com/finos/perspective/pull/3146)
+- Add presize API to `&lt;perspective-viewer&gt;` [#3144](https://github.com/finos/perspective/pull/3144)
+
+Features
+
+- `Client::join` API [#3143](https://github.com/finos/perspective/pull/3143)
+- Performance optimization for `perspective-server` [#3141](https://github.com/finos/perspective/pull/3141)
+- Use Arrow IPC in Virtual Server API [#3139](https://github.com/finos/perspective/pull/3139)
+- Implement `ViewGetMinMaxReq` API for Virtual Servers [#3140](https://github.com/finos/perspective/pull/3140)
+
+Fixes
+
+- SQL model fixes [#3151](https://github.com/finos/perspective/pull/3151)
+- Workspace theme fixes [#3150](https://github.com/finos/perspective/pull/3150)
+
+Misc
+
+- Refactor `&lt;perspective-viewer&gt;` and add tests [#3138](https://github.com/finos/perspective/pull/3138)
+
 # [v4.3.0](https://github.com/perspective-dev/perspective/releases/tag/v4.3.0)
 
-_10 March 2026_ ([Full changelog](https://github.com/finos/perspective/compare/v4.3.0...v4.3.0))
+_10 March 2026_ ([Full changelog](https://github.com/finos/perspective/compare/v4.2.0...v4.3.0))
 
 **Breaking**
 
