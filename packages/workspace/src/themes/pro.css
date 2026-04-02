@@ -17,7 +17,7 @@
 perspective-workspace,
 perspective-workspace[theme="Pro Light"],
 perspective-indicator[theme="Pro Light"] {
-    --theme-name: "Pro Light";
+    --psp-theme-name: "Pro Light";
 }
 
 perspective-workspace {
@@ -43,50 +43,50 @@ perspective-workspace {
     --menu-close--content: "close";
     --menu-new--content: "description";
     --menu-newview--content: "file_copy";
-    --workspace-split-panel-handle--background-color: #f2f4f6;
+    --psp-workspace--split-panel-handle--background-color: #f2f4f6;
 
-    --workspace-tabbar--border: 1px solid var(--inactive--color);
-    --workspace-tabbar--border-width: 1px 1px 1px 1px;
-    --workspace-tabbar--border-radius: 6px;
-    --workspace-tabbar--border-color: var(--inactive--color);
-    --workspace-tabbar-tab--border-width: 1px 1px 0px 1px;
+    --psp-workspace--tabbar--border: 1px solid var(--psp-inactive--color);
+    --psp-workspace--tabbar--border-width: 1px 1px 1px 1px;
+    --psp-workspace--tabbar--border-radius: 6px;
+    --psp-workspace--tabbar--border-color: var(--psp-inactive--color);
+    --psp-workspace--tabbar-tab--border-width: 1px 1px 0px 1px;
 
     /* Workspace */
-    --column-drag-handle--mask-image: url("../svg/drag-handle.svg");
-    --bookmarks--mask-image: url("../svg/bookmark-icon.svg");
+    --psp-icon--column-drag-handle--mask-image: url("../svg/drag-handle.svg");
+    --psp-icon--bookmarks--mask-image: url("../svg/bookmark-icon.svg");
 
     /* perspective-viewer-pro--colors */
     color: #161616;
     background-color: #dadada;
-    --icon--color: #161616;
-    --inactive--color: #ababab;
-    --inactive--border-color: #dadada;
+    --psp--color: #161616;
+    --psp-inactive--color: #ababab;
+    --psp-inactive--border-color: #dadada;
 
-    --active--color: #2670a9;
-    --error--color: #ff471e;
-    --plugin--background: #ffffff;
-    --overflow-hint-icon--color: rgba(0, 0, 0, 0.2);
-    --select--background-color: none;
-    --warning--background: #042121;
-    --warning--color: #fdfffd;
+    --psp-active--color: #2670a9;
+    --psp-error--color: #ff471e;
+    --psp--background-color: #ffffff;
+    --psp-icon-overflow-hint--color: rgba(0, 0, 0, 0.2);
+    --psp-select--background-color: none;
+    --psp-warning--background: #042121;
+    --psp-warning--color: #fdfffd;
 
-    --select-arrow--background-image: var(
-        --select-arrow-dark--background-image
+    --psp-icon--select-arrow--mask-image: var(
+        --psp-icon--select-arrow-dark--mask-image
     );
 
-    --select-arrow--hover--background-image: var(
-        --select-arrow-light--background-image
+    --psp-icon--select-arrow-hover--mask-image: var(
+        --psp-icon--select-arrow-light--mask-image
     );
 
     /* TODO deprecate me */
-    --overflow-hint-icon--color: #fdfffd;
+    --psp-icon-overflow-hint--color: #fdfffd;
 }
 
 perspective-workspace perspective-viewer.widget-maximize {
     /* --modal-panel--margin: -4px 0 -4px 0; */
     --psp-status-bar--border-radius: 6px 0 0 0;
     --psp-main-column--margin: 3px 0 3px 3px;
-    --psp-main-column--border: 1px solid var(--inactive--color);
+    --psp-main-column--border: 1px solid var(--psp-inactive--color);
     --psp-main-column--border-width: 1px 0px 1px 1px;
     --psp-main-column--border-radius: 6px 0 0 6px;
     /* --settings-button--margin: 10px 0 0 0; */
@@ -99,7 +99,7 @@ perspective-workspace perspective-viewer {
 
 perspective-viewer[theme="Pro Light"].workspace-master-widget {
     background-color: #f2f4f6;
-    --plugin--background: #f2f4f6;
+    --psp--background-color: #f2f4f6;
     regular-table {
         td,
         th {
@@ -109,7 +109,7 @@ perspective-viewer[theme="Pro Light"].workspace-master-widget {
 }
 
 perspective-viewer {
-    --bookmarks--mask-image: url("../svg/bookmark-icon.svg");
+    --psp-icon--bookmarks--mask-image: url("../svg/bookmark-icon.svg");
 }
 
 perspective-workspace-menu {

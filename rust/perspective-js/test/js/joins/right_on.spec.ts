@@ -39,10 +39,10 @@ test.describe("right_on option", function () {
             { id: 2, x: 20, y: "b" },
         ]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("output schema uses left key column name", async function () {
@@ -63,9 +63,9 @@ test.describe("right_on option", function () {
             y: "string",
         });
 
-        joined.delete();
-        right.delete();
-        left.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("errors on type mismatch between on and right_on", async function () {
@@ -85,8 +85,8 @@ test.describe("right_on option", function () {
         }
 
         expect(error).toBeDefined();
-        right.delete();
-        left.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("errors when right_on column not found", async function () {
@@ -106,8 +106,8 @@ test.describe("right_on option", function () {
         }
 
         expect(error).toBeDefined();
-        right.delete();
-        left.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("right_on same as on behaves identically to omitting it", async function () {
@@ -132,10 +132,10 @@ test.describe("right_on option", function () {
             { id: 2, x: 20, y: "b" },
         ]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("reacts to right table updates with right_on", async function () {
@@ -164,10 +164,10 @@ test.describe("right_on option", function () {
             { id: 2, x: 20, y: "b" },
         ]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("left join with right_on", async function () {
@@ -196,10 +196,10 @@ test.describe("right_on option", function () {
             { id: 3, x: 30, y: null },
         ]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("outer join with right_on", async function () {
@@ -227,9 +227,9 @@ test.describe("right_on option", function () {
             { id: 3, x: null, y: "c" },
         ]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 });

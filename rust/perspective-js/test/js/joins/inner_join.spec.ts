@@ -33,10 +33,10 @@ test.describe("Inner joins", function () {
 
         expect(json).toHaveLength(2);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("joined table has correct schema", async function () {
@@ -56,9 +56,9 @@ test.describe("Inner joins", function () {
             y: "string",
         });
 
-        joined.delete();
-        right.delete();
-        left.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("joined table reacts to left table updates", async function () {
@@ -87,10 +87,10 @@ test.describe("Inner joins", function () {
             { id: 1, x: 99, y: "a" },
         ]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("joined table reacts to right table updates", async function () {
@@ -119,10 +119,10 @@ test.describe("Inner joins", function () {
             { id: 2, x: 20, y: "b" },
         ]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("joined table reacts to new matching rows", async function () {
@@ -142,10 +142,10 @@ test.describe("Inner joins", function () {
         expect(json).toHaveLength(1);
         expect(json).toEqual([{ id: 1, x: 10, y: "a" }]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("joined table supports views with group_by", async function () {
@@ -171,10 +171,10 @@ test.describe("Inner joins", function () {
         expect(json["x"]).toEqual([60, 30, 30]);
         expect(json["y"]).toEqual([600, 300, 300]);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("inner joins two tables by name strings", async function () {
@@ -206,10 +206,10 @@ test.describe("Inner joins", function () {
 
         expect(json).toHaveLength(2);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("inner joins with mixed Table and string args", async function () {
@@ -232,10 +232,10 @@ test.describe("Inner joins", function () {
 
         expect(json).toHaveLength(2);
 
-        view.delete();
-        joined.delete();
-        right.delete();
-        left.delete();
+        await view.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("rejects column name conflicts", async function () {
@@ -250,8 +250,8 @@ test.describe("Inner joins", function () {
         }
 
         expect(error).toBeDefined();
-        right.delete();
-        left.delete();
+        await right.delete();
+        await left.delete();
     });
 
     test("rejects updates on joined table", async function () {
@@ -269,8 +269,8 @@ test.describe("Inner joins", function () {
 
         expect(error).toBeDefined();
 
-        joined.delete();
-        right.delete();
-        left.delete();
+        await joined.delete();
+        await right.delete();
+        await left.delete();
     });
 });

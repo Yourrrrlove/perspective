@@ -43,10 +43,10 @@ import perspective from "../perspective_client.ts";
                 { id: 4, x: null, y: "d" },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("outer join includes all rows when no keys match", async function () {
@@ -74,10 +74,10 @@ import perspective from "../perspective_client.ts";
                 { id: 4, x: null, y: "d" },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("outer join with all keys matching is same as inner", async function () {
@@ -103,10 +103,10 @@ import perspective from "../perspective_client.ts";
                 { id: 2, x: 20, y: "b" },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("outer join reacts to left table updates", async function () {
@@ -140,10 +140,10 @@ import perspective from "../perspective_client.ts";
                 { id: 2, x: 20, y: "b" },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("outer join reacts to right table updates", async function () {
@@ -176,10 +176,10 @@ import perspective from "../perspective_client.ts";
                 { id: 2, x: 20, y: "b" },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("outer join has correct schema", async function () {
@@ -200,9 +200,9 @@ import perspective from "../perspective_client.ts";
                 y: "string",
             });
 
-            joined.delete();
-            right.delete();
-            left.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
     });
 })(perspective);

@@ -42,10 +42,10 @@ import perspective from "../perspective_client.ts";
                 { id: 3, x: 30, y: null },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("left join includes unmatched left rows with nulls", async function () {
@@ -68,10 +68,10 @@ import perspective from "../perspective_client.ts";
                 { id: 2, x: 20, y: null },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("left join does not include unmatched right rows", async function () {
@@ -91,10 +91,10 @@ import perspective from "../perspective_client.ts";
             expect(json).toHaveLength(1);
             expect(json).toEqual([{ id: 1, x: 10, y: "a" }]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("left join reacts to right table updates", async function () {
@@ -121,10 +121,10 @@ import perspective from "../perspective_client.ts";
                 { id: 2, x: 20, y: "b" },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("left join with no matching rows", async function () {
@@ -151,10 +151,10 @@ import perspective from "../perspective_client.ts";
                 { id: 2, x: 20, y: null },
             ]);
 
-            view.delete();
-            joined.delete();
-            right.delete();
-            left.delete();
+            await view.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
 
         test("left join has correct schema", async function () {
@@ -175,9 +175,9 @@ import perspective from "../perspective_client.ts";
                 y: "string",
             });
 
-            joined.delete();
-            right.delete();
-            left.delete();
+            await joined.delete();
+            await right.delete();
+            await left.delete();
         });
     });
 })(perspective);

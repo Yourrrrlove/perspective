@@ -62,34 +62,40 @@ pub trait EditExpression: HasPresentation + HasRenderer + HasSession + UpdateAnd
                 .to_props()
                 .create_replace_expression_update(&old_name, &new_expr);
 
+            this.update_and_render(update)?.await?;
             this.presentation
                 .set_open_column_settings(Some(OpenColumnSettings {
                     locator: Some(ColumnLocator::Expression(new_expr.name.to_string())),
                     tab: Some(ColumnSettingsTab::Attributes),
                 }));
 
-            this.update_and_render(update)?.await?;
             Ok(())
         });
     }
 
     /// Saves a new expression. Spawns a future.
     fn save_expr(&self, expr: Expression) -> ApiResult<()> {
+        let presentation = self.presentation().clone();
+        let expr_name: String = expr.name.clone().into();
         let task = {
             let mut serde_exprs = self.session().get_view_config().expressions.clone();
             serde_exprs.insert(&expr);
-            self.presentation()
-                .set_open_column_settings(Some(OpenColumnSettings {
-                    locator: Some(ColumnLocator::Expression(expr.name.clone().into())),
-                    tab: Some(ColumnSettingsTab::Attributes),
-                }));
             self.update_and_render(ViewConfigUpdate {
                 expressions: Some(serde_exprs),
                 ..Default::default()
             })
         }?;
 
-        ApiFuture::spawn(task);
+        ApiFuture::spawn(async move {
+            task.await?;
+            presentation.set_open_column_settings(Some(OpenColumnSettings {
+                locator: Some(ColumnLocator::Expression(expr_name)),
+                tab: Some(ColumnSettingsTab::Attributes),
+            }));
+
+            Ok(())
+        });
+
         Ok(())
     }
 
