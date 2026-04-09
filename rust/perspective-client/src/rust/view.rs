@@ -168,18 +168,26 @@ impl Deref for OnUpdateData {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```no_run
+/// # use perspective_client::{Client, TableData, TableInitOptions, UpdateData, ViewWindow};
+/// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
+/// # let client: Client = todo!();
 /// let opts = TableInitOptions::default();
 /// let data = TableData::Update(UpdateData::Csv("x,y\n1,2\n3,4".into()));
 /// let table = client.table(data, opts).await?;
 ///
 /// let view = table.view(None).await?;
-/// let arrow = view.to_arrow().await?;
+/// let arrow = view.to_arrow(ViewWindow::default()).await?;
 /// view.delete().await?;
+/// # Ok(()) }
 /// ```
 ///
-/// ```rust
-/// use crate::config::*;
+/// ```no_run
+/// # use std::collections::HashMap;
+/// # use perspective_client::Table;
+/// # use perspective_client::config::*;
+/// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
+/// # let table: Table = todo!();
 /// let view = table
 ///     .view(Some(ViewConfigUpdate {
 ///         columns: Some(vec![Some("Sales".into())]),
@@ -192,28 +200,39 @@ impl Deref for OnUpdateData {
 ///         ..ViewConfigUpdate::default()
 ///     }))
 ///     .await?;
+/// # Ok(()) }
 /// ```
 ///
 ///  Group By
 ///
-/// ```rust
+/// ```no_run
+/// # use perspective_client::Table;
+/// # use perspective_client::config::*;
+/// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
+/// # let table: Table = todo!();
 /// let view = table
 ///     .view(Some(ViewConfigUpdate {
 ///         group_by: Some(vec!["a".into(), "c".into()]),
 ///         ..ViewConfigUpdate::default()
 ///     }))
 ///     .await?;
+/// # Ok(()) }
 /// ```
 ///
 /// Split By
 ///
-/// ```rust
+/// ```no_run
+/// # use perspective_client::Table;
+/// # use perspective_client::config::*;
+/// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
+/// # let table: Table = todo!();
 /// let view = table
 ///     .view(Some(ViewConfigUpdate {
 ///         split_by: Some(vec!["a".into(), "c".into()]),
 ///         ..ViewConfigUpdate::default()
 ///     }))
 ///     .await?;
+/// # Ok(()) }
 /// ```
 ///
 /// In Javascript, a [`Table`] can be constructed on a [`Table::view`] instance,
@@ -223,13 +242,18 @@ impl Deref for OnUpdateData {
 /// [Client/Server Replicated](server.md#clientserver-replicated) design, by
 /// serializing the `View` to an arrow and setting up an `on_update` callback.
 ///
-/// ```rust
+/// ```no_run
+/// # use perspective_client::{Client, TableData, TableInitOptions, UpdateData, UpdateOptions};
+/// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
+/// # let client: Client = todo!();
 /// let opts = TableInitOptions::default();
 /// let data = TableData::Update(UpdateData::Csv("x,y\n1,2\n3,4".into()));
-/// let table = client.table(data, opts).await?;
+/// let table = client.table(data, opts.clone()).await?;
 /// let view = table.view(None).await?;
-/// let table2 = client.table(TableData::View(view)).await?;
-/// table.update(data).await?;
+/// let table2 = client.table(TableData::View(view), opts).await?;
+/// let more = UpdateData::Csv("x,y\n5,6".into());
+/// table.update(more, UpdateOptions::default()).await?;
+/// # Ok(()) }
 /// ```
 #[derive(Clone, Debug)]
 pub struct View {
@@ -524,10 +548,14 @@ impl View {
     ///
     /// # Examples
     ///
-    /// ```rust
+    /// ```no_run
+    /// # use perspective_client::{OnUpdateOptions, View};
+    /// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let view: View = todo!();
     /// let callback = |_| async { print!("Updated!") };
     /// let cid = view.on_update(callback, OnUpdateOptions::default()).await?;
     /// view.remove_update(cid).await?;
+    /// # Ok(()) }
     /// ```
     pub async fn remove_update(&self, update_id: u32) -> ClientResult<()> {
         let msg = self.client_message(ClientReq::ViewRemoveOnUpdateReq(ViewRemoveOnUpdateReq {

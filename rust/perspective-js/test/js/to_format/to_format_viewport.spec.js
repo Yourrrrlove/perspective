@@ -11,7 +11,7 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import { test, expect } from "@perspective-dev/test";
-import perspective from "./perspective_client";
+import perspective from "../perspective_client";
 
 const data = {
     w: [

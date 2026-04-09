@@ -264,7 +264,7 @@ table td {
     margin-top: 12px;
 }
 
-.demo__time-controls>* {
+.demo__time-controls > * {
     margin-right: 15px;
 }
 
@@ -491,7 +491,7 @@ perspective-viewer {
         "Liberation Mono", monospace;
 }
 
-.block-detail__file-title+pre {
+.block-detail__file-title + pre {
     margin-top: 0;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
@@ -535,15 +535,14 @@ perspective-viewer {
     flex-direction: column;
 }
 
-.page-container>main {
+.page-container > main {
     flex: 1;
     margin-top: 100px;
 }
 
-.page-container.examples>main {
+.page-container.examples > main {
     margin-top: 60px;
 }
-
 
 /* --- Prism Syntax Highlighting --- */
 

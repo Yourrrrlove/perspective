@@ -97,7 +97,8 @@ perspective-viewer,
     cursor: pointer;
 }
 
-regular-table.flat-group-rollup-mode.vertical-row-headers th.psp-tree-label:not(:last-of-type) {
+regular-table.flat-group-rollup-mode.vertical-row-headers
+    th.psp-tree-label:not(:last-of-type) {
     writing-mode: vertical-lr;
 }
 
@@ -250,10 +251,12 @@ tbody th:last-of-type {
 }
 
 tbody th:empty {
-    background-image: linear-gradient(to right,
-            transparent 9px,
-            var(--psp-inactive--border-color, #eee) 10px,
-            transparent 11px);
+    background-image: linear-gradient(
+        to right,
+        transparent 9px,
+        var(--psp-inactive--border-color, #eee) 10px,
+        transparent 11px
+    );
     background-repeat: no-repeat;
     min-width: 20px;
     max-width: 20px;
@@ -441,8 +444,15 @@ regular-table table {
     }
 }
 
-regular-table tbody tr:hover td.psp-select-region:not(.psp-select-region-inactive),
-regular-table tbody tr:hover+tr td.psp-select-region:not(.psp-select-region-inactive) {
+regular-table
+    tbody
+    tr:hover
+    td.psp-select-region:not(.psp-select-region-inactive),
+regular-table
+    tbody
+    tr:hover
+    + tr
+    td.psp-select-region:not(.psp-select-region-inactive) {
     border-color: var(--psp--background-color) !important;
 }
 
@@ -468,7 +478,10 @@ regular-table tbody tr:hover {
 /* until the drawing is done. However, this causes the datagrid to draw its */
 /* _first_ frame as if its in the wrong state, as it detects sidepanel state */
 /* via HTML attribute checking. */
-regular-table #psp-column-edit-buttons th:not(.rt-group-corner) span:not(.rt-column-resize):before {
+regular-table
+    #psp-column-edit-buttons
+    th:not(.rt-group-corner)
+    span:not(.rt-column-resize):before {
     content: var(--psp-datagrid--column-edit-button--content, "Edit");
 }
 
@@ -507,54 +520,70 @@ regular-table table tbody tr:hover:not(:first-child):after {
     border-top: 1px solid var(--psp-datagrid--hover--border-color);
 }
 
-regular-table table tbody tr:hover+tr:after {
+regular-table table tbody tr:hover + tr:after {
     border-top: 1px solid var(--psp-datagrid--hover--border-color);
 }
 
 @keyframes pulse_pos {
     0% {
-        background-color: var(--pulse--background-color-start,
-                rgba(0, 128, 255, 0.5));
+        background-color: var(
+            --pulse--background-color-start,
+            rgba(0, 128, 255, 0.5)
+        );
     }
 
     100% {
-        background-color: var(--pulse--background-color-end,
-                rgba(0, 128, 255, 0));
+        background-color: var(
+            --pulse--background-color-end,
+            rgba(0, 128, 255, 0)
+        );
     }
 }
 
 @keyframes pulse_pos2 {
     0% {
-        background-color: var(--pulse--background-color-start,
-                rgba(0, 128, 255, 0.5));
+        background-color: var(
+            --pulse--background-color-start,
+            rgba(0, 128, 255, 0.5)
+        );
     }
 
     100% {
-        background-color: var(--pulse--background-color-end,
-                rgba(0, 128, 255, 0));
+        background-color: var(
+            --pulse--background-color-end,
+            rgba(0, 128, 255, 0)
+        );
     }
 }
 
 @keyframes pulse_neg {
     0% {
-        background-color: var(--pulse--background-color-start,
-                rgba(255, 25, 0, 0.5));
+        background-color: var(
+            --pulse--background-color-start,
+            rgba(255, 25, 0, 0.5)
+        );
     }
 
     100% {
-        background-color: var(--pulse--background-color-end,
-                rgba(255, 25, 0, 0));
+        background-color: var(
+            --pulse--background-color-end,
+            rgba(255, 25, 0, 0)
+        );
     }
 }
 
 @keyframes pulse_neg2 {
     0% {
-        background-color: var(--pulse--background-color-start,
-                rgba(255, 25, 0, 0.5));
+        background-color: var(
+            --pulse--background-color-start,
+            rgba(255, 25, 0, 0.5)
+        );
     }
 
     100% {
-        background-color: var(--pulse--background-color-end,
-                rgba(255, 25, 0, 0));
+        background-color: var(
+            --pulse--background-color-end,
+            rgba(255, 25, 0, 0)
+        );
     }
 }
