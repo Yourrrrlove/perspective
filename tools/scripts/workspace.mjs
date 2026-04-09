@@ -31,12 +31,15 @@ const memoize = (f) => {
 export function getWorkspaceRoot() {
     return workspaceRoot;
 }
+
 export function getRustTargetDir() {
     return rustTargetDir;
 }
+
 export function getRustWheelsDir() {
     return rustWheelsDir;
 }
+
 export function getEmscriptenWheelPath() {
     const pspVersion = getWorkspacePackageJson().version.replace("-", ".");
     const wheeljunk = "cp311-abi3-emscripten_4_0_9_wasm32";
@@ -45,6 +48,7 @@ export function getEmscriptenWheelPath() {
         `perspective_python-${pspVersion}-${wheeljunk}.whl`,
     );
 }
+
 /**
  * @returns memoized, deserialized contents of workspace package.json
  */

@@ -11,9 +11,8 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import * as dotenv from "dotenv";
-import * as _path from "path";
+import * as path from "path";
 import * as fs from "fs";
-import sh from "./sh.mjs";
 import { execSync } from "child_process";
 
 import "zx/globals";
@@ -22,27 +21,19 @@ dotenv.config({ path: "./.perspectiverc", quiet: true });
 process.env.FORCE_COLOR = true;
 
 /**
- * Calls `join` on each of the input path arguments, then `fs.r,Sync`s the path if
- * it exists.   Can be used as an template literal, and can also take multiple
- * arguments call itself in sequence.
+ * Calls `path.resolve` on each of the input path arguments, then removes the
+ * path if it exists.
  *
- * @param {string} [path] a `/` encode path.
+ * @param {string} dirs paths to clean.
  * @example
- * clean`a/b/c`; // Cleans this dir
- * clean(path`a/b/c`, path`d/e/f`); // Cleans both dirs
+ * clean("a/b/c"); // Cleans this dir
+ * clean("a/b/c", "d/e/f"); // Cleans both dirs
  */
 export function clean(...dirs) {
-    if (Array.isArray(dirs[0])) {
-        const dir = sh.path(...dirs);
-        if (fs.existsSync(dir)) {
-            fs.rmSync(dir, { recursive: true, force: true });
-        }
-    } else {
-        for (let dir of dirs) {
-            dir = sh.path([dir]);
-            if (fs.existsSync(dir)) {
-                fs.rmSync(dir, { recursive: true, force: true });
-            }
+    for (const dir of dirs) {
+        const resolved = path.resolve(dir);
+        if (fs.existsSync(resolved)) {
+            fs.rmSync(resolved, { recursive: true, force: true });
         }
     }
 }
