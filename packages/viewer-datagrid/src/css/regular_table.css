@@ -265,6 +265,7 @@ tbody th:last-of-type {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 tbody th:empty {
     background-image: linear-gradient(
         to right,
@@ -316,12 +317,44 @@ regular-table:not(.flat-group-rollup-mode) {
 .psp-align-right {
     text-align: right;
 }
+
+.psp-color-mode-label-bar {
+    position: relative;
+    isolation: isolate;
+}
+
+.psp-label-bar {
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0px;
+}
+
+.psp-label-bar-fill {
+    position: absolute;
+    top: 10%;
+    height: 80%;
+    background: var(--psp-label-bar-color);
+    pointer-events: none;
+}
+
+.psp-label-bar-text {
+    position: relative;
+    color: var(--psp-label-bar-bg);
+    mix-blend-mode: difference;
+    pointer-events: none;
+}
+
 .psp-align-left {
     text-align: left;
 }
+
 .psp-positive:not(:focus) {
     color: var(--psp-datagrid--pos-cell--color);
 }
+
 .psp-negative:not(:focus) {
     color: var(--psp-datagrid--neg-cell--color);
 }
@@ -363,6 +396,7 @@ regular-table table {
 
     th.psp-header-leaf {
         border-bottom-width: 0px;
+
         span {
             height: 23px;
             min-height: 23px;
@@ -479,6 +513,7 @@ regular-table table tbody tr:hover + tr:after {
             rgba(0, 128, 255, 0.5)
         );
     }
+
     100% {
         background-color: var(
             --pulse--background-color-end,
@@ -494,6 +529,7 @@ regular-table table tbody tr:hover + tr:after {
             rgba(0, 128, 255, 0.5)
         );
     }
+
     100% {
         background-color: var(
             --pulse--background-color-end,
@@ -509,6 +545,7 @@ regular-table table tbody tr:hover + tr:after {
             rgba(255, 25, 0, 0.5)
         );
     }
+
     100% {
         background-color: var(
             --pulse--background-color-end,
@@ -524,6 +561,7 @@ regular-table table tbody tr:hover + tr:after {
             rgba(255, 25, 0, 0.5)
         );
     }
+
     100% {
         background-color: var(
             --pulse--background-color-end,

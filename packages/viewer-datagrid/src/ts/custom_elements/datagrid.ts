@@ -225,14 +225,11 @@ export class HTMLPerspectiveViewerDatagridPluginElement
         this.regular_table.clear();
     }
 
-    async save(): Promise<any> {
+    save(): any {
         return save.call(this);
     }
 
-    async restore(
-        token: DatagridPluginConfig,
-        columns_config?: ColumnsConfig,
-    ): Promise<any> {
+    restore(token: DatagridPluginConfig, columns_config?: ColumnsConfig): void {
         return restore.call(this, token, columns_config ?? {});
     }
 
@@ -243,7 +240,7 @@ export class HTMLPerspectiveViewerDatagridPluginElement
         }
     }
 
-    async delete(): Promise<void> {
+    delete(): void {
         this.disconnectedCallback();
         this._toolbar = undefined;
         if ((this.regular_table as any).table_model) {

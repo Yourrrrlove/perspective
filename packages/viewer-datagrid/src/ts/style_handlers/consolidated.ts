@@ -70,11 +70,9 @@ function isEditableMode(
     const has_pivots =
         model._config.group_by.length === 0 &&
         model._config.split_by.length === 0;
+
     const selectable = viewer.hasAttribute("selectable");
-    const plugin = viewer.children[0] as
-        | (DatagridPluginElement & { dataset: DOMStringMap })
-        | undefined;
-    const editable = allowed || plugin?.dataset?.editMode === "EDIT";
+    const editable = allowed || model._edit_mode === "EDIT";
     return has_pivots && !selectable && editable;
 }
 

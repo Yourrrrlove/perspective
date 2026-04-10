@@ -54,6 +54,7 @@ export function applyGroupHeaderStyles(
             );
 
             td.classList.toggle("psp-color-mode-bar", false);
+            td.classList.toggle("psp-color-mode-label-bar", false);
             td.classList.toggle("psp-header-sort-asc", false);
             td.classList.toggle("psp-header-sort-desc", false);
             td.classList.toggle("psp-header-sort-col-asc", false);

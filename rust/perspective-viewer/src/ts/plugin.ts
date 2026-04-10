@@ -176,17 +176,17 @@ export interface IPerspectiveViewerPlugin {
      * reload.  For example, `@perspective-dev/viewer-d3fc` uses
      * `plugin_config` to remember the user-repositionable legend coordinates.
      */
-    save(): Promise<any>;
+    save(): any;
 
     /**
      * Restore this plugin to a state previously returned by `save()`.
      */
-    restore(config: any): Promise<void>;
+    restore(config: any): void;
 
     /**
      * Free any resources acquired by this plugin and prepare to be deleted.
      */
-    delete(): Promise<void>;
+    delete(): void;
 }
 
 /**
@@ -265,11 +265,11 @@ export class HTMLPerspectiveViewerPluginElement
         // Not Implemented
     }
 
-    async save(): Promise<any> {
+    save(): any {
         // Not Implemented
     }
 
-    async restore(): Promise<void> {
+    restore(): void {
         // Not Implemented
     }
 

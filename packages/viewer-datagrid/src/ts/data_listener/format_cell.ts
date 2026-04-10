@@ -44,7 +44,11 @@ export function format_cell(
     const plugin: ColumnConfig = plugins[title] || {};
     const is_numeric = type === "integer" || type === "float";
 
-    if (is_numeric && plugin?.number_fg_mode === "bar") {
+    if (
+        is_numeric &&
+        (plugin?.number_fg_mode === "bar" ||
+            plugin?.number_fg_mode === "label-bar")
+    ) {
         const a = Math.max(
             0,
             Math.min(
@@ -54,15 +58,41 @@ export function format_cell(
             ),
         );
 
-        const div = this._div_factory.get();
         const anchor = (val as number) >= 0 ? "left" : "right";
         const pct = (a * 100).toFixed(2);
-        div.setAttribute(
-            "style",
-            `width:calc(${pct}% - 4px);position:absolute;${anchor}:2px;height:80%;top:10%;pointer-events:none;`,
-        );
 
-        return div;
+        if (plugin.number_fg_mode === "bar") {
+            const div = this._div_factory.get();
+            div.className = "psp-bar";
+            div.setAttribute(
+                "style",
+                `width:calc(${pct}% - 4px);position:absolute;${anchor}:2px;height:80%;top:10%;pointer-events:none;`,
+            );
+
+            return div;
+        } else {
+            const wrapper = this._div_factory.get();
+            wrapper.setAttribute("style", "");
+            wrapper.className = "psp-label-bar";
+            while (wrapper.firstChild) {
+                wrapper.removeChild(wrapper.firstChild);
+            }
+            const bar = document.createElement("div");
+            bar.className = "psp-label-bar-fill";
+            bar.setAttribute(
+                "style",
+                `width:calc(${pct}% - 4px);${anchor}:2px;`,
+            );
+            const label = document.createElement("span");
+            label.className = "psp-label-bar-text";
+            const formatter = FORMAT_CACHE.get(type, plugin);
+            label.textContent = formatter
+                ? formatter.format(val)
+                : (val as string);
+            wrapper.appendChild(bar);
+            wrapper.appendChild(label);
+            return wrapper;
+        }
     } else if (plugin?.format === "link" && type === "string") {
         const anchor = document.createElement("a");
         anchor.setAttribute("href", val as string);

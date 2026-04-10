@@ -180,6 +180,10 @@ export function cell_style_numeric(
         ) {
             (td.children[0] as HTMLElement).style.background = gradhex;
         }
+    } else if (plugin?.number_fg_mode === "label-bar") {
+        td.style.color = "";
+        td.style.setProperty("--psp-label-bar-color", gradhex);
+        td.style.setProperty("--psp-label-bar-bg", hex);
     } else if (plugin?.number_fg_mode === "color" || !plugin?.number_fg_mode) {
         td.style.color = hex;
     }

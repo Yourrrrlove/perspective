@@ -44,8 +44,6 @@ export function toggle_edit_mode(
     if (this._edit_button !== undefined) {
         this._edit_button.dataset.editMode = mode;
     }
-
-    this.dataset.editMode = mode;
 }
 
 export function toggle_scroll_lock(

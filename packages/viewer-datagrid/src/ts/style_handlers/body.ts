@@ -123,6 +123,11 @@ export function applyBodyCellStyles(
             plugin?.number_fg_mode === "bar" && is_numeric,
         );
 
+        td.classList.toggle(
+            "psp-color-mode-label-bar",
+            plugin?.number_fg_mode === "label-bar" && is_numeric,
+        );
+
         // Apply row header styling
         if (isHeader) {
             cell_style_row_header.call(this, regularTable, td, metadata as any);
