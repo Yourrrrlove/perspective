@@ -184,6 +184,11 @@ async function focus_package() {
             value: "viewer-openlayers",
         },
         {
+            key: "g",
+            name: "@perspective-dev/viewer-webgl",
+            value: "viewer-webgl",
+        },
+        {
             key: "w",
             name: "@perspective-dev/workspace",
             value: "workspace",

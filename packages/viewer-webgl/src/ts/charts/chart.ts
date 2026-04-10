@@ -10,41 +10,41 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-/**
- * Module for the `<perspective-viewer>` custom element.  This module has no
- * (real) exports, but importing it has a side effect: the
- * `PerspectiveViewerElement` class is registered as a custom element, after
- * which it can be used as a standard DOM element.
- *
- * Though `<perspective-viewer>` is written mostly in Rust, the nature
- * of WebAssembly's compilation makes it a dynamic module;  in order to
- * guarantee that the Custom Elements extension methods are registered
- * synchronously with this package's import, we need perform said registration
- * within this wrapper module.  As a result, the API methods of the Custom
- * Elements are all `async` (as they must await the wasm module instance).
- *
- * The documentation in this module defines the instance structure of a
- * `<perspective-viewer>` DOM object instantiated typically, through HTML or any
- * relevent DOM method e.g. `document.createElement("perspective-viewer")` or
- * `document.getElementsByTagName("perspective-viewer")`.
- *
- * @module perspective-viewer
- */
+import type { ColumnDataMap } from "../data/arrow-reader";
+import type { WebGLContextManager } from "../webgl/context-manager";
+import type { ZoomController } from "../interaction/zoom-controller";
 
-export { IPerspectiveViewerPlugin } from "./plugin";
-export { HTMLPerspectiveViewerPluginElement } from "./plugin";
-export type { StreamingRenderHandle, RenderChunk } from "./plugin";
+export interface ChartImplementation {
+    uploadAndRender(
+        glManager: WebGLContextManager,
+        columns: ColumnDataMap,
+        startRow: number,
+        endRow: number,
+    ): void;
 
-export type * from "./extensions.ts";
-export { PerspectiveSelectDetail } from "./extensions.ts";
-export type * from "./ts-rs/ViewerConfigUpdate.d.ts";
-export type * from "./ts-rs/ViewerConfig.d.ts";
-export type * from "./ts-rs/ColumnConfigValues.d.ts";
-export type * from "./ts-rs/Filter.d.ts";
-export type * from "./ts-rs/FilterTerm.d.ts";
-export type * from "./ts-rs/FilterReducer.d.ts";
+    /** Re-render with existing GPU buffer data (e.g., after resize). */
+    redraw(glManager: WebGLContextManager): void;
 
-export { init_client } from "./bootstrap";
-import { init_client } from "./bootstrap";
+    /** Set the gridline canvas (behind WebGL, for gridlines). */
+    setGridlineCanvas?(canvas: HTMLCanvasElement): void;
 
-export default { init_client };
+    /** Set the chrome canvas (above WebGL, for axes/labels/legend/tooltip). */
+    setChromeCanvas?(canvas: HTMLCanvasElement): void;
+
+    /** Set the zoom controller for interactive zoom/pan. */
+    setZoomController?(zc: ZoomController): void;
+
+    /** Attach tooltip mouse handlers to the GL canvas. */
+    attachTooltip?(glCanvas: HTMLCanvasElement): void;
+
+    /** Set the column slot config (with nulls for empty slots). */
+    setColumnSlots?(slots: (string | null)[]): void;
+
+    /** Set group_by and split_by config from the viewer. */
+    setViewPivots?(groupBy: string[], splitBy: string[]): void;
+
+    /** Set column type schema from the view (e.g., { "col": "date" }). */
+    setColumnTypes?(schema: Record<string, string>): void;
+
+    destroy(): void;
+}

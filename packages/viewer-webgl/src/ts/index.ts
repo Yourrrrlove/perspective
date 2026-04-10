@@ -10,41 +10,49 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-/**
- * Module for the `<perspective-viewer>` custom element.  This module has no
- * (real) exports, but importing it has a side effect: the
- * `PerspectiveViewerElement` class is registered as a custom element, after
- * which it can be used as a standard DOM element.
- *
- * Though `<perspective-viewer>` is written mostly in Rust, the nature
- * of WebAssembly's compilation makes it a dynamic module;  in order to
- * guarantee that the Custom Elements extension methods are registered
- * synchronously with this package's import, we need perform said registration
- * within this wrapper module.  As a result, the API methods of the Custom
- * Elements are all `async` (as they must await the wasm module instance).
- *
- * The documentation in this module defines the instance structure of a
- * `<perspective-viewer>` DOM object instantiated typically, through HTML or any
- * relevent DOM method e.g. `document.createElement("perspective-viewer")` or
- * `document.getElementsByTagName("perspective-viewer")`.
- *
- * @module perspective-viewer
- */
+import CHARTS from "./plugin/charts";
+import { HTMLPerspectiveViewerWebGLPluginElement } from "./plugin/plugin";
+import { ScatterChart } from "./charts/scatter";
+import { LineChart } from "./charts/line";
+import { TreemapChart } from "./charts/treemap";
 
-export { IPerspectiveViewerPlugin } from "./plugin";
-export { HTMLPerspectiveViewerPluginElement } from "./plugin";
-export type { StreamingRenderHandle, RenderChunk } from "./plugin";
+const CHART_IMPLS: Record<(typeof CHARTS)[number]["tag"], new () => any> = {
+    scatter: ScatterChart,
+    line: LineChart,
+    treemap: TreemapChart,
+};
 
-export type * from "./extensions.ts";
-export { PerspectiveSelectDetail } from "./extensions.ts";
-export type * from "./ts-rs/ViewerConfigUpdate.d.ts";
-export type * from "./ts-rs/ViewerConfig.d.ts";
-export type * from "./ts-rs/ColumnConfigValues.d.ts";
-export type * from "./ts-rs/Filter.d.ts";
-export type * from "./ts-rs/FilterTerm.d.ts";
-export type * from "./ts-rs/FilterReducer.d.ts";
+export function register(...plugin_names: string[]) {
+    const plugins = new Set(
+        plugin_names.length > 0
+            ? plugin_names
+            : CHARTS.map((chart) => chart.name),
+    );
 
-export { init_client } from "./bootstrap";
-import { init_client } from "./bootstrap";
+    CHARTS.forEach((chart) => {
+        if (plugins.has(chart.name)) {
+            const tagName = `perspective-viewer-webgl-${chart.tag}`;
+            const ImplClass = CHART_IMPLS[chart.tag];
 
-export default { init_client };
+            customElements.define(
+                tagName,
+                class extends HTMLPerspectiveViewerWebGLPluginElement {
+                    _chartType = chart;
+                    static _chartType = chart;
+
+                    constructor() {
+                        super();
+                        (this as any)._chartImpl = new ImplClass();
+                    }
+                },
+            );
+
+            customElements.whenDefined("perspective-viewer").then(async () => {
+                const Viewer = customElements.get("perspective-viewer") as any;
+                await Viewer.registerPlugin(tagName);
+            });
+        }
+    });
+}
+
+register();
