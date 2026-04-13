@@ -14,14 +14,14 @@ import { CellMetadataBody } from "regular-table/dist/esm/types.js";
 import type { DatagridModel, ColorRecord } from "../../types.js";
 
 export function style_cell_flash(
-    this: DatagridModel,
+    model: DatagridModel,
     metadata: CellMetadataBody,
     td: HTMLElement,
     [, , , , , pos_s, pos_e]: ColorRecord,
     [, , , , , neg_s, neg_e]: ColorRecord,
     is_settings_open: boolean,
 ): void {
-    const id = this._ids?.[metadata.dy ?? 0]?.join("|");
+    const id = model._ids?.[metadata.dy ?? 0]?.join("|");
     const metadata_path = (
         is_settings_open
             ? (metadata.column_header ?? []).slice(0, -1)
@@ -29,19 +29,19 @@ export function style_cell_flash(
     ).join("|");
 
     if (
-        this.last_reverse_columns?.has(metadata_path) &&
-        this.last_reverse_ids?.has(id)
+        model.last_reverse_columns?.has(metadata_path) &&
+        model.last_reverse_ids?.has(id)
     ) {
-        const row_idx = this.last_reverse_ids?.get(id);
-        const col_idx = this.last_reverse_columns.get(metadata_path);
-        if (!this._is_old_viewport) {
+        const row_idx = model.last_reverse_ids?.get(id);
+        const col_idx = model.last_reverse_columns.get(metadata_path);
+        if (!model._is_old_viewport) {
             td.style.animation = "";
         } else if (
             col_idx !== undefined &&
             row_idx !== undefined &&
-            (this.last_meta?.[col_idx]?.[row_idx] as number | undefined) !==
+            (model.last_meta?.[col_idx]?.[row_idx] as number | undefined) !==
                 undefined &&
-            (this.last_meta![col_idx]![row_idx] as number) >
+            (model.last_meta![col_idx]![row_idx] as number) >
                 ((metadata.user ?? 0) as number)
         ) {
             td.style.setProperty("--pulse--background-color-start", neg_s);
@@ -54,9 +54,9 @@ export function style_cell_flash(
         } else if (
             col_idx !== undefined &&
             row_idx !== undefined &&
-            (this.last_meta?.[col_idx]?.[row_idx] as number | undefined) !==
+            (model.last_meta?.[col_idx]?.[row_idx] as number | undefined) !==
                 undefined &&
-            (this.last_meta![col_idx]![row_idx] as number) <
+            (model.last_meta![col_idx]![row_idx] as number) <
                 ((metadata.user ?? 0) as number)
         ) {
             td.style.setProperty("--pulse--background-color-start", pos_s);

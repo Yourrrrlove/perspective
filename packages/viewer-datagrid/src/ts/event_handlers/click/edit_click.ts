@@ -56,21 +56,21 @@ export function write_cell(
 }
 
 export function clickListener(
-    this: DatagridModel,
+    model: DatagridModel,
     table: RegularTable,
     _viewer: PerspectiveViewerElement,
     event: MouseEvent,
 ): void {
     const meta = table.getMeta(event.target as HTMLElement);
     if (meta?.type === "body" || meta?.type === "column_header") {
-        const is_editable2 = this._is_editable[meta.x];
-        const is_bool = get_psp_type(this, meta) === "boolean";
+        const is_editable2 = model._is_editable[meta.x];
+        const is_bool = get_psp_type(model, meta) === "boolean";
         const is_null = (event.target as Element).classList.contains(
             "psp-null",
         );
 
         if (is_editable2 && is_bool && !is_null) {
-            write_cell(table, this, event.target as HTMLElement);
+            write_cell(table, model, event.target as HTMLElement);
         }
     }
 }

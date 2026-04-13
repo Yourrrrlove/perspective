@@ -26,7 +26,6 @@ export class PerspectiveSelectDetail {
     column_names?: string[];
     removeConfigs: ViewConfigUpdate[];
     insertConfigs: ViewConfigUpdate[];
-
     constructor(
         selected: boolean,
         row: Record<string, unknown>,
@@ -49,6 +48,7 @@ export class PerspectiveSelectDetail {
         return this.insertConfigs.flatMap((x) => x.filter ?? []);
     }
 }
+
 import type {
     ExportDropDownMenuElement,
     CopyDropDownMenuElement,
@@ -191,6 +191,12 @@ export interface PerspectiveViewerElementExt {
     ): void;
 
     addEventListener(
+        name: "perspective-global-filter",
+        cb: (e: CustomEvent<PerspectiveSelectEventDetail>) => void,
+        options?: { signal: AbortSignal },
+    ): void;
+
+    addEventListener(
         name: "perspective-toggle-settings",
         cb: (e: CustomEvent) => void,
         options?: { signal: AbortSignal },
@@ -228,6 +234,7 @@ export interface PerspectiveViewerElementExt {
 
     removeEventListener(name: "perspective-click", cb: any): void;
     removeEventListener(name: "perspective-select", cb: any): void;
+    removeEventListener(name: "perspective-global-filter", cb: any): void;
     removeEventListener(name: "perspective-toggle-settings", cb: any): void;
     removeEventListener(
         name: "perspective-toggle-settings-before",

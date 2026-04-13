@@ -73,6 +73,11 @@ import type {
     ViewConfigUpdate,
     SystemInfo,
 } from "@perspective-dev/client";
+
+export type * from "../../src/ts/ts-rs/ViewerConfig.d.ts";
+export type * from "../../src/ts/ts-rs/ViewerConfigUpdate.d.ts";
+import type {ViewerConfig} from "../../src/ts/ts-rs/ViewerConfig.d.ts";
+import type {ViewerConfigUpdate} from "../../src/ts/ts-rs/ViewerConfigUpdate.d.ts";
 "#;
 
 /// Register a plugin globally.

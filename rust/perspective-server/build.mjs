@@ -81,7 +81,7 @@ try {
         ...make_flags,
     ]);
 
-    fs.cpSync("build/release/web", "dist/wasm", { recursive: true });
+    fs.cpSync(`build/${env}/web`, "dist/wasm", { recursive: true });
     if (!process.env.PSP_HEAP_INSTRUMENTS) {
         compress(
             `./dist/wasm/perspective-server.wasm`,

@@ -524,7 +524,7 @@ class HTMLPerspectiveViewerD3fcPluginElement extends HTMLElement {
      * causes non-cleared redraws duplicate column labels when calculating column name
      * resize/repositions - see `treemapLabel.js`.
      */
-    async resize(view) {
+    async resize(_view) {
         if (this.offsetParent !== null) {
             if (this._settings?.data !== undefined) {
                 this._draw();
@@ -536,13 +536,13 @@ class HTMLPerspectiveViewerD3fcPluginElement extends HTMLElement {
         }
     }
 
-    async restyle(view, _end_col, _end_row) {
+    async restyle(view) {
         let settings = this._settings;
         if (settings) {
             delete settings["colorStyles"];
             delete settings["textStyles"];
             if (this.isConnected) {
-                initialiseStyles(this._container, this._settings);
+                initialiseStyles(this._container, settings);
                 this.resize(view);
             }
         }

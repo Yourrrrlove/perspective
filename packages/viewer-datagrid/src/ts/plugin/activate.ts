@@ -12,31 +12,40 @@
 
 import { style_selected_column } from "../style_handlers/column_header.js";
 import {
-    click_listener,
-    mousedown_listener,
+    createMousedownListener,
+    createClickListener,
+    createDblclickListener,
 } from "../event_handlers/header_click.js";
 
-import { focusinListener, focusoutListener } from "../event_handlers/focus.js";
-import { keydownListener, clickListener } from "../event_handlers/click.js";
-
-import { selectionListener } from "../event_handlers/row_select_click.js";
-import { deselect_all_listener } from "../event_handlers/deselect_all.js";
+import {
+    createFocusinListener,
+    createFocusoutListener,
+} from "../event_handlers/focus.js";
+import {
+    createKeydownListener,
+    createEditClickListener,
+} from "../event_handlers/click.js";
 
 import { createModel } from "../model/create.js";
-import { dispatch_click_listener } from "../event_handlers/dispatch_click.js";
-
-import { addAreaMouseSelection } from "../event_handlers/select_region.js";
+import { createDispatchClickListener } from "../event_handlers/dispatch_click.js";
 
 import {
-    createConsolidatedStyleListener,
-    installConsolidatedStyleMethods,
-} from "../style_handlers/consolidated.js";
+    addAreaMouseSelection,
+    type OnSelectCallback,
+} from "../event_handlers/select_region.js";
+
+import { createConsolidatedStyleListener } from "../style_handlers/consolidated.js";
+
+import getCellConfig from "../get_cell_config.js";
 
 import type { View } from "@perspective-dev/client";
-import type {
-    DatagridPluginElement,
-    PerspectiveViewerElement,
-    SelectedPosition,
+import {
+    type DatagridPluginElement,
+    type PerspectiveViewerElement,
+    type SelectedPosition,
+    type SelectedPositionMap,
+    type SelectionArea,
+    PerspectiveSelectDetail,
 } from "../types.js";
 import type { RegularTableElement } from "regular-table";
 
@@ -76,126 +85,144 @@ export async function activate(
             return;
         }
 
+        const model = this.model;
+        const regularTable = this.regular_table;
+        const onSelect: OnSelectCallback = async (
+            area: SelectionArea,
+            isDeselect: boolean,
+        ) => {
+            if (model._edit_mode !== "SELECT_ROW_TREE") return;
+
+            // Store the selected row identity on the model so it persists
+            // even when the selected row scrolls out of the viewport.
+            if (isDeselect) {
+                model._tree_selection_id = undefined;
+            } else {
+                const idx = area.y0 - (model._last_window?.start_row ?? 0);
+                if (idx >= 0 && idx < model._ids.length) {
+                    model._tree_selection_id = model._ids[idx];
+                }
+            }
+
+            const { row, column_names, config } = await getCellConfig(
+                model,
+                area.y0,
+                0,
+            );
+
+            let detail: PerspectiveSelectDetail;
+            if (isDeselect) {
+                if ((model._last_insert_configs?.length || 0) > 0) {
+                    detail = new PerspectiveSelectDetail(
+                        false,
+                        row,
+                        [],
+                        model._last_insert_configs ?? [],
+                        [],
+                    );
+                } else {
+                    throw new Error("Suprious deselect");
+                }
+
+                model._last_insert_configs = undefined;
+            } else {
+                detail = new PerspectiveSelectDetail(
+                    true,
+                    row,
+                    column_names,
+                    model._last_insert_configs ?? [],
+                    [config],
+                );
+                model._last_insert_configs = [config];
+            }
+
+            await regularTable.draw({ preserve_width: true });
+            viewer.dispatchEvent(
+                new CustomEvent<PerspectiveSelectDetail>(
+                    "perspective-global-filter",
+                    {
+                        bubbles: true,
+                        composed: true,
+                        detail,
+                    },
+                ),
+            );
+        };
+
         addAreaMouseSelection(this, this.regular_table, {
             className: "psp-select-region",
+            onSelect,
         });
 
-        // Create shared state maps for selection and focus tracking
-        const selected_rows_map = new WeakMap<
-            RegularTableElement,
-            Set<number>
-        >();
-        const selected_position_map = new WeakMap<
-            RegularTableElement,
-            SelectedPosition
-        >();
+        // Create shared state map for focus tracking
+        const selected_position_map: SelectedPositionMap = new WeakMap();
 
-        // Install consolidated style methods on model prototype
-        installConsolidatedStyleMethods(this.model);
-
-        // Single consolidated style listener replaces:
-        // - table_cell_style_listener
-        // - group_header_style_listener
-        // - column_header_style_listener
-        // - selectionStyleListener
-        // - editable_style_listener
-        // - focus_style_listener
         this.regular_table.addStyleListener(
             createConsolidatedStyleListener(
                 this,
-                selected_rows_map as any,
-                selected_position_map as any,
-            ).bind(this.model, this.regular_table, viewer),
+                this.model,
+                this.regular_table,
+                viewer,
+                selected_position_map,
+            ),
         );
 
-        // uh ..
         this.regular_table.addEventListener(
             "click",
-            click_listener.bind(
-                this.model,
-                this.regular_table,
-            ) as EventListener,
-        );
-
-        this.regular_table.addEventListener(
-            "mousedown",
-            selectionListener.bind(
-                this.model,
-                this.regular_table,
-                viewer,
-                selected_rows_map as any,
-            ) as unknown as EventListener,
-        );
-
-        this.regular_table.addEventListener(
-            "psp-deselect-all",
-            deselect_all_listener.bind(
-                this.model,
-                this.regular_table,
-                viewer,
-                selected_rows_map as any,
-            ) as unknown as EventListener,
+            createClickListener(this.regular_table),
         );
 
         // User event click
         this.regular_table.addEventListener(
             "click",
-            dispatch_click_listener.bind(
-                this.model,
-                this.regular_table,
-                viewer,
-            ) as unknown as EventListener,
+            createDispatchClickListener(this.model, this.regular_table, viewer),
         );
 
         // tree collapse, expand, edit button headers
         this.regular_table.addEventListener(
             "mousedown",
-            mousedown_listener.bind(
-                this.model,
-                this.regular_table,
-                viewer,
-            ) as unknown as EventListener,
+            createMousedownListener(this.model, this.regular_table, viewer),
         );
 
-        // Editing event handlers (style handling is now in consolidated listener)
-        // TODO relies on this.model._is_editable
+        this.regular_table.addEventListener(
+            "dblclick",
+            createDblclickListener(this.model, this.regular_table, viewer),
+        );
+
+        // Editing event handlers
         this.regular_table.addEventListener(
             "click",
-            clickListener.bind(
-                this.model,
-                this.regular_table,
-                viewer,
-            ) as EventListener,
+            createEditClickListener(this.model, this.regular_table, viewer),
         );
 
         this.regular_table.addEventListener(
             "focusin",
-            focusinListener.bind(
+            createFocusinListener(
                 this.model,
                 this.regular_table,
                 viewer,
-                selected_position_map as any,
-            ) as EventListener,
+                selected_position_map,
+            ),
         );
 
         this.regular_table.addEventListener(
             "focusout",
-            focusoutListener.bind(
+            createFocusoutListener(
                 this.model,
                 this.regular_table,
                 viewer,
-                selected_position_map as any,
-            ) as EventListener,
+                selected_position_map,
+            ),
         );
 
         this.regular_table.addEventListener(
             "keydown",
-            keydownListener.bind(
+            createKeydownListener(
                 this.model,
                 this.regular_table,
                 viewer,
-                selected_position_map as any,
-            ) as EventListener,
+                selected_position_map,
+            ),
         );
 
         // viewer event listeners
@@ -204,7 +231,7 @@ export async function activate(
             (event: Event) => {
                 const toggleEvent = event as ToggleColumnSettingsEvent;
                 if (this.isConnected) {
-                    style_selected_column.call(
+                    style_selected_column(
                         this.model!,
                         this.regular_table,
                         viewer,

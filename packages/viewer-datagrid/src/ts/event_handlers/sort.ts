@@ -31,14 +31,10 @@ const ROW_COL_SORT_ORDER: SortRotationOrder = {
     asc: undefined,
     "desc abs": "asc abs",
     "asc abs": undefined,
-    // "col desc": "col asc",
-    // "col asc": undefined,
-    // "col desc abs": "col asc abs",
-    // "col asc abs": undefined,
 };
 
 export async function sortHandler(
-    this: DatagridModel,
+    model: DatagridModel,
     regularTable: RegularTableElement,
     viewer: PerspectiveViewerElement,
     event: MouseEvent,
@@ -46,7 +42,7 @@ export async function sortHandler(
 ): Promise<void> {
     const meta = regularTable.getMeta(target);
     if (!meta?.column_header) return;
-    const column_name = meta.column_header[this._config.split_by.length];
+    const column_name = meta.column_header[model._config.split_by.length];
     const sort_method =
         event.ctrlKey ||
         (event as MouseEvent & { metaKey?: boolean }).metaKey ||
@@ -55,22 +51,22 @@ export async function sortHandler(
             : override_sort;
 
     const abs = event.shiftKey;
-    const sort = sort_method.call(this, `${column_name}`, abs);
+    const sort = sort_method(model, `${column_name}`, abs);
     await viewer.restore({ sort });
 }
 
 export function append_sort(
-    this: DatagridModel,
+    model: DatagridModel,
     column_name: string,
     abs: boolean,
 ): SortTerm[] {
     const sort: SortTerm[] = [];
     let found = false;
-    for (const sort_term of this._config.sort) {
+    for (const sort_term of model._config.sort) {
         const [_column_name, _sort_dir] = sort_term;
         if (_column_name === column_name) {
             found = true;
-            const term = create_sort.call(this, column_name, _sort_dir, abs);
+            const term = create_sort(model, column_name, _sort_dir, abs);
             if (term) {
                 sort.push(term);
             }
@@ -87,13 +83,13 @@ export function append_sort(
 }
 
 export function override_sort(
-    this: DatagridModel,
+    model: DatagridModel,
     column_name: string,
     abs: boolean,
 ): SortTerm[] {
-    for (const [_column_name, _sort_dir] of this._config.sort) {
+    for (const [_column_name, _sort_dir] of model._config.sort) {
         if (_column_name === column_name) {
-            const sort = create_sort.call(this, column_name, _sort_dir, abs);
+            const sort = create_sort(model, column_name, _sort_dir, abs);
             return sort ? [sort] : [];
         }
     }
@@ -102,12 +98,12 @@ export function override_sort(
 }
 
 export function create_sort(
-    this: DatagridModel,
+    model: DatagridModel,
     column_name: string,
     sort_dir: SortDir | undefined,
     _abs: boolean,
 ): SortTerm | undefined {
-    const is_col_sortable = this._config.split_by.length > 0;
+    const is_col_sortable = model._config.split_by.length > 0;
     const order = is_col_sortable ? ROW_COL_SORT_ORDER : ROW_SORT_ORDER;
     const inc_sort_dir: SortDir | undefined = sort_dir
         ? order[sort_dir]

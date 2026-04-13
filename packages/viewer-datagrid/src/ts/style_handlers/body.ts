@@ -14,9 +14,7 @@ import { RegularTableElement } from "regular-table";
 
 import {
     type DatagridModel,
-    type PerspectiveViewerElement,
     type ColumnsConfig,
-    type DatagridPluginElement,
     get_psp_type,
 } from "../types.js";
 
@@ -25,39 +23,31 @@ import { cell_style_string } from "./table_cell/string.js";
 import { cell_style_datetime } from "./table_cell/datetime.js";
 import { cell_style_boolean } from "./table_cell/boolean.js";
 import { cell_style_row_header } from "./table_cell/row_header.js";
-import {
-    CollectedCell,
-    LocalSelectedPositionMap,
-    LocalSelectedRowsMap,
-} from "./types.js";
+import { CollectedCell } from "./types.js";
 
 /**
  * Apply styles to all body cells in a single pass.
  */
 export function applyBodyCellStyles(
-    this: DatagridModel,
+    model: DatagridModel,
     cells: CollectedCell[],
     plugins: ColumnsConfig,
     isSettingsOpen: boolean,
     isSelectable: boolean,
     isEditable: boolean,
     regularTable: RegularTableElement,
-    selectedRowsMap: LocalSelectedRowsMap,
-    selectedPositionMap: LocalSelectedPositionMap,
-    viewer: PerspectiveViewerElement,
 ): void {
-    const hasSelected = selectedRowsMap.has(regularTable);
-    const selected = selectedRowsMap.get(regularTable);
+    const selectedId = isSelectable ? model._tree_selection_id : undefined;
 
     regularTable.classList.toggle(
         "flat-group-rollup-mode",
-        this._config.group_rollup_mode === "flat",
+        model._config.group_rollup_mode === "flat",
     );
 
     for (const { element: td, metadata, isHeader } of cells) {
         const column_name =
-            metadata.column_header?.[this._config.split_by.length];
-        const type = get_psp_type(this, metadata);
+            metadata.column_header?.[model._config.split_by.length];
+        const type = get_psp_type(model, metadata);
         const plugin = column_name
             ? plugins[column_name.toString()]
             : undefined;
@@ -66,13 +56,13 @@ export function applyBodyCellStyles(
         // Calculate aggregate depth visibility
         // @ts-ignore
         metadata._is_hidden_by_aggregate_depth =
-            this._config.group_rollup_mode === "rollup" &&
+            model._config.group_rollup_mode === "rollup" &&
             ((x?: number) =>
                 x === 0 || x === undefined
                     ? false
                     : x - 1 <
                       Math.min(
-                          this._config.group_by.length,
+                          model._config.group_by.length,
                           plugin?.aggregate_depth || 0,
                       ))(
                 (metadata.row_header as unknown[] | undefined)?.filter(
@@ -82,19 +72,19 @@ export function applyBodyCellStyles(
 
         // Apply type-specific cell styling
         if (is_numeric) {
-            cell_style_numeric.call(
-                this,
+            cell_style_numeric(
+                model,
                 plugin as any,
                 td,
                 metadata as any,
                 isSettingsOpen,
             );
         } else if (type === "boolean") {
-            cell_style_boolean.call(this, plugin, td, metadata as any);
+            cell_style_boolean(model, plugin, td, metadata as any);
         } else if (type === "string") {
-            cell_style_string.call(this, plugin as any, td, metadata as any);
+            cell_style_string(model, plugin as any, td, metadata as any);
         } else if (type === "date" || type === "datetime") {
-            cell_style_datetime.call(this, plugin as any, td, metadata);
+            cell_style_datetime(model, plugin as any, td, metadata);
         } else {
             td.style.backgroundColor = "";
             td.style.color = "";
@@ -109,10 +99,10 @@ export function applyBodyCellStyles(
         td.classList.toggle("psp-null", metadata.value === null);
         td.classList.toggle("psp-align-right", !isHeader && is_numeric);
         td.classList.toggle("psp-align-left", isHeader || !is_numeric);
-        if (this._column_settings_selected_column) {
+        if (model._column_settings_selected_column) {
             td.classList.toggle(
                 "psp-menu-open",
-                column_name === this._column_settings_selected_column,
+                column_name === model._column_settings_selected_column,
             );
         } else {
             td.classList.toggle("psp-menu-open", false);
@@ -130,7 +120,7 @@ export function applyBodyCellStyles(
 
         // Apply row header styling
         if (isHeader) {
-            cell_style_row_header.call(this, regularTable, td, metadata as any);
+            cell_style_row_header(model, regularTable, td, metadata as any);
         }
 
         // Set data attributes
@@ -157,55 +147,53 @@ export function applyBodyCellStyles(
             delete td.dataset.x;
         }
 
-        // Apply selection styling (if selectable)
+        // Apply tree selection styling (SELECT_ROW_TREE).
+        // psp-select-region-inactive is exclusively a tree-selection class,
+        // so always clean it up. psp-select-region is shared with the
+        // coordinate-based selection modes, so only touch it when in
+        // SELECT_ROW_TREE mode (isSelectable).
+        td.classList.toggle("psp-select-region-inactive", false);
         if (isSelectable) {
-            if (!hasSelected) {
-                td.classList.toggle("psp-row-selected", false);
-                td.classList.toggle("psp-row-subselected", false);
+            if (!selectedId) {
+                td.classList.toggle("psp-select-region", false);
             } else {
-                const id = this._ids[(metadata.y ?? 0) - (metadata.y0 ?? 0)];
-                const key_match = (selected as unknown[]).reduce<boolean>(
+                const id = model._ids[(metadata.y ?? 0) - (metadata.y0 ?? 0)];
+                const key_match = selectedId.reduce<boolean>(
                     (agg, x, i) => agg && x === id[i],
                     true,
                 );
 
-                const selectedArr = selected as unknown[];
+                const isExact = id.length === selectedId.length && key_match;
+                const isSub = id.length !== selectedId.length && key_match;
+
                 if (isHeader) {
                     if (
                         metadata.type === "row_header" &&
                         metadata.row_header_x !== undefined &&
                         !!id[metadata.row_header_x]
                     ) {
-                        td.classList.toggle("psp-row-selected", false);
-                        td.classList.toggle("psp-row-subselected", false);
+                        td.classList.toggle("psp-select-region", false);
                     } else {
+                        td.classList.toggle("psp-select-region", isExact);
                         td.classList.toggle(
-                            "psp-row-selected",
-                            id.length === selectedArr.length && key_match,
-                        );
-                        td.classList.toggle(
-                            "psp-row-subselected",
-                            id.length !== selectedArr.length && key_match,
+                            "psp-select-region-inactive",
+                            isSub,
                         );
                     }
                 } else {
-                    td.classList.toggle(
-                        "psp-row-selected",
-                        id.length === selectedArr.length && key_match,
-                    );
-                    td.classList.toggle(
-                        "psp-row-subselected",
-                        id.length !== selectedArr.length && key_match,
-                    );
+                    td.classList.toggle("psp-select-region", isExact);
+                    td.classList.toggle("psp-select-region-inactive", isSub);
                 }
             }
+        } else {
+            td.classList.toggle("psp-select-region", false);
         }
 
         // Apply editable styling (if editable)
         if (!isHeader && metadata.type === "body") {
-            if (isEditable && this._is_editable[metadata.x]) {
+            if (isEditable && model._is_editable[metadata.x]) {
                 const col_name =
-                    metadata.column_header?.[this._config.split_by.length];
+                    metadata.column_header?.[model._config.split_by.length];
                 const col_name_str = col_name?.toString();
                 if (
                     col_name_str &&

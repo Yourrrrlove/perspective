@@ -58,7 +58,7 @@ export function format_cell(
             ),
         );
 
-        const anchor = (val as number) >= 0 ? "left" : "right";
+        const anchor = (val as number) >= 0 ? "" : "justify-self:flex-end;";
         const pct = (a * 100).toFixed(2);
 
         if (plugin.number_fg_mode === "bar") {
@@ -66,32 +66,21 @@ export function format_cell(
             div.className = "psp-bar";
             div.setAttribute(
                 "style",
-                `width:calc(${pct}% - 4px);position:absolute;${anchor}:2px;height:80%;top:10%;pointer-events:none;`,
+                `${anchor}width:${pct}%;height:80%;top:10%;pointer-events:none;background:var(--psp-label-bar-color)`,
             );
 
             return div;
         } else {
-            const wrapper = this._div_factory.get();
-            wrapper.setAttribute("style", "");
-            wrapper.className = "psp-label-bar";
-            while (wrapper.firstChild) {
-                wrapper.removeChild(wrapper.firstChild);
-            }
-            const bar = document.createElement("div");
-            bar.className = "psp-label-bar-fill";
-            bar.setAttribute(
-                "style",
-                `width:calc(${pct}% - 4px);${anchor}:2px;`,
-            );
-            const label = document.createElement("span");
-            label.className = "psp-label-bar-text";
             const formatter = FORMAT_CACHE.get(type, plugin);
-            label.textContent = formatter
-                ? formatter.format(val)
-                : (val as string);
-            wrapper.appendChild(bar);
-            wrapper.appendChild(label);
-            return wrapper;
+            const label = formatter ? formatter.format(val) : (val as string);
+
+            const div = this._div_factory.get();
+            div.className = "psp-bar";
+            div.setAttribute(
+                "style",
+                `--label:"${label}";${anchor}width:${pct}%;height:80%;top:10%;pointer-events:none;background:var(--psp-label-bar-color)`,
+            );
+            return div;
         }
     } else if (plugin?.format === "link" && type === "string") {
         const anchor = document.createElement("a");

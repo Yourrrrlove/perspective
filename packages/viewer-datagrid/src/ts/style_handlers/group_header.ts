@@ -19,11 +19,11 @@ import { CollectedHeaderRow } from "./types.js";
  * Apply styles to group header rows.
  */
 export function applyGroupHeaderStyles(
-    this: DatagridModel,
+    model: DatagridModel,
     headerRows: CollectedHeaderRow[],
     regularTable: RegularTableElement,
 ): void {
-    const header_depth = this._config.group_by.length;
+    const header_depth = model._config.group_by.length;
     const m: boolean[][] = [];
     let marked = new Set<number>();
 

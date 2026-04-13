@@ -94,6 +94,10 @@
     -webkit-mask-image: var(--psp-toolbar-edit-mode-select-region--content);
 }
 
+#edit_mode[data-edit-mode="SELECT_ROW_TREE"]:before {
+    -webkit-mask-image: var(--psp-toolbar-edit-mode-select-row-tree--content);
+}
+
 /* #edit_mode span:before { */
 /*     content: var(--edit-mode-toggle--content, "N/A"); */
 /* } */
@@ -121,6 +125,13 @@
     content: var(
         --psp-label--edit-mode-select-region--content,
         "Region Select"
+    );
+}
+
+#edit_mode[data-edit-mode="SELECT_ROW_TREE"] span:before {
+    content: var(
+        --psp-label--edit-mode-select-row-tree--content,
+        "Tree Select"
     );
 }
 

@@ -18,68 +18,110 @@ import type {
     PerspectiveViewerElement,
 } from "../types.js";
 
-export async function mousedown_listener(
-    this: DatagridModel,
+export function createMousedownListener(
+    model: DatagridModel,
     regularTable: RegularTable,
     viewer: PerspectiveViewerElement,
-    event: MouseEvent,
-): Promise<void> {
-    if (event.which !== 1) {
-        return;
-    }
-
-    let target = event.target as HTMLElement | null;
-    if (target?.tagName === "A") {
-        return;
-    }
-
-    while (target && target.tagName !== "TD" && target.tagName !== "TH") {
-        target = target.parentElement;
-        if (!target || !regularTable.contains(target)) {
+): EventListener {
+    return async (event: Event): Promise<void> => {
+        const mouseEvent = event as MouseEvent;
+        if (mouseEvent.which !== 1) {
             return;
         }
-    }
 
-    if (!target) return;
+        let target = mouseEvent.target as HTMLElement | null;
+        if (target?.tagName === "A") {
+            return;
+        }
 
-    if (target.classList.contains("psp-tree-label")) {
-        expandCollapseHandler.call(this, regularTable, event);
-        return;
-    }
+        while (target && target.tagName !== "TD" && target.tagName !== "TH") {
+            target = target.parentElement;
+            if (!target || !regularTable.contains(target)) {
+                return;
+            }
+        }
 
-    if (target.classList.contains("psp-menu-enabled")) {
-        const meta = regularTable.getMeta(target);
-        const column_name = meta?.column_header?.[this._config.split_by.length];
-        await viewer.toggleColumnSettings(`${column_name}`);
-    } else if (target.classList.contains("psp-sort-enabled")) {
-        sortHandler.call(this, regularTable, viewer, event, target);
-    }
+        if (!target) return;
+
+        if (target.classList.contains("psp-tree-label")) {
+            if (model._edit_mode !== "SELECT_ROW_TREE") {
+                expandCollapseHandler(model, regularTable, mouseEvent);
+            }
+
+            return;
+        }
+
+        if (target.classList.contains("psp-menu-enabled")) {
+            const meta = regularTable.getMeta(target);
+            const column_name =
+                meta?.column_header?.[model._config.split_by.length];
+            await viewer.toggleColumnSettings(`${column_name}`);
+        } else if (target.classList.contains("psp-sort-enabled")) {
+            sortHandler(model, regularTable, viewer, mouseEvent, target);
+        }
+    };
 }
 
-export function click_listener(
+export function createDblclickListener(
+    model: DatagridModel,
     regularTable: RegularTable,
-    event: MouseEvent,
-): void {
-    if (event.which !== 1) {
-        return;
-    }
-
-    let target = event.target as HTMLElement | null;
-    while (target && target.tagName !== "TD" && target.tagName !== "TH") {
-        target = target.parentElement;
-        if (!target || !regularTable.contains(target)) {
+    viewer: PerspectiveViewerElement,
+): EventListener {
+    return async (event: Event): Promise<void> => {
+        const mouseEvent = event as MouseEvent;
+        if (mouseEvent.which !== 1) {
             return;
         }
-    }
 
-    if (!target) return;
+        let target = mouseEvent.target as HTMLElement | null;
+        if (target?.tagName === "A") {
+            return;
+        }
 
-    if (target.classList.contains("psp-tree-label") && event.offsetX < 26) {
-        event.stopImmediatePropagation();
-    } else if (
-        target.classList.contains("psp-header-leaf") &&
-        !target.classList.contains("psp-header-corner")
-    ) {
-        event.stopImmediatePropagation();
-    }
+        while (target && target.tagName !== "TD" && target.tagName !== "TH") {
+            target = target.parentElement;
+            if (!target || !regularTable.contains(target)) {
+                return;
+            }
+        }
+
+        if (!target) return;
+
+        if (target.classList.contains("psp-tree-label")) {
+            if (model._edit_mode === "SELECT_ROW_TREE") {
+                expandCollapseHandler(model, regularTable, mouseEvent);
+            }
+        }
+    };
+}
+
+export function createClickListener(regularTable: RegularTable): EventListener {
+    return (event: Event): void => {
+        const mouseEvent = event as MouseEvent;
+        if (mouseEvent.which !== 1) {
+            return;
+        }
+
+        let target = mouseEvent.target as HTMLElement | null;
+        while (target && target.tagName !== "TD" && target.tagName !== "TH") {
+            target = target.parentElement;
+            if (!target || !regularTable.contains(target)) {
+                return;
+            }
+        }
+
+        if (!target) return;
+
+        if (
+            target.classList.contains("psp-tree-label") &&
+            mouseEvent.offsetX < 26
+        ) {
+            mouseEvent.stopImmediatePropagation();
+        } else if (
+            target.classList.contains("psp-header-leaf") &&
+            !target.classList.contains("psp-header-corner")
+        ) {
+            mouseEvent.stopImmediatePropagation();
+        }
+    };
 }

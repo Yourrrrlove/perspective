@@ -402,6 +402,7 @@ impl PyVirtualDataSlice {
         PyVirtualDataSlice(Arc::new(Mutex::new(VirtualDataSlice::new(config))))
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub fn from_arrow_ipc(&self, ipc: &[u8]) -> PyResult<()> {
         self.0
             .lock()

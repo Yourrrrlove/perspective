@@ -43,10 +43,13 @@ export async function shadowDragOver(page: Page, src: Locator, tgt: Locator) {
 
     await page.mouse.move(srcX, srcY);
     await page.mouse.down();
+
     // Small initial move to trigger the browser's drag-start threshold.
     await page.mouse.move(srcX + 5, srcY, { steps: 2 });
+
     // Move to the target center, generating dragenter + dragover events.
     await page.mouse.move(tgtX, tgtY, { steps: 10 });
+
     // Allow Yew to process events and re-render.
     await page.waitForTimeout(100);
 }
@@ -65,6 +68,13 @@ export async function shadowDragCancel(
     const srcX = srcBox.x + srcBox.width / 2;
     const srcY = srcBox.y + srcBox.height / 2;
 
+    await page.evaluate(() => {
+        window["dragend_resolvers"] = Promise.withResolvers();
+        document.body.addEventListener("dragend", () => {
+            window["dragend_resolvers"].resolve();
+        });
+    });
+
     await page.mouse.move(srcX, srcY);
     await page.mouse.down();
     await page.mouse.move(srcX + 5, srcY, { steps: 2 });
@@ -78,9 +88,14 @@ export async function shadowDragCancel(
         );
     }
 
+    // Drag is a cruel mistress.
+    await page.waitForTimeout(100);
+
     // Cancel the drag (fires dragend with no preceding drop).
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(100);
+    await page.evaluate(async () => {
+        await window["dragend_resolvers"].promise;
+    });
 }
 
 export async function localDrag(page: any, source: any, target: any) {

@@ -157,13 +157,13 @@ export interface IPerspectiveViewerPlugin {
      * Like `update()`, but for when the dimensions of the plugin have changed
      * and the underlying data has not.
      */
-    resize(): Promise<void>;
+    resize(view: View): Promise<void>;
 
     /**
      * Notify the plugin that the style environment has changed.  Useful for
      * plugins which read CSS styles via `window.getComputedStyle()`.
      */
-    restyle(): Promise<void>;
+    restyle(view: View): Promise<void>;
 
     /**
      * Save this plugin's state to a JSON-serializable value.  While this value
@@ -257,11 +257,11 @@ export class HTMLPerspectiveViewerPluginElement
         this.innerHTML = "";
     }
 
-    async resize(): Promise<void> {
+    async resize(view: View): Promise<void> {
         // Not Implemented
     }
 
-    async restyle(): Promise<void> {
+    async restyle(view: View): Promise<void> {
         // Not Implemented
     }
 

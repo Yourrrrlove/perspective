@@ -15,78 +15,52 @@ import * as edit_keydown from "./keydown/edit_keydown.js";
 import type {
     DatagridModel,
     PerspectiveViewerElement,
-    SelectedPosition,
+    SelectedPositionMap,
 } from "../types.js";
+import { isEditableMode } from "../types.js";
 import { RegularTableElement } from "regular-table";
-import { HTMLPerspectiveViewerDatagridPluginElement } from "../custom_elements/datagrid.js";
 
-type SelectedPositionMap = Map<RegularTableElement, SelectedPosition>;
-
-export function is_editable(
-    this: DatagridModel,
-    viewer: PerspectiveViewerElement,
-    allowed: boolean = false,
-): boolean {
-    const has_pivots =
-        this._config.group_by.length === 0 &&
-        this._config.split_by.length === 0;
-    const selectable = viewer.hasAttribute("selectable");
-    const plugin = viewer.children[0] as
-        | HTMLPerspectiveViewerDatagridPluginElement
-        | undefined;
-    const editable = allowed || !!(plugin?._edit_mode === "EDIT");
-    return has_pivots && !selectable && editable;
-}
-
-export function keydownListener(
-    this: DatagridModel,
+export function createKeydownListener(
+    model: DatagridModel,
     table: RegularTableElement,
     viewer: PerspectiveViewerElement,
     selected_position_map: SelectedPositionMap,
-    event: KeyboardEvent,
-): void {
-    if (this._edit_mode === "EDIT") {
-        if (!is_editable.call(this, viewer)) {
-            return;
-        }
+): EventListener {
+    return (event: Event): void => {
+        const keyEvent = event as KeyboardEvent;
+        if (model._edit_mode === "EDIT") {
+            if (!isEditableMode(model, viewer)) {
+                return;
+            }
 
-        edit_keydown.keydownListener.call(
-            this,
-            table,
-            viewer,
-            selected_position_map,
-            event,
-        );
-    } else {
-        console.debug(
-            `Mode ${this._edit_mode} for "keydown" event not yet implemented`,
-        );
-    }
+            edit_keydown.keydownListener(
+                model,
+                table,
+                viewer,
+                selected_position_map,
+                keyEvent,
+            );
+        } else {
+            console.debug(
+                `Mode ${model._edit_mode} for "keydown" event not yet implemented`,
+            );
+        }
+    };
 }
 
-export function clickListener(
-    this: DatagridModel,
+export function createEditClickListener(
+    model: DatagridModel,
     table: RegularTableElement,
     viewer: PerspectiveViewerElement,
-    event: MouseEvent,
-): void {
-    if (this._edit_mode === "EDIT") {
-        if (!is_editable.call(this, viewer)) {
-            return;
-        }
+): EventListener {
+    return (event: Event): void => {
+        const mouseEvent = event as MouseEvent;
+        if (model._edit_mode === "EDIT") {
+            if (!isEditableMode(model, viewer)) {
+                return;
+            }
 
-        edit_click.clickListener.call(this, table, viewer, event);
-    } else if (this._edit_mode === "READ_ONLY") {
-        // No-op for read-only mode
-    } else if (this._edit_mode === "SELECT_COLUMN") {
-        // Not yet implemented
-    } else if (this._edit_mode === "SELECT_ROW") {
-        // Not yet implemented
-    } else if (this._edit_mode === "SELECT_REGION") {
-        // Not yet implemented
-    } else {
-        console.debug(
-            `Mode ${this._edit_mode} for "click" event not yet implemented`,
-        );
-    }
+            edit_click.clickListener(model, table, viewer, mouseEvent);
+        }
+    };
 }

@@ -210,7 +210,7 @@ export class HTMLPerspectiveViewerDatagridPluginElement
         return out.trim();
     }
 
-    async resize(): Promise<void> {
+    async resize(_view: View): Promise<void> {
         if (!this.isConnected || this.offsetParent == null) {
             return;
         }
@@ -233,10 +233,10 @@ export class HTMLPerspectiveViewerDatagridPluginElement
         return restore.call(this, token, columns_config ?? {});
     }
 
-    async restyle(): Promise<void> {
+    async restyle(view: View): Promise<void> {
         // Get view from model if available, otherwise no-op
         if (this.model?._view) {
-            await this.draw(this.model._view);
+            await this.draw(view);
         }
     }
 

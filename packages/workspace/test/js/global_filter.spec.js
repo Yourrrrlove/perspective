@@ -206,7 +206,7 @@ function tests(context, compare) {
                 ".workspace-master-widget",
             );
             masterViewer.dispatchEvent(
-                new CustomEvent("perspective-select", {
+                new CustomEvent("perspective-global-filter", {
                     bubbles: true,
                     composed: true,
                     detail: new PerspectiveSelectDetail(
@@ -233,7 +233,7 @@ function tests(context, compare) {
                 ".workspace-master-widget",
             );
             masterViewer.dispatchEvent(
-                new CustomEvent("perspective-select", {
+                new CustomEvent("perspective-global-filter", {
                     bubbles: true,
                     composed: true,
                     detail: new PerspectiveSelectDetail(
@@ -309,7 +309,7 @@ function tests(context, compare) {
                 ".workspace-master-widget",
             );
             masterViewer.dispatchEvent(
-                new CustomEvent("perspective-select", {
+                new CustomEvent("perspective-global-filter", {
                     bubbles: true,
                     composed: true,
                     detail: new PerspectiveSelectDetail(
@@ -343,7 +343,7 @@ function tests(context, compare) {
                 ".workspace-master-widget",
             );
             masterViewer.dispatchEvent(
-                new CustomEvent("perspective-select", {
+                new CustomEvent("perspective-global-filter", {
                     bubbles: true,
                     composed: true,
                     detail: new PerspectiveSelectDetail(
@@ -426,6 +426,7 @@ function tests(context, compare) {
         await page
             .locator(".workspace-master-widget my-grid")
             .locator("tbody tr:nth-child(6) th:last-of-type")
+
             .click();
         let cfg = await cfgPromise;
 

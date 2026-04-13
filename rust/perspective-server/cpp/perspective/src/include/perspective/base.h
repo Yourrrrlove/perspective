@@ -175,7 +175,7 @@ PERSPECTIVE_EXPORT ESM_EXPORT("psp_heap_size") extern "C" size_t
     {                                                                          \
         std::stringstream __SS__;                                              \
         __SS__ << (X) << "\n";                                                 \
-        __SS__ << psp_stack_trace();                                           \
+        __SS__ << perspective::psp_stack_trace();                                           \
         std::cout << __SS__.str() << '\n';                                     \
         perspective::psp_abort(__SS__.str());                                  \
     }

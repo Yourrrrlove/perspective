@@ -17,6 +17,7 @@ import { Signal } from "@lumino/signaling";
 import type {
     HTMLPerspectiveViewerCopyMenuElement,
     HTMLPerspectiveViewerExportMenuElement,
+    ViewerConfigUpdate,
 } from "@perspective-dev/viewer";
 
 import type { PerspectiveWorkspace } from "./workspace";
@@ -141,7 +142,7 @@ export const createCommands = (
                 args.target_widget_name as string,
             )!;
 
-            const config = await target_widget.save();
+            const config = (await target_widget.save()) as ViewerConfigUpdate;
             const new_widget = await workspace._createWidgetAndNode({
                 config,
                 slot: undefined,

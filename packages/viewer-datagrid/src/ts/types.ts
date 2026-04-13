@@ -46,7 +46,8 @@ export type EditMode =
     | "EDIT"
     | "SELECT_COLUMN"
     | "SELECT_ROW"
-    | "SELECT_REGION";
+    | "SELECT_REGION"
+    | "SELECT_ROW_TREE";
 
 // Color record for styling - tuple returned by make_color_record
 export type ColorRecord = [
@@ -177,6 +178,8 @@ export interface DatagridModel {
     _column_types: ColumnType[];
     _is_editable: boolean[];
     _edit_mode: EditMode;
+    _tree_selection_id?: unknown[];
+    _last_insert_configs?: ViewConfigUpdate[];
     _selection_state: SelectionState;
     _row_header_types: ColumnType[];
     _series_color_map: Map<string, Map<string, number>>;
@@ -221,6 +224,7 @@ export interface PerspectiveViewerElement extends HTMLElement {
     toggleColumnSettings(columnName?: string): Promise<void>;
     hasAttribute(name: string): boolean;
     setSelection(viewport?: ViewWindow): void;
+    getSelection(): ViewWindow | undefined;
     dispatchEvent(event: Event): boolean;
     children: HTMLCollectionOf<HTMLElement>;
 }
@@ -255,7 +259,7 @@ export interface PerspectiveClickDetail {
     config: Partial<ViewConfig>;
 }
 
-export { PerspectiveSelectDetail } from "@perspective-dev/viewer";
+export { PerspectiveSelectDetail } from "@perspective-dev/viewer/src/ts/extensions.js";
 
 // Mouse event with handled flag
 export interface HandledMouseEvent extends MouseEvent {
@@ -281,9 +285,22 @@ export interface DatagridPluginElement extends HTMLElement {
     _reset_column_size?: boolean;
 }
 
-// Map types for selected rows and positions
-export type SelectedRowsMap = WeakMap<RegularTableElement, Set<number>>;
+// Map types for selected positions
 export type SelectedPositionMap = WeakMap<
     RegularTableElement,
     SelectedPosition
 >;
+
+// Centralized editable mode check - used by style handlers and event handlers
+export function isEditableMode(
+    model: DatagridModel,
+    viewer: PerspectiveViewerElement,
+    allowed: boolean = false,
+): boolean {
+    const has_pivots =
+        model._config.group_by.length === 0 &&
+        model._config.split_by.length === 0;
+    const plugin = viewer.children[0] as DatagridPluginElement | undefined;
+    const editable = allowed || plugin?._edit_mode === "EDIT";
+    return has_pivots && editable;
+}

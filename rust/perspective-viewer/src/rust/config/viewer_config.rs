@@ -26,9 +26,9 @@ use crate::presentation::ColumnConfigMap;
 
 /// The state of an entire `custom_elements::PerspectiveViewerElement` component
 /// and its `Plugin`.
-#[derive(Debug, Default, Serialize, PartialEq)]
+#[derive(Debug, Default, Serialize, PartialEq, TS)]
 #[serde(deny_unknown_fields)]
-pub struct ViewerConfig<V = String> {
+pub struct ViewerConfig<V: TS = String> {
     pub version: V,
     pub columns_config: ColumnConfigMap,
     pub plugin: String,
