@@ -151,17 +151,16 @@ t_view_config::get_used_expressions() {
         std::inserter(used_cols, used_cols.end())
     );
 
-    std::copy(
-        m_row_pivots.begin(),
-        m_row_pivots.end(),
-        std::inserter(used_cols, used_cols.end())
-    );
-
-    std::copy(
-        m_row_pivots.begin(),
-        m_row_pivots.end(),
-        std::inserter(used_cols, used_cols.end())
-    );
+    for (const auto& agg : m_aggregates) {
+        if (std::find(m_columns.begin(), m_columns.end(), agg.first)
+            == m_columns.end()) {
+            continue;
+        }
+        const auto& aggregate = agg.second;
+        for (std::size_t i = 1; i < aggregate.size(); ++i) {
+            used_cols.insert(aggregate[i]);
+        }
+    }
 
     auto iter = std::remove_if(
         exprs.begin(),

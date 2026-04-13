@@ -221,6 +221,25 @@ const std = (nums) => {
             table.delete();
         });
 
+        test("['z'], weighted mean by expression", async function () {
+            var table = await perspective.table(data2);
+            var view = await table.view({
+                group_by: ["z"],
+                aggregates: { x: ["weighted mean", ["q"]] },
+                expressions: { q: `"y"` },
+                columns: ["x"],
+            });
+            var answer = [
+                { __ROW_PATH__: [], x: 2.8333333333333335 },
+                { __ROW_PATH__: [false], x: 3.3333333333333335 },
+                { __ROW_PATH__: [true], x: 2.3333333333333335 },
+            ];
+            let result = await view.to_json();
+            expect(result).toEqual(answer);
+            view.delete();
+            table.delete();
+        });
+
         test("['z'], weighted mean on a table created from schema should return valid values after update", async function () {
             const table = await perspective.table({
                 x: "integer",

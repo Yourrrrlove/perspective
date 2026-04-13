@@ -455,6 +455,44 @@ class TestView(object):
             {"__ROW_PATH__": ["a"], "y": (1.0 * 200 + 2 * 100) / (1.0 + 2)},
         ]
 
+    def test_view_aggregate_weighted_mean_by_expression(self):
+        data = [
+            {"a": "a", "x": 1, "y": 200},
+            {"a": "a", "x": 2, "y": 100},
+            {"a": "a", "x": 3, "y": None},
+        ]
+        tbl = Table(data)
+        view = tbl.view(
+            aggregates={"y": ("weighted mean", ["z"])},
+            group_by=["a"],
+            columns=["y", "z"],
+            expressions={"z": '"x"'},
+        )
+
+        assert view.to_records() == [
+            {"__ROW_PATH__": [], "y": (1.0 * 200 + 2 * 100) / (1.0 + 2), "z": 6},
+            {"__ROW_PATH__": ["a"], "y": (1.0 * 200 + 2 * 100) / (1.0 + 2), "z": 6},
+        ]
+
+    def test_view_aggregate_weighted_mean_by_expression_without_column_ref(self):
+        data = [
+            {"a": "a", "x": 1, "y": 200},
+            {"a": "a", "x": 2, "y": 100},
+            {"a": "a", "x": 3, "y": None},
+        ]
+        tbl = Table(data)
+        view = tbl.view(
+            aggregates={"y": ("weighted mean", ["z"])},
+            group_by=["a"],
+            columns=["y"],
+            expressions={"z": '"x" + 1'},
+        )
+
+        assert view.to_records() == [
+            {"__ROW_PATH__": [], "y": (2 * 200 + 3 * 100) / (2 + 3)},
+            {"__ROW_PATH__": ["a"], "y": (2 * 200 + 3 * 100) / (2 + 3)},
+        ]
+
     def test_view_aggregate_weighted_mean_with_negative_weights(self):
         data = [
             {"a": "a", "x": 1, "y": 200},
