@@ -210,7 +210,7 @@ export class HTMLPerspectiveViewerDatagridPluginElement
         return out.trim();
     }
 
-    async resize(): Promise<void> {
+    async resize(_view: View): Promise<void> {
         if (!this.isConnected || this.offsetParent == null) {
             return;
         }
@@ -225,25 +225,22 @@ export class HTMLPerspectiveViewerDatagridPluginElement
         this.regular_table.clear();
     }
 
-    async save(): Promise<any> {
+    save(): any {
         return save.call(this);
     }
 
-    async restore(
-        token: DatagridPluginConfig,
-        columns_config?: ColumnsConfig,
-    ): Promise<any> {
+    restore(token: DatagridPluginConfig, columns_config?: ColumnsConfig): void {
         return restore.call(this, token, columns_config ?? {});
     }
 
-    async restyle(): Promise<void> {
+    async restyle(view: View): Promise<void> {
         // Get view from model if available, otherwise no-op
         if (this.model?._view) {
-            await this.draw(this.model._view);
+            await this.draw(view);
         }
     }
 
-    async delete(): Promise<void> {
+    delete(): void {
         this.disconnectedCallback();
         this._toolbar = undefined;
         if ((this.regular_table as any).table_model) {

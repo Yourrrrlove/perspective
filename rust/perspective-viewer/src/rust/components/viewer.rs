@@ -294,7 +294,6 @@ impl Component for PerspectiveViewer {
             ToggleSettingsComplete(_, resolve)
                 if matches!(self.fonts.get_status(), FontLoaderStatus::Finished) =>
             {
-                ctx.props().presentation.set_open_column_settings(None);
                 if let Err(e) = resolve.send(()) {
                     tracing::error!("toggle settings failed {:?}", e);
                 }

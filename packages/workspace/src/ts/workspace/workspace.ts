@@ -16,11 +16,9 @@ import { CommandRegistry } from "@lumino/commands";
 import { SplitPanel, Panel, DockPanel } from "@lumino/widgets";
 import uniqBy from "lodash/uniqBy";
 import { DebouncedFunc, DebouncedFuncLeading, isEqual } from "lodash";
-import { throttle } from "lodash";
-import debounce from "lodash/debounce";
 import type {
     HTMLPerspectiveViewerElement,
-    ViewerConfigUpdate,
+    ViewerConfig,
 } from "@perspective-dev/viewer";
 import type * as psp from "@perspective-dev/client";
 import type * as psp_viewer from "@perspective-dev/viewer";
@@ -29,6 +27,7 @@ import { PerspectiveDockPanel } from "./dockpanel";
 import { WorkspaceMenu } from "./menu";
 import { createCommands } from "./commands";
 import { PerspectiveViewerWidget } from "./widget";
+import type { Filter } from "@perspective-dev/client";
 
 class AsyncMutex {
     _lock: Promise<unknown> | null;
@@ -329,7 +328,7 @@ export class PerspectiveWorkspace extends SplitPanel {
             for (const widget of this.masterPanel.widgets) {
                 const psp_widget = widget as PerspectiveViewerWidget;
                 layout.viewers[psp_widget.viewer.getAttribute("slot")!] =
-                    await psp_widget.save();
+                    (await psp_widget.save()) as psp_viewer.ViewerConfigUpdate;
             }
 
             const widgets = PerspectiveDockPanel.getWidgets(
@@ -342,7 +341,8 @@ export class PerspectiveWorkspace extends SplitPanel {
                 widgets.map(async (widget) => {
                     const psp_widget = widget as PerspectiveViewerWidget;
                     const slot = psp_widget.viewer.getAttribute("slot")!;
-                    layout.viewers[slot] = await psp_widget.save();
+                    layout.viewers[slot] =
+                        (await psp_widget.save()) as psp_viewer.ViewerConfigUpdate;
                     layout.viewers[slot]!.settings = false;
                 }),
             );
@@ -515,10 +515,18 @@ export class PerspectiveWorkspace extends SplitPanel {
 
         if (master) {
             widget.viewer.classList.add("workspace-master-widget");
-            widget.viewer.toggleAttribute("selectable", true);
+            await widget.viewer.restore({
+                plugin_config: { edit_mode: "SELECT_ROW_TREE" },
+            });
+
+            widget.viewer.addEventListener(
+                "perspective-global-filter",
+                this.on_global_filter_callback,
+            );
+
             widget.viewer.addEventListener(
                 "perspective-select",
-                this.onPerspectiveSelect.bind(this),
+                this.on_select_callback,
             );
 
             // TODO remove event listener
@@ -613,7 +621,7 @@ export class PerspectiveWorkspace extends SplitPanel {
             this._unmaximize();
         }
 
-        const config = await widget.save();
+        const config = (await widget.save()) as psp_viewer.ViewerConfigUpdate;
         config.settings = false;
         config.title = config.title ? `${config.title} (*)` : "";
         const duplicate = await this._createWidgetAndNode({
@@ -688,29 +696,25 @@ export class PerspectiveWorkspace extends SplitPanel {
         candidates: Set<string>,
     ) {
         const config = await viewer.save();
-        const table = await viewer.getTable();
-        const availableColumns = Object.keys(await table.schema());
-        const currentFilters = config.filter || [];
-        const columnAvailable = (filter: psp.Filter) =>
-            filter[0] && availableColumns.includes(filter[0]);
 
-        const clearColumns = new Set<string>(removeFilters.map((f) => f[0]));
-        const validFilters = insertFilters.filter(columnAvailable);
-        validFilters.push(
-            ...currentFilters.filter(
-                (x: [string, ..._: string[]]) =>
-                    !candidates.has(x[0]) && !clearColumns.has(x[0]),
-            ),
-        );
-
-        const newFilters = uniqBy(validFilters, (item) => item[0]);
-        await viewer.restore({ filter: newFilters });
+        await viewer.restore({
+            filter: config.filter
+                .filter((x) => !removeFilters.find((y) => y[0] === x[0]))
+                .concat(insertFilters),
+        });
     }
 
-    async onPerspectiveSelect(event: CustomEvent) {
+    async onPerspectiveSelect(
+        filterFun: (config: ViewerConfig) => boolean,
+        event: CustomEvent,
+    ) {
         const config = await (
             event.target as HTMLPerspectiveViewerElement
         ).save();
+
+        if (!filterFun(config)) {
+            return;
+        }
 
         const candidates = new Set([
             ...(config["group_by"] || []),
@@ -735,13 +739,26 @@ export class PerspectiveWorkspace extends SplitPanel {
         });
     }
 
+    private on_select_callback = this.onPerspectiveSelect.bind(
+        this,
+        (config) => config.plugin !== "Datagrid",
+    );
+
+    private on_global_filter_callback = this.onPerspectiveSelect.bind(
+        this,
+        // (config) => config.plugin === "Datagrid",
+        (config) => true,
+    );
+
     async makeMaster(widget: PerspectiveViewerWidget) {
         if (widget.viewer.hasAttribute("settings")) {
             await widget.toggleConfig();
         }
 
         widget.viewer.classList.add("workspace-master-widget");
-        widget.viewer.toggleAttribute("selectable", true);
+        await widget.viewer.restore({
+            plugin_config: { edit_mode: "SELECT_ROW_TREE" },
+        });
         if (!this.masterPanel.isAttached) {
             this.detailPanel.close();
             this.setupMasterPanel(DEFAULT_WORKSPACE_SIZE);
@@ -750,15 +767,23 @@ export class PerspectiveWorkspace extends SplitPanel {
         this.masterPanel.addWidget(widget);
         widget.isHidden && widget.show();
         widget.viewer.restyleElement();
+
+        widget.viewer.addEventListener(
+            "perspective-global-filter",
+            this.on_global_filter_callback,
+        );
+
         widget.viewer.addEventListener(
             "perspective-select",
-            this.onPerspectiveSelect.bind(this),
+            this.on_select_callback,
         );
     }
 
-    makeDetail(widget: PerspectiveViewerWidget) {
+    async makeDetail(widget: PerspectiveViewerWidget) {
         widget.viewer.classList.remove("workspace-master-widget");
-        widget.viewer.toggleAttribute("selectable", false);
+        await widget.viewer.restore({
+            plugin_config: { edit_mode: "READ_ONLY" },
+        });
         this.dockpanel.addWidget(widget, { mode: `split-left` });
         if (this.masterPanel.widgets.length === 0) {
             this.detailPanel.close();
@@ -769,8 +794,13 @@ export class PerspectiveWorkspace extends SplitPanel {
 
         widget.viewer.restyleElement();
         widget.viewer.removeEventListener(
+            "perspective-global-filter",
+            this.on_global_filter_callback,
+        );
+
+        widget.viewer.removeEventListener(
             "perspective-select",
-            this.onPerspectiveSelect.bind(this),
+            this.on_select_callback,
         );
     }
 

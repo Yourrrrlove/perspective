@@ -90,24 +90,6 @@ perspective-string-column-style {
     --psp-plugin-selector--y-scatter--content: url(../svg/mega-menu-icons-y-scatter.svg);
     --psp-plugin-selector--datagrid--content: url(../svg/mega-menu-icons-datagrid.svg);
 
-    /* Colors */
-    color: #161616;
-    background-color: transparent;
-    --psp--color: #161616;
-    --psp-inactive--color: #ababab;
-    --psp-inactive--border-color: #dadada;
-
-    --psp-active--color: #2670a9;
-    --psp-error--color: #ff471e;
-    --psp--background-color: #ffffff;
-    --psp-icon-overflow-hint--color: rgba(0, 0, 0, 0.2);
-    --psp-select--background-color: none;
-    --psp-warning--background: #042121;
-    --psp-warning--color: #fdfffd;
-
-    /* TODO deprecate me */
-    --psp-icon-overflow-hint--color: #fdfffd;
-
     /* Datagrid */
     /* `regular-table` icons */
     --psp-label--column-style-open-button--content: "style";
@@ -121,4 +103,5 @@ perspective-string-column-style {
     --psp-toolbar-edit-mode-select-row--content: url("../svg/datagrid-select-row.svg");
     --psp-toolbar-edit-mode-select-column--content: url("../svg/datagrid-select-column.svg");
     --psp-toolbar-edit-mode-select-region--content: url("../svg/datagrid-select-region.svg");
+    --psp-toolbar-edit-mode-select-row-tree--content: url("../svg/datagrid-select-row-tree.svg");
 }

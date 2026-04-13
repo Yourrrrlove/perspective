@@ -27,8 +27,13 @@ export const raiseEvent = (node, data, settings) => {
         [],
         [{ filter }],
     );
+
+    if (node.tagName !== "PERSPECTIVE-VIEWER") {
+        node = node.getRootNode().host.parentElement;
+    }
+
     node.dispatchEvent(
-        new CustomEvent("perspective-select", {
+        new CustomEvent("perspective-global-filter", {
             bubbles: true,
             composed: true,
             detail,

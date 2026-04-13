@@ -70,7 +70,7 @@ test.describe("Events", () => {
             expressions: {},
             filter: [],
             plugin: "Debug",
-            plugin_config: {},
+            plugin_config: null,
             group_by: ["State"],
             group_rollup_mode: "rollup",
             settings: true,
@@ -89,7 +89,6 @@ test.describe("Events", () => {
         await page.evaluate(async () => {
             const viewer = document.querySelector("perspective-viewer");
             window["acc"] = [];
-
             await viewer!.restore({
                 settings: true,
             });

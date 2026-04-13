@@ -18,7 +18,7 @@ import type { DatagridModel } from "../../types.js";
 import { RegularTableElement } from "regular-table";
 
 export function cell_style_row_header(
-    this: DatagridModel,
+    model: DatagridModel,
     regularTable: RegularTableElement,
     td: HTMLElement,
     metadata: CellMetadataRowHeader,
@@ -28,7 +28,7 @@ export function cell_style_row_header(
         metadata.value !== null &&
         metadata.value?.toString()?.trim().length > 0;
     const is_leaf =
-        (metadata.row_header_x ?? 0) >= this._config.group_by.length;
+        (metadata.row_header_x ?? 0) >= model._config.group_by.length;
     const next = regularTable.getMeta({
         dx: 0,
         dy: (metadata.y ?? 0) - (metadata.y0 ?? 0) + 1,

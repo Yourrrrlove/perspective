@@ -31,6 +31,25 @@ import {
 } from "../types.js";
 import { CellMetadata } from "regular-table/dist/esm/types.js";
 
+function arraysChanged<T>(a: T[], b: T[]): boolean {
+    if (a.length !== b.length) return true;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) return true;
+    }
+    return false;
+}
+
+function nestedArraysChanged<T>(a: T[][], b: T[][]): boolean {
+    if (a.length !== b.length) return true;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i].length !== b[i].length) return true;
+        for (let j = 0; j < a[i].length; j++) {
+            if (a[i][j] !== b[i][j]) return true;
+        }
+    }
+    return false;
+}
+
 function get_rule(regular: HTMLElement, tag: string, def: string): string {
     const color = window.getComputedStyle(regular).getPropertyValue(tag).trim();
     if (color.length > 0) {
@@ -75,52 +94,20 @@ export async function createModel(
     const config = (await view.get_config()) as ViewConfig;
     if (this?.model?._config) {
         const old = this.model._config;
-        let group_by_changed = old.group_by.length !== config.group_by.length;
+        const group_by_changed = arraysChanged(old.group_by, config.group_by);
         const type_changed =
             (old.group_by.length === 0 || config.group_by.length === 0) &&
             group_by_changed;
-
-        if (!group_by_changed) {
-            for (const lvl in old.group_by) {
-                group_by_changed ||= config.group_by[lvl] !== old.group_by[lvl];
-            }
-        }
-
-        let split_by_changed = old.split_by.length !== config.split_by.length;
-        if (!split_by_changed) {
-            for (const lvl in old.split_by) {
-                split_by_changed ||= config.split_by[lvl] !== old.split_by[lvl];
-            }
-        }
-
-        let columns_changed = old.columns.length !== config.columns.length;
-        if (!columns_changed) {
-            for (const lvl in old.columns) {
-                columns_changed ||= config.columns[lvl] !== old.columns[lvl];
-            }
-        }
-
-        let filter_changed = old.filter.length !== config.filter.length;
-        if (!filter_changed) {
-            for (const lvl in old.filter) {
-                for (const i in config.filter[lvl]) {
-                    filter_changed ||=
-                        config.filter[lvl][i as unknown as number] !==
-                        old.filter[lvl][i as unknown as number];
-                }
-            }
-        }
-
-        let sort_changed = old.sort.length !== config.sort.length;
-        if (!sort_changed) {
-            for (const lvl in old.sort) {
-                for (const i in config.sort[lvl]) {
-                    sort_changed ||=
-                        config.sort[lvl][i as unknown as number] !==
-                        old.sort[lvl][i as unknown as number];
-                }
-            }
-        }
+        const split_by_changed = arraysChanged(old.split_by, config.split_by);
+        const columns_changed = arraysChanged(old.columns, config.columns);
+        const filter_changed = nestedArraysChanged(
+            old.filter as unknown[][],
+            config.filter as unknown[][],
+        );
+        const sort_changed = nestedArraysChanged(
+            old.sort as unknown[][],
+            config.sort as unknown[][],
+        );
 
         const group_rollup_mode_changed =
             old.group_rollup_mode !== config.group_rollup_mode;
@@ -188,7 +175,15 @@ export async function createModel(
     const _is_editable: boolean[] = [];
     const _column_types: ColumnType[] = [];
 
-    const _edit_mode: EditMode = this._edit_mode || "READ_ONLY";
+    let _edit_mode: EditMode = this._edit_mode || "READ_ONLY";
+    if (
+        _edit_mode === "SELECT_ROW_TREE" &&
+        (config.group_by.length === 0 || config.group_rollup_mode === "flat")
+    ) {
+        _edit_mode = "READ_ONLY";
+        this._edit_mode = _edit_mode;
+    }
+
     this._edit_button!.dataset.editMode = _edit_mode;
 
     const model: DatagridModel = Object.assign(extend, {

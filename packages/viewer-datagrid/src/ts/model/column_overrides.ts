@@ -46,7 +46,10 @@ export function restore_column_size_overrides(
         this._cached_column_sizes = old_sizes;
     }
 
-    const overrides: Record<number, number | undefined> = {};
+    const regular_table = this.regular_table as RegularTableWithOverrides;
+    const overrides: Record<number, number | undefined> = {
+        ...regular_table.saveColumnSizes(),
+    };
     const { group_by } = this.model!._config;
     const tree_header_offset = group_by?.length > 0 ? group_by.length + 1 : 0;
 
@@ -57,15 +60,21 @@ export function restore_column_size_overrides(
                 | undefined;
         } else {
             const index = this.model!._column_paths.indexOf(key);
+            // Skip keys that don't resolve to a known column — e.g. on the
+            // first draw after `activate`, `_column_paths` has not yet been
+            // populated by the data listener, so we leave any existing
+            // `regular-table` widths untouched rather than clobbering them
+            // with garbage indices.
+            if (index === -1) {
+                continue;
+            }
             overrides[index + tree_header_offset] = old_sizes[key] as
                 | number
                 | undefined;
         }
     }
 
-    (this.regular_table as RegularTableWithOverrides).restoreColumnSizes(
-        overrides,
-    );
+    regular_table.restoreColumnSizes(overrides);
 }
 
 /**

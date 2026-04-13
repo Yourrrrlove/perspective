@@ -10,13 +10,11 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { RegularTableElement } from "regular-table";
 import {
     CellMetadata,
     CellMetadataBody,
     CellMetadataRowHeader,
 } from "regular-table/dist/esm/types.js";
-import type { SelectedPosition } from "../types.js";
 
 export interface CollectedCell {
     element: HTMLElement;
@@ -31,11 +29,3 @@ export interface CollectedHeaderRow {
         metadata: CellMetadata | undefined;
     }>;
 }
-
-// Local types for selection maps - match the actual runtime usage
-// (activate.ts uses `as any` casts when passing these)
-export type LocalSelectedRowsMap = WeakMap<RegularTableElement, unknown[]>;
-export type LocalSelectedPositionMap = WeakMap<
-    RegularTableElement,
-    SelectedPosition
->;

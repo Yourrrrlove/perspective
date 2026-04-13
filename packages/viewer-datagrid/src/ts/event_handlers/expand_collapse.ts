@@ -13,7 +13,7 @@
 import type { RegularTable, DatagridModel } from "../types.js";
 
 export async function expandCollapseHandler(
-    this: DatagridModel,
+    model: DatagridModel,
     regularTable: RegularTable,
     event: MouseEvent,
 ): Promise<void> {
@@ -24,22 +24,22 @@ export async function expandCollapseHandler(
     );
 
     if (event.shiftKey && is_collapse) {
-        this._view.set_depth(
+        model._view.set_depth(
             (meta.row_header as unknown[]).filter((x) => x !== undefined)
                 .length - 2,
         );
     } else if (event.shiftKey) {
-        this._view.set_depth(
+        model._view.set_depth(
             (meta.row_header as unknown[]).filter((x) => x !== undefined)
                 .length - 1,
         );
     } else if (is_collapse) {
-        this._view.collapse(meta.y);
+        model._view.collapse(meta.y);
     } else {
-        this._view.expand(meta.y);
+        model._view.expand(meta.y);
     }
 
-    this._num_rows = await this._view.num_rows();
-    this._num_columns = await this._view.num_columns();
+    model._num_rows = await model._view.num_rows();
+    model._num_columns = await model._view.num_columns();
     regularTable.draw();
 }

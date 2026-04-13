@@ -29,6 +29,9 @@ pub enum NumberForegroundMode {
 
     #[serde(rename = "bar")]
     Bar,
+
+    #[serde(rename = "label-bar")]
+    LabelBar,
 }
 
 impl FromStr for NumberForegroundMode {
@@ -38,6 +41,7 @@ impl FromStr for NumberForegroundMode {
         match s {
             "color" => Ok(Self::Color),
             "bar" => Ok(Self::Bar),
+            "label-bar" => Ok(Self::LabelBar),
             x => Err(format!("Unknown NumberForegroundMode::{x}")),
         }
     }
@@ -53,7 +57,7 @@ impl NumberForegroundMode {
     }
 
     pub fn needs_gradient(&self) -> bool {
-        *self == Self::Bar
+        *self == Self::Bar || *self == Self::LabelBar
     }
 }
 

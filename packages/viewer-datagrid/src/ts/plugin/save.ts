@@ -41,5 +41,6 @@ export function save(
 
         return JSON.parse(JSON.stringify(token));
     }
+
     return {};
 }

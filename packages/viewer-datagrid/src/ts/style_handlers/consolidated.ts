@@ -17,66 +17,16 @@ import type {
     PerspectiveViewerElement,
     ColumnsConfig,
     DatagridPluginElement,
-    SelectedPosition,
+    SelectedPositionMap,
 } from "../types.js";
+import { isEditableMode } from "../types.js";
 
 import { applyFocusStyle } from "./focus.js";
-import { styleColumnHeaderRow } from "./column_header.js";
 import { applyColumnHeaderStyles } from "./editable.js";
 import { applyGroupHeaderStyles } from "./group_header.js";
 import { applyBodyCellStyles } from "./body.js";
 import { CellMetadata } from "regular-table/dist/esm/types.js";
-
-interface CollectedCell {
-    element: HTMLElement;
-    metadata: CellMetadata;
-    isHeader: boolean;
-}
-
-interface CollectedHeaderRow {
-    row: HTMLTableRowElement;
-    cells: Array<{
-        element: HTMLTableCellElement;
-        metadata: CellMetadata | undefined;
-    }>;
-}
-
-/**
- * Context object passed through consolidated styling
- */
-export interface StyleContext {
-    model: DatagridModel;
-    regularTable: RegularTableElement;
-    viewer: PerspectiveViewerElement;
-    datagrid: DatagridPluginElement;
-    plugins: ColumnsConfig;
-    isSettingsOpen: boolean;
-    isSelectable: boolean;
-    isEditable: boolean;
-    selectedRowsMap: Map<RegularTableElement, unknown[]>;
-    selectedPositionMap: Map<RegularTableElement, SelectedPosition>;
-}
-
-// Local types for selection maps - match the actual runtime usage
-// (activate.ts uses `as any` casts when passing these)
-type LocalSelectedRowsMap = WeakMap<RegularTableElement, unknown[]>;
-type LocalSelectedPositionMap = WeakMap<RegularTableElement, SelectedPosition>;
-
-function isEditableMode(
-    model: DatagridModel,
-    viewer: PerspectiveViewerElement,
-    allowed: boolean = false,
-): boolean {
-    const has_pivots =
-        model._config.group_by.length === 0 &&
-        model._config.split_by.length === 0;
-    const selectable = viewer.hasAttribute("selectable");
-    const plugin = viewer.children[0] as
-        | (DatagridPluginElement & { dataset: DOMStringMap })
-        | undefined;
-    const editable = allowed || plugin?.dataset?.editMode === "EDIT";
-    return has_pivots && !selectable && editable;
-}
+import { CollectedCell, CollectedHeaderRow } from "./types.js";
 
 /**
  * Consolidated style listener that handles all cell styling in a single pass.
@@ -86,24 +36,18 @@ function isEditableMode(
  */
 export function createConsolidatedStyleListener(
     datagrid: DatagridPluginElement,
-    selectedRowsMap: LocalSelectedRowsMap,
-    selectedPositionMap: LocalSelectedPositionMap,
-): (
-    this: DatagridModel,
+    model: DatagridModel,
     regularTable: RegularTableElement,
     viewer: PerspectiveViewerElement,
-) => void {
-    return function consolidatedStyleListener(
-        this: DatagridModel,
-        regularTable: RegularTableElement,
-        viewer: PerspectiveViewerElement,
-    ): void {
+    selectedPositionMap: SelectedPositionMap,
+): () => void {
+    return function consolidatedStyleListener(): void {
         const plugins: ColumnsConfig =
             (regularTable as any)[PRIVATE_PLUGIN_SYMBOL] || {};
         const isSettingsOpen = viewer.hasAttribute("settings");
-        const isSelectable = viewer.hasAttribute("selectable");
-        const isEditable = isEditableMode(this, viewer);
-        const isEditableAllowed = isEditableMode(this, viewer, true);
+        const isSelectable = model._edit_mode === "SELECT_ROW_TREE";
+        const isEditable = isEditableMode(model, viewer);
+        const isEditableAllowed = isEditableMode(model, viewer, true);
 
         // Toggle edit mode class on datagrid
         datagrid.classList.toggle("edit-mode-allowed", isEditableAllowed);
@@ -117,7 +61,11 @@ export function createConsolidatedStyleListener(
                         cell as HTMLElement,
                     ) as CellMetadata | undefined;
 
-                    if (metadata) {
+                    if (
+                        metadata &&
+                        (metadata.type === "body" ||
+                            metadata.type === "row_header")
+                    ) {
                         const isHeader = cell.tagName === "TH";
                         bodyCells.push({
                             element: cell as HTMLElement,
@@ -152,67 +100,18 @@ export function createConsolidatedStyleListener(
             }
         }
 
-        this._applyBodyCellStyles(
+        applyBodyCellStyles(
+            model,
             bodyCells,
             plugins,
             isSettingsOpen,
             isSelectable,
             isEditable,
             regularTable,
-            selectedRowsMap,
-            selectedPositionMap,
-            viewer,
         );
 
-        this._applyGroupHeaderStyles(groupHeaderRows, regularTable);
-        this._applyColumnHeaderStyles(groupHeaderRows, regularTable, viewer);
-        this._applyFocusStyle(bodyCells, regularTable, selectedPositionMap);
+        applyGroupHeaderStyles(model, groupHeaderRows, regularTable);
+        applyColumnHeaderStyles(model, groupHeaderRows, regularTable, viewer);
+        applyFocusStyle(model, bodyCells, regularTable, selectedPositionMap);
     };
-}
-
-declare module "../types.js" {
-    interface DatagridModel {
-        _applyBodyCellStyles(
-            cells: CollectedCell[],
-            plugins: ColumnsConfig,
-            isSettingsOpen: boolean,
-            isSelectable: boolean,
-            isEditable: boolean,
-            regularTable: RegularTableElement,
-            selectedRowsMap: LocalSelectedRowsMap,
-            selectedPositionMap: LocalSelectedPositionMap,
-            viewer: PerspectiveViewerElement,
-        ): void;
-        _applyGroupHeaderStyles(
-            headerRows: CollectedHeaderRow[],
-            regularTable: RegularTableElement,
-        ): void;
-        _applyColumnHeaderStyles(
-            headerRows: CollectedHeaderRow[],
-            regularTable: RegularTableElement,
-            viewer: PerspectiveViewerElement,
-        ): void;
-        _applyFocusStyle(
-            cells: CollectedCell[],
-            regularTable: RegularTableElement,
-            selectedPositionMap: LocalSelectedPositionMap,
-        ): void;
-        _styleColumnHeaderRow(
-            headerRow: CollectedHeaderRow,
-            regularTable: RegularTableElement,
-            is_menu_row: boolean,
-        ): void;
-    }
-}
-
-/**
- * Install the styling methods on the DatagridModel prototype.
- * This should be called once during module initialization.
- */
-export function installConsolidatedStyleMethods(modelPrototype: any): void {
-    modelPrototype._applyBodyCellStyles = applyBodyCellStyles;
-    modelPrototype._applyGroupHeaderStyles = applyGroupHeaderStyles;
-    modelPrototype._applyColumnHeaderStyles = applyColumnHeaderStyles;
-    modelPrototype._applyFocusStyle = applyFocusStyle;
-    modelPrototype._styleColumnHeaderRow = styleColumnHeaderRow;
 }

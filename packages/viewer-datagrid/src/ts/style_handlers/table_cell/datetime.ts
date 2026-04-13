@@ -22,7 +22,7 @@ interface PluginWithColor extends Omit<ColumnConfig, "color"> {
 }
 
 export function cell_style_datetime(
-    this: DatagridModel,
+    model: DatagridModel,
     plugin: PluginWithColor,
     td: HTMLElement,
     metadata: CellMetadata,
@@ -31,7 +31,7 @@ export function cell_style_datetime(
         if (plugin?.color !== undefined) {
             return plugin.color;
         } else {
-            return this._color;
+            return model._color;
         }
     })();
 
@@ -51,7 +51,7 @@ export function cell_style_datetime(
         plugin?.datetime_color_mode === "background" &&
         metadata.user !== null
     ) {
-        const source = this._plugin_background as [number, number, number];
+        const source = model._plugin_background as [number, number, number];
         const foreground = infer_foreground_from_background(
             rgbaToRgb([r, g, b, 1], source),
         );

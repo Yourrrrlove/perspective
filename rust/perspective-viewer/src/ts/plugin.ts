@@ -157,13 +157,13 @@ export interface IPerspectiveViewerPlugin {
      * Like `update()`, but for when the dimensions of the plugin have changed
      * and the underlying data has not.
      */
-    resize(): Promise<void>;
+    resize(view: View): Promise<void>;
 
     /**
      * Notify the plugin that the style environment has changed.  Useful for
      * plugins which read CSS styles via `window.getComputedStyle()`.
      */
-    restyle(): Promise<void>;
+    restyle(view: View): Promise<void>;
 
     /**
      * Save this plugin's state to a JSON-serializable value.  While this value
@@ -176,17 +176,17 @@ export interface IPerspectiveViewerPlugin {
      * reload.  For example, `@perspective-dev/viewer-d3fc` uses
      * `plugin_config` to remember the user-repositionable legend coordinates.
      */
-    save(): Promise<any>;
+    save(): any;
 
     /**
      * Restore this plugin to a state previously returned by `save()`.
      */
-    restore(config: any): Promise<void>;
+    restore(config: any): void;
 
     /**
      * Free any resources acquired by this plugin and prepare to be deleted.
      */
-    delete(): Promise<void>;
+    delete(): void;
 }
 
 /**
@@ -257,19 +257,19 @@ export class HTMLPerspectiveViewerPluginElement
         this.innerHTML = "";
     }
 
-    async resize(): Promise<void> {
+    async resize(view: View): Promise<void> {
         // Not Implemented
     }
 
-    async restyle(): Promise<void> {
+    async restyle(view: View): Promise<void> {
         // Not Implemented
     }
 
-    async save(): Promise<any> {
+    save(): any {
         // Not Implemented
     }
 
-    async restore(): Promise<void> {
+    restore(): void {
         // Not Implemented
     }
 

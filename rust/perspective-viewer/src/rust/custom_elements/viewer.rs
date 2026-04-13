@@ -39,6 +39,15 @@ use crate::tasks::*;
 use crate::utils::*;
 use crate::*;
 
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "Promise<ViewerConfig>")]
+    pub type JsViewerConfigPromise;
+
+    #[wasm_bindgen(typescript_type = "ViewerConfigUpdate")]
+    pub type JsViewerConfigUpdate;
+}
+
 #[derive(serde::Deserialize, Default)]
 struct ResizeOptions {
     dimensions: Option<ResizeDimensions>,
@@ -563,7 +572,7 @@ impl PerspectiveViewerElement {
     /// ```javascript
     /// await viewer.restore({group_by: ["State"]});
     /// ```
-    pub fn restore(&self, update: JsValue) -> ApiFuture<()> {
+    pub fn restore(&self, update: JsViewerConfigUpdate) -> ApiFuture<()> {
         let this = self.clone();
         ApiFuture::new_throttled(async move {
             let decoded_update = ViewerConfigUpdate::decode(&update)?;
@@ -646,9 +655,9 @@ impl PerspectiveViewerElement {
     ///     await viewer.restore(token);
     /// });
     /// ```
-    pub fn save(&self) -> ApiFuture<JsValue> {
+    pub fn save(&self) -> JsViewerConfigPromise {
         let this = self.clone();
-        ApiFuture::new(async move {
+        let fut = ApiFuture::new(async move {
             let viewer_config = this
                 .renderer
                 .clone()
@@ -656,7 +665,9 @@ impl PerspectiveViewerElement {
                 .await?;
 
             viewer_config.encode()
-        })
+        });
+
+        js_sys::Promise::from(fut).unchecked_into()
     }
 
     /// Download this viewer's internal [`View`] data via a browser download

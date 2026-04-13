@@ -14,7 +14,7 @@ import { CellMetadata } from "regular-table/dist/esm/types.js";
 import type { DatagridModel, ColumnConfig, ColorRecord } from "../../types.js";
 
 export function cell_style_boolean(
-    this: DatagridModel,
+    model: DatagridModel,
     _plugin: ColumnConfig | undefined,
     td: HTMLElement,
     metadata: CellMetadata,
@@ -26,9 +26,9 @@ export function cell_style_boolean(
     } else {
         const [hex]: ColorRecord | [string, number, number, number, string] =
             metadata.user === true
-                ? this._pos_fg_color
+                ? model._pos_fg_color
                 : metadata.user === false
-                  ? this._neg_fg_color
+                  ? model._neg_fg_color
                   : ["", 0, 0, 0, ""];
         td.style.backgroundColor = "";
         td.style.color = hex;

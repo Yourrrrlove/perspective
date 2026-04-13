@@ -19,11 +19,11 @@ import { CollectedHeaderRow } from "./types.js";
  * Apply styles to group header rows.
  */
 export function applyGroupHeaderStyles(
-    this: DatagridModel,
+    model: DatagridModel,
     headerRows: CollectedHeaderRow[],
     regularTable: RegularTableElement,
 ): void {
-    const header_depth = this._config.group_by.length;
+    const header_depth = model._config.group_by.length;
     const m: boolean[][] = [];
     let marked = new Set<number>();
 
@@ -54,6 +54,7 @@ export function applyGroupHeaderStyles(
             );
 
             td.classList.toggle("psp-color-mode-bar", false);
+            td.classList.toggle("psp-color-mode-label-bar", false);
             td.classList.toggle("psp-header-sort-asc", false);
             td.classList.toggle("psp-header-sort-desc", false);
             td.classList.toggle("psp-header-sort-col-asc", false);

@@ -35,7 +35,7 @@ use futures::future::{join_all, select_all};
 use perspective_client::utils::*;
 use perspective_client::{View, ViewWindow};
 use perspective_js::json;
-use perspective_js::utils::ApiResult;
+use perspective_js::utils::{ApiResult, ResultTApiErrorExt};
 use wasm_bindgen::prelude::*;
 use web_sys::*;
 use yew::html::ImplicitClone;
@@ -246,7 +246,7 @@ impl Renderer {
             PluginUpdate::Update(plugin) => plugin,
         };
 
-        let idx = self.find_plugin_idx(name).expect("f");
+        let idx = self.find_plugin_idx(name)?;
         let changed = !matches!(
             self.0.borrow().plugins_idx,
             Some(selected_idx) if selected_idx == idx
@@ -403,13 +403,18 @@ impl Renderer {
         if let Some(cb) = self.0.on_render_limits_changed.borrow().as_ref() {
             cb.emit(limits);
         }
+
         let viewer_elem = &self.0.borrow().viewer_elem.clone();
-        if is_update {
+        let result = if is_update {
             let task = plugin.update(view.clone().into(), limits.max_cols, limits.max_rows, false);
-            activate_plugin(viewer_elem, &plugin, task).await?;
+            activate_plugin(viewer_elem, &plugin, task).await
         } else {
             let task = plugin.draw(view.clone().into(), limits.max_cols, limits.max_rows, false);
-            activate_plugin(viewer_elem, &plugin, task).await?;
+            activate_plugin(viewer_elem, &plugin, task).await
+        };
+
+        if let Err(error) = result.ignore_view_delete() {
+            tracing::warn!("{}", error);
         }
 
         remove_inactive_plugin(

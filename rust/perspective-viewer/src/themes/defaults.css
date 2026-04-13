@@ -23,6 +23,24 @@ perspective-datetime-column-style,
 perspective-number-column-style,
 perspective-string-column-style {
     /* Colors */
+    --psp--color: #161616;
+
+    color: var(--psp--color);
+    background-color: transparent;
+
+    --psp-inactive--color: #ababab;
+    --psp-inactive--border-color: #dadada;
+    --psp-active--color: #2670a9;
+    --psp-error--color: #ff471e;
+    --psp--background-color: #ffffff;
+    --psp-icon-overflow-hint--color: rgba(0, 0, 0, 0.2);
+    --psp-select--background-color: none;
+    --psp-warning--background: #042121;
+    --psp-warning--color: #fdfffd;
+
+    /* TODO deprecate me */
+    --psp-icon-overflow-hint--color: #fdfffd;
+    /* Colors */
     --psp-placeholder--background: #8b868045;
 
     /* Dimensions */

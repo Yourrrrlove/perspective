@@ -67,11 +67,8 @@ export class PerspectiveViewerWidget extends Widget {
     }
 
     async save() {
-        let config = {
-            ...(await this.viewer.save()),
-        };
-
-        delete config["settings"];
+        let config = await this.viewer.save();
+        config["settings"] = false;
         return config;
     }
 

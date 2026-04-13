@@ -18,25 +18,27 @@ import type {
     PerspectiveClickDetail,
 } from "../types.js";
 
-export async function dispatch_click_listener(
-    this: DatagridModel,
+export function createDispatchClickListener(
+    model: DatagridModel,
     table: RegularTableElement,
     viewer: PerspectiveViewerElement,
-    event: MouseEvent,
-): Promise<void> {
-    const meta = table.getMeta(event.target as HTMLElement);
-    if (!meta || meta.type !== "body") return;
-    const { x, y } = meta;
-    const { row, column_names, config } = await getCellConfig(this, y, x);
-    viewer.dispatchEvent(
-        new CustomEvent<PerspectiveClickDetail>("perspective-click", {
-            bubbles: true,
-            composed: true,
-            detail: {
-                row,
-                column_names,
-                config,
-            },
-        }),
-    );
+): EventListener {
+    return async (event: Event): Promise<void> => {
+        const mouseEvent = event as MouseEvent;
+        const meta = table.getMeta(mouseEvent.target as HTMLElement);
+        if (!meta || meta.type !== "body") return;
+        const { x, y } = meta;
+        const { row, column_names, config } = await getCellConfig(model, y, x);
+        viewer.dispatchEvent(
+            new CustomEvent<PerspectiveClickDetail>("perspective-click", {
+                bubbles: true,
+                composed: true,
+                detail: {
+                    row,
+                    column_names,
+                    config,
+                },
+            }),
+        );
+    };
 }

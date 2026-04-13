@@ -36,7 +36,7 @@ interface PluginWithColors
 }
 
 export function cell_style_numeric(
-    this: DatagridModel,
+    model: DatagridModel,
     plugin: PluginWithColors | undefined,
     td: HTMLElement,
     metadata: CellMetaWithExtras,
@@ -49,14 +49,14 @@ export function cell_style_numeric(
     if (plugin?.pos_bg_color !== undefined) {
         pos_bg_color = plugin.pos_bg_color;
     } else {
-        pos_bg_color = this._pos_bg_color;
+        pos_bg_color = model._pos_bg_color;
     }
 
     let neg_bg_color: ColorRecord;
     if (plugin?.neg_bg_color !== undefined) {
         neg_bg_color = plugin.neg_bg_color;
     } else {
-        neg_bg_color = this._neg_bg_color;
+        neg_bg_color = model._neg_bg_color;
     }
 
     const bg_tuple: ColorRecord = is_positive
@@ -65,9 +65,9 @@ export function cell_style_numeric(
           ? neg_bg_color
           : [
                 "",
-                this._plugin_background[0],
-                this._plugin_background[1],
-                this._plugin_background[2],
+                model._plugin_background[0],
+                model._plugin_background[1],
+                model._plugin_background[2],
                 "",
                 "",
                 "",
@@ -91,7 +91,7 @@ export function cell_style_numeric(
                     Math.abs((metadata.user ?? 0) / (plugin.bg_gradient ?? 1)),
                 ),
             );
-            const source = this._plugin_background as [number, number, number];
+            const source = model._plugin_background as [number, number, number];
             const foreground = infer_foreground_from_background(
                 rgbaToRgb([r, g, b, a], source),
             );
@@ -100,8 +100,8 @@ export function cell_style_numeric(
             td.style.color = foreground;
             td.style.backgroundColor = `rgba(${r},${g},${b},${a})`;
         } else if (plugin?.number_bg_mode === "pulse") {
-            style_cell_flash.call(
-                this,
+            style_cell_flash(
+                model,
                 metadata as any,
                 td,
                 pos_bg_color,
@@ -129,23 +129,23 @@ export function cell_style_numeric(
                   ? plugin.neg_fg_color!
                   : [
                         "",
-                        this._plugin_background[0],
-                        this._plugin_background[1],
-                        this._plugin_background[2],
+                        model._plugin_background[0],
+                        model._plugin_background[1],
+                        model._plugin_background[2],
                         "",
                         "",
                         "",
                     ];
         } else {
             return is_positive
-                ? this._pos_fg_color
+                ? model._pos_fg_color
                 : is_negative
-                  ? this._neg_fg_color
+                  ? model._neg_fg_color
                   : [
                         "",
-                        this._plugin_background[0],
-                        this._plugin_background[1],
-                        this._plugin_background[2],
+                        model._plugin_background[0],
+                        model._plugin_background[1],
+                        model._plugin_background[2],
                         "",
                         "",
                         "",
@@ -160,7 +160,7 @@ export function cell_style_numeric(
         td.style.color = "";
     } else if (plugin?.number_fg_mode === "disabled") {
         if (plugin?.number_bg_mode === "color") {
-            const source = this._plugin_background as [number, number, number];
+            const source = model._plugin_background as [number, number, number];
             const foreground = infer_foreground_from_background(
                 rgbaToRgb([bg_tuple[1], bg_tuple[2], bg_tuple[3], 1], source),
             );
@@ -173,13 +173,12 @@ export function cell_style_numeric(
     } else if (plugin?.number_fg_mode === "bar") {
         td.style.color = "";
         td.style.position = "relative";
-        if (
-            gradhex !== "" &&
-            td.children.length > 0 &&
-            td.children[0].nodeType === Node.ELEMENT_NODE
-        ) {
-            (td.children[0] as HTMLElement).style.background = gradhex;
-        }
+        td.style.setProperty("--psp-label-bar-color", gradhex);
+        td.style.setProperty("--psp-label-bar-bg", hex);
+    } else if (plugin?.number_fg_mode === "label-bar") {
+        td.style.color = "";
+        td.style.setProperty("--psp-label-bar-color", gradhex);
+        td.style.setProperty("--psp-label-bar-bg", hex);
     } else if (plugin?.number_fg_mode === "color" || !plugin?.number_fg_mode) {
         td.style.color = hex;
     }

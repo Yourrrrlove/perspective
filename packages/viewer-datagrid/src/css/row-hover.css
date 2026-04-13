@@ -14,10 +14,14 @@
 regular-table {
     tbody {
         tr:hover
-            th.psp-tree-leaf:not(.psp-row-selected):not(.psp-row-subselected),
+            th.psp-tree-leaf:not(.psp-select-region):not(
+                .psp-select-region-inactive
+            ),
         tr:hover
-            th.psp-tree-label:not(.psp-row-selected):not(.psp-row-subselected),
-        tr:hover td:not(.psp-row-selected):not(.psp-row-subselected),
+            th.psp-tree-label:not(.psp-select-region):not(
+                .psp-select-region-inactive
+            ),
+        tr:hover td:not(.psp-select-region):not(.psp-select-region-inactive),
         tr:hover:after {
             border-color: var(
                 --psp-datagrid--hover--border-color,
@@ -36,7 +40,9 @@ regular-table {
         }
 
         tr:last-child:hover
-            td:not(.psp-row-selected):not(.psp-row-subselected).psp-menu-open {
+            td:not(.psp-select-region):not(
+                .psp-select-region-inactive
+            ).psp-menu-open {
             box-shadow:
                 inset -2px 0px 0px var(--psp--color),
                 inset 2px 0px 0px var(--psp--color),
@@ -46,11 +52,17 @@ regular-table {
 
         tr:hover
             + tr
-            th.psp-tree-leaf:not(.psp-row-selected):not(.psp-row-subselected),
+            th.psp-tree-leaf:not(.psp-select-region):not(
+                .psp-select-region-inactive
+            ),
         tr:hover
             + tr
-            th.psp-tree-label:not(.psp-row-selected):not(.psp-row-subselected),
-        tr:hover + tr td:not(.psp-row-selected):not(.psp-row-subselected) {
+            th.psp-tree-label:not(.psp-select-region):not(
+                .psp-select-region-inactive
+            ),
+        tr:hover
+            + tr
+            td:not(.psp-select-region):not(.psp-select-region-inactive) {
             border-top-color: transparent;
         }
 
@@ -72,6 +84,7 @@ regular-table {
 
         tr:hover {
             color: inherit;
+
             th:first-child:not(:empty),
             th:first-child:empty + th:not(:empty),
             th:first-child:empty ~ th:empty + th:not(:empty),

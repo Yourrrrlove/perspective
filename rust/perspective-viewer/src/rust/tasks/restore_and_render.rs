@@ -104,11 +104,12 @@ pub trait RestoreAndRender: HasRenderer + HasSession + HasPresentation {
 
             // TODO this should be part of the API for `draw()` above, such that
             // the plugin need not render twice when a theme is provided.
-            if needs_restyle && presentation.is_visible() {
-                let view = session.get_view().into_apierror()?;
+            if needs_restyle
+                && presentation.is_visible()
+                && let Some(view) = session.get_view()
+            {
                 renderer.restyle_all(&view).await?;
             }
-            // }
 
             Ok(())
         })

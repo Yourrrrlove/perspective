@@ -259,6 +259,14 @@ impl Component for NumberColumnStyle {
                     <NumberField ..self.max_value_props(Fg, ctx) />
                 </>
             },
+            NumberForegroundMode::LabelBar => html! {
+                <>
+                    <div class="row">
+                        <ColorRangeSelector ..self.color_props("label-bar-color", Fg, false, ctx) />
+                    </div>
+                    <NumberField ..self.max_value_props(Fg, ctx) />
+                </>
+            },
         };
 
         let bg_controls = match self.bg_mode {
