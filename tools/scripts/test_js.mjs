@@ -10,7 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import sh from "./sh.mjs";
+import { execSync } from "child_process";
 import { getarg, run_with_scope, get_scope } from "./sh_perspective.mjs";
 
 const IS_NEEDS_BUILD = get_scope().some((x) => x === "jupyterlab");
@@ -52,32 +52,34 @@ if (IS_CI) {
 }
 
 function playwright(pkg, is_jlab) {
-    const pkg_name = `"${pkg}" ` || "";
+    const pkg_name = pkg ? `"${pkg}" ` : "";
     console.log(`-- Running ${pkg_name}Playwright test suite`);
     const args = process.argv
         .slice(2)
         .filter((x) => x !== "--ci" && x !== "--jupyter");
 
-    const env = {};
+    const env = { ...process.env, TZ: "UTC" };
     if (is_jlab) {
-        env.PSP_JUPYTERLAB_TESTS = 1;
-        env.__JUPYTERLAB_PORT__ = 6538;
+        env.PSP_JUPYTERLAB_TESTS = "1";
+        env.__JUPYTERLAB_PORT__ = "6538";
     }
 
     if (IS_CI) {
-        env.CI = 1;
+        env.CI = "1";
     }
 
     if (pkg) {
         env.PACKAGE = pkg;
     }
 
-    return sh`
-        TZ=UTC
-        npx playwright test
-        --config=tools/test/playwright.config.ts
-        ${args}
-    `.env(env);
+    const cmd = [
+        "npx",
+        "playwright",
+        "test",
+        "--config=tools/test/playwright.config.ts",
+        ...args,
+    ].join(" ");
+    execSync(cmd, { stdio: "inherit", env });
 }
 
 if (!IS_JUPYTER) {
@@ -93,12 +95,12 @@ if (process.env.PACKAGE) {
     if (IS_JUPYTER) {
         // Jupyterlab is guaranteed to have started at this point, so
         // copy the test files over and run the tests.
-        playwright("jupyterlab", true).runSync();
+        playwright("jupyterlab", true);
         process.exit(0);
     }
 
     if (IS_PLAYWRIGHT) {
-        playwright(process.env.PACKAGE).runSync();
+        playwright(process.env.PACKAGE);
     }
 
     if (
@@ -107,7 +109,10 @@ if (process.env.PACKAGE) {
     ) {
         // Support `pnpm test -- --my_cool --test_arguments`
         const args = process.argv.slice(2);
-        sh`pnpm run --recursive --filter @perspective-dev/python test ${args}`.runSync();
+        execSync(
+            `pnpm run --recursive --filter @perspective-dev/python test ${args.join(" ")}`,
+            { stdio: "inherit" },
+        );
     }
 
     if (IS_RUST) {
@@ -140,9 +145,12 @@ if (process.env.PACKAGE) {
             target = "--target=aarch64-unknown-linux-gnu";
         }
 
-        sh`cargo test ${flags} ${target} -p perspective -p perspective-client`.runSync();
+        execSync(
+            `cargo test ${flags} ${target} -p perspective -p perspective-client`,
+            { stdio: "inherit" },
+        );
     }
 } else {
     console.log("-- Running all tests");
-    playwright().runSync();
+    playwright();
 }

@@ -315,6 +315,16 @@ regular-table:not(.flat-group-rollup-mode) {
         position: unset;
     }
 
+    .psp-bar:before {
+        color: transparent;
+        pointer-events: none;
+        content: var(--label);
+        display: inline-flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 3px;
+    }
+
     .psp-bar:after {
         color: var(--psp-label-bar-bg);
         content: var(--label);
@@ -395,7 +405,7 @@ regular-table table {
     td,
     th {
         border-color: var(--psp-inactive--border-color, #8b868045);
-        height: 23px;
+        height: var(--psp-datagrid--row--height, 23px);
     }
 
     .psp-header-group {
@@ -406,8 +416,8 @@ regular-table table {
         border-bottom-width: 0px;
 
         span {
-            height: 23px;
-            min-height: 23px;
+            height: var(--psp-datagrid--row--height, 23px);
+            min-height: var(--psp-datagrid--row--height, 23px);
         }
     }
 
@@ -487,7 +497,7 @@ regular-table table thead tr:last-child:after {
     width: 10000px;
     box-sizing: border-box;
     display: block;
-    height: 23px;
+    height: var(--psp-datagrid--row--height, 23px);
     content: " ";
     border-bottom: 1px solid var(--psp-inactive--border-color);
 }
@@ -497,7 +507,7 @@ regular-table table tbody tr:after {
     width: 10000px;
     box-sizing: border-box;
     display: block;
-    height: 23px;
+    height: var(--psp-datagrid--row--height, 23px);
     content: " ";
     border-top: 1px solid transparent;
 }

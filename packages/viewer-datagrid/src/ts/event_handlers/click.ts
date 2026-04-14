@@ -12,18 +12,15 @@
 
 import * as edit_click from "./click/edit_click.js";
 import * as edit_keydown from "./keydown/edit_keydown.js";
-import type {
-    DatagridModel,
-    PerspectiveViewerElement,
-    SelectedPositionMap,
-} from "../types.js";
+import type { DatagridModel, SelectedPositionMap } from "../types.js";
 import { isEditableMode } from "../types.js";
 import { RegularTableElement } from "regular-table";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 export function createKeydownListener(
     model: DatagridModel,
     table: RegularTableElement,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
     selected_position_map: SelectedPositionMap,
 ): EventListener {
     return (event: Event): void => {
@@ -51,7 +48,7 @@ export function createKeydownListener(
 export function createEditClickListener(
     model: DatagridModel,
     table: RegularTableElement,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
 ): EventListener {
     return (event: Event): void => {
         const mouseEvent = event as MouseEvent;

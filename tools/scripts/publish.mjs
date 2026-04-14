@@ -11,7 +11,6 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import { Octokit } from "octokit";
-import sh from "./sh.mjs";
 import fs from "node:fs/promises";
 
 import "zx/globals";
@@ -21,11 +20,11 @@ const OCTOKIT = new Octokit({
     auth: process.env.GITHUB_TOKEN,
 });
 
-const CURRENT_TAG = sh`git describe --exact-match --tags`.execSync();
+const CURRENT_TAG = $.sync`git describe --exact-match --tags`.toString().trim();
 
-const IS_DIRTY = await sh`git status --untracked-files=no --porcelain`
-    .exec()
-    .then((x) => x.length > 0);
+const IS_DIRTY =
+    (await $`git status --untracked-files=no --porcelain`).stdout.trim()
+        .length > 0;
 
 async function get_release_assets() {
     const resp = await OCTOKIT.request("GET /repos/{owner}/{repo}/releases", {
@@ -71,9 +70,9 @@ async function publish_release_assets(releases) {
                     release.name.endsWith("tar.gz")) &&
                 release.name.indexOf("wasm") === -1
             ) {
-                sh`twine upload ${release.name}`.runSync();
+                $.sync`twine upload ${release.name}`;
             } else if (release.name.endsWith(".tgz")) {
-                sh`npm publish ${release.name}`.runSync();
+                $.sync`npm publish ${release.name}`;
             } else {
                 console.log(`Skipping  "${release.name}"`);
             }

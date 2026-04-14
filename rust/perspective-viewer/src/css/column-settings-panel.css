@@ -15,6 +15,7 @@
     #column_settings_sidebar {
         overflow: hidden;
         text-overflow: ellipsis;
+        z-index: 4;
 
         #attributes-button-panel {
             flex: 0 0 auto;

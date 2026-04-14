@@ -22,12 +22,14 @@ import datagridStyles from "../../../dist/css/perspective-viewer-datagrid.css";
 import { format_raw } from "../data_listener/format_cell.js";
 
 import type { View, ViewWindow } from "@perspective-dev/client";
-import type { IPerspectiveViewerPlugin } from "@perspective-dev/viewer";
+import type {
+    HTMLPerspectiveViewerElement,
+    IPerspectiveViewerPlugin,
+} from "@perspective-dev/viewer";
 import type {
     DatagridModel,
     DatagridToolbarElement,
     EditMode,
-    PerspectiveViewerElement,
     DatagridPluginConfig,
     ColumnsConfig,
 } from "../types.js";
@@ -171,7 +173,7 @@ export class HTMLPerspectiveViewerDatagridPluginElement
     }
 
     async render(viewport?: ViewWindow): Promise<string> {
-        const viewer = this.parentElement as PerspectiveViewerElement;
+        const viewer = this.parentElement as HTMLPerspectiveViewerElement;
         const view = await viewer.getView();
         const json = await view.to_columns(viewport as any);
         const cols = await view.column_paths(viewport as any);

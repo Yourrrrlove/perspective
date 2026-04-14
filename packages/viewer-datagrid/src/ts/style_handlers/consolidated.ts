@@ -14,12 +14,12 @@ import { RegularTableElement } from "regular-table";
 import { PRIVATE_PLUGIN_SYMBOL } from "../model/index.js";
 import type {
     DatagridModel,
-    PerspectiveViewerElement,
     ColumnsConfig,
     DatagridPluginElement,
     SelectedPositionMap,
 } from "../types.js";
 import { isEditableMode } from "../types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 import { applyFocusStyle } from "./focus.js";
 import { applyColumnHeaderStyles } from "./editable.js";
@@ -38,7 +38,7 @@ export function createConsolidatedStyleListener(
     datagrid: DatagridPluginElement,
     model: DatagridModel,
     regularTable: RegularTableElement,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
     selectedPositionMap: SelectedPositionMap,
 ): () => void {
     return function consolidatedStyleListener(): void {

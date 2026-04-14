@@ -36,7 +36,7 @@
             const table = WORKER.table(buff);
             await el.load(table);
             await el.toggleConfig();
-            
+            window.__TEST_PERSPECTIVE_READY__ = true;
         </script>
     </body>
 </html>

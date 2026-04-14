@@ -57,13 +57,9 @@ const gists = [
     "evictions",
     "streaming",
     "covid",
-    "movies",
     "superstore",
-    "olympics",
     "editable",
     "file",
-    "magic",
-    "nypd",
     "webcam",
 ];
 

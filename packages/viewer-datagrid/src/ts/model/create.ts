@@ -10,9 +10,8 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import chroma from "chroma-js";
 import { createDataListener } from "../data_listener/index.js";
-import { blend, make_color_record } from "../color_utils.js";
+import { blend, make_color_record, parseColor } from "../color_utils.js";
 import type {
     ColumnType,
     Table,
@@ -26,10 +25,8 @@ import {
     type Schema,
     type ElemFactory,
     type EditMode,
-    type PerspectiveViewerElement,
-    get_psp_type,
 } from "../types.js";
-import { CellMetadata } from "regular-table/dist/esm/types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 function arraysChanged<T>(a: T[], b: T[]): boolean {
     if (a.length !== b.length) return true;
@@ -89,6 +86,7 @@ export async function createModel(
     regular: RegularTable,
     table: Table,
     view: View,
+    theme: string,
     extend: Partial<DatagridModel> = {},
 ): Promise<DatagridModel> {
     const config = (await view.get_config()) as ViewConfig;
@@ -98,12 +96,14 @@ export async function createModel(
         const type_changed =
             (old.group_by.length === 0 || config.group_by.length === 0) &&
             group_by_changed;
+
         const split_by_changed = arraysChanged(old.split_by, config.split_by);
         const columns_changed = arraysChanged(old.columns, config.columns);
         const filter_changed = nestedArraysChanged(
             old.filter as unknown[][],
             config.filter as unknown[][],
         );
+
         const sort_changed = nestedArraysChanged(
             old.sort as unknown[][],
             config.sort as unknown[][],
@@ -112,6 +112,7 @@ export async function createModel(
         const group_rollup_mode_changed =
             old.group_rollup_mode !== config.group_rollup_mode;
 
+        const theme_changed = this.model._theme !== theme;
         this._reset_scroll_top = group_by_changed;
         this._reset_scroll_left = split_by_changed;
         this._reset_select =
@@ -126,6 +127,7 @@ export async function createModel(
             split_by_changed ||
             group_by_changed ||
             columns_changed ||
+            theme_changed ||
             type_changed;
     }
 
@@ -135,12 +137,12 @@ export async function createModel(
             view.num_rows(),
             view.schema(),
             view.expression_schema(),
-            (this.parentElement as PerspectiveViewerElement).getEditPort(),
+            (this.parentElement as HTMLPerspectiveViewerElement).getEditPort(),
         ]);
 
-    const _plugin_background = chroma(
+    const _plugin_background = parseColor(
         get_rule(regular, "--psp--background-color", "#FFFFFF"),
-    ).rgb();
+    );
 
     const _pos_fg_color = make_color_record(
         get_rule(regular, "--psp-datagrid--pos-cell--color", "#338DCD"),
@@ -174,8 +176,8 @@ export async function createModel(
     const _column_paths: string[] = [];
     const _is_editable: boolean[] = [];
     const _column_types: ColumnType[] = [];
-
     let _edit_mode: EditMode = this._edit_mode || "READ_ONLY";
+
     if (
         _edit_mode === "SELECT_ROW_TREE" &&
         (config.group_by.length === 0 || config.group_rollup_mode === "flat")
@@ -185,7 +187,6 @@ export async function createModel(
     }
 
     this._edit_button!.dataset.editMode = _edit_mode;
-
     const model: DatagridModel = Object.assign(extend, {
         _edit_port,
         _view: view,
@@ -203,6 +204,7 @@ export async function createModel(
         _neg_bg_color,
         _column_paths,
         _column_types,
+        _theme: theme,
         _is_editable,
         _edit_mode,
         _selection_state: {
@@ -219,10 +221,9 @@ export async function createModel(
     }) as DatagridModel;
 
     regular.setDataListener(
-        createDataListener(this.parentElement as PerspectiveViewerElement).bind(
-            model,
-            regular,
-        ) as any,
+        createDataListener(
+            this.parentElement as HTMLPerspectiveViewerElement,
+        ).bind(model, regular) as any,
         {
             virtual_mode: (window
                 .getComputedStyle(regular)

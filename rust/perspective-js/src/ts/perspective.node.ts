@@ -108,6 +108,7 @@ const CONTENT_TYPES: Record<string, string> = {
     ".arrow": "arraybuffer",
     ".feather": "arraybuffer",
     ".wasm": "application/wasm",
+    ".svg": "image/svg+xml",
 };
 
 /**
@@ -147,9 +148,9 @@ export async function cwd_static_file_handler(
                         "Access-Control-Allow-Origin": "*",
                     });
                     if (extname === ".arrow" || extname === ".feather") {
-                        response.end(content, "utf-8");
+                        response.end(content, "utf8");
                     } else {
-                        response.end(content);
+                        response.end(content, "utf8");
                     }
 
                     return;

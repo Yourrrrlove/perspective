@@ -14,7 +14,6 @@ import path from "path";
 import os from "os";
 import fs from "fs";
 import * as dotenv from "dotenv";
-import sh from "./sh.mjs";
 import { getWorkspaceRoot, getWorkspacePackageJson } from "./workspace.mjs";
 
 import "zx/globals";
@@ -26,27 +25,23 @@ const emscripten = pkg.emscripten;
 dotenv.config({ path: "./.perspectiverc", quiet: true });
 
 function base() {
-    return sh.path`${getWorkspaceRoot()}/.emsdk`;
+    return path.resolve(getWorkspaceRoot(), ".emsdk").replace(/\\/g, "/");
 }
 
 function emsdk_checkout() {
-    function git(args) {
-        sh`git ${args}`.runSync();
-    }
-
-    git(["clone", "https://github.com/emscripten-core/emsdk.git", base()]);
+    $.sync`git clone https://github.com/emscripten-core/emsdk.git ${base()}`;
 }
 
 function emsdk(...args) {
     const basedir = base();
     const suffix = os.type() == "Windows_NT" ? ".bat" : "";
-    const emsdk = path.join(basedir, "emsdk" + suffix);
-    sh`${emsdk} ${args}`.runSync();
+    const emsdkBin = path.join(basedir, "emsdk" + suffix).replace(/\\/g, "/");
+    $.sync`${emsdkBin} ${args}`;
 }
 
 function toolchain_install() {
     console.log(`-- Installing Emscripten ${emscripten}`);
-    sh`git pull`.cwd(".emsdk").runSync();
+    $.sync({ cwd: ".emsdk" })`git pull`;
     emsdk("install", emscripten);
     emsdk("activate", emscripten);
     console.log(`-- Emscripten ${emscripten} installed`);
@@ -68,5 +63,4 @@ if (!process.env.PSP_SKIP_EMSDK_INSTALL) {
     }
 
     toolchain_install();
-    $.sync`cd .emsdk && git apply ../tools/scripts/emsdk.patch`;
 }

@@ -41,13 +41,12 @@ import getCellConfig from "../get_cell_config.js";
 import type { View } from "@perspective-dev/client";
 import {
     type DatagridPluginElement,
-    type PerspectiveViewerElement,
-    type SelectedPosition,
     type SelectedPositionMap,
     type SelectionArea,
     PerspectiveSelectDetail,
 } from "../types.js";
-import type { RegularTableElement } from "regular-table";
+
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 interface ToggleColumnSettingsEvent extends CustomEvent {
     detail: {
@@ -63,7 +62,7 @@ export async function activate(
     this: DatagridPluginElement,
     view: View,
 ): Promise<void> {
-    const viewer = this.parentElement as PerspectiveViewerElement;
+    const viewer = this.parentElement as HTMLPerspectiveViewerElement;
     const table = await viewer.getTable();
 
     if (!this._initialized) {
@@ -79,6 +78,7 @@ export async function activate(
             this.regular_table,
             table,
             view,
+            viewer.getAttribute("theme")!,
         );
 
         if (!this.model) {
@@ -256,6 +256,7 @@ export async function activate(
             this.regular_table,
             table,
             view,
+            viewer.getAttribute("theme")!,
             this.model,
         );
     }

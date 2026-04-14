@@ -12,16 +12,13 @@
 
 import { RegularTableElement } from "regular-table";
 import getCellConfig from "../get_cell_config.js";
-import type {
-    DatagridModel,
-    PerspectiveViewerElement,
-    PerspectiveClickDetail,
-} from "../types.js";
+import type { DatagridModel, PerspectiveClickDetail } from "../types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 export function createDispatchClickListener(
     model: DatagridModel,
     table: RegularTableElement,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
 ): EventListener {
     return async (event: Event): Promise<void> => {
         const mouseEvent = event as MouseEvent;

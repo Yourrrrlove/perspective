@@ -10,7 +10,7 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { ColumnType } from "@perspective-dev/client";
+import type { ColumnType } from "@perspective-dev/client";
 import type { ColumnConfig } from "../types.js";
 
 export interface Formatter {

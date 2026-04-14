@@ -10,10 +10,13 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import chroma from "chroma-js";
 import {
-    rgbaToRgb,
+    hslToRgb,
     infer_foreground_from_background,
+    parseColor,
+    rgbaToRgb,
+    rgbToHex,
+    rgbToHsl,
 } from "../../color_utils.js";
 import type { DatagridModel, ColumnConfig, ColorRecord } from "../../types.js";
 
@@ -84,11 +87,10 @@ export function cell_style_string(
         }
 
         const color_seed = series_map.get(metadata.user!) ?? 0;
-        let [h, s, l] = chroma(hex).hsl();
-        h = h + ((color_seed * 150) % 360);
-        const color2 = chroma(h, s, l, "hsl");
-        const [r2, g2, b2] = color2.rgb();
-        const hex2 = color2.hex();
+        const [h, s, l] = rgbToHsl(parseColor(hex));
+        const rotated = hslToRgb([h + ((color_seed * 150) % 360), s, l]);
+        const [r2, g2, b2] = rotated;
+        const hex2 = rgbToHex(rotated);
         const source = model._plugin_background as [number, number, number];
         const foreground = infer_foreground_from_background(
             rgbaToRgb([r2, g2, b2, 1], source),

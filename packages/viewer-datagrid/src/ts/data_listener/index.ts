@@ -17,14 +17,10 @@ import {
     format_tree_header,
     format_tree_header_row_path,
 } from "./format_tree_header.js";
-import type {
-    DatagridModel,
-    PerspectiveViewerElement,
-    RegularTable,
-    Schema,
-} from "../types.js";
+import type { DatagridModel, RegularTable, Schema } from "../types.js";
 import type { CellScalar, DataResponse } from "regular-table/dist/esm/types.js";
-import { ViewConfig, ViewWindow } from "@perspective-dev/client";
+import type { ViewConfig, ViewWindow } from "@perspective-dev/client";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 interface ColumnData {
     __ROW_PATH__?: unknown[][];
@@ -40,7 +36,7 @@ interface ColumnData {
  * @returns A data listener for the plugin.
  */
 export function createDataListener(
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
 ): (
     regularTable: RegularTable,
     x0: number,

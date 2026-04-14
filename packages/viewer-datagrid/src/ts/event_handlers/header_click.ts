@@ -12,16 +12,13 @@
 
 import { sortHandler } from "./sort.js";
 import { expandCollapseHandler } from "./expand_collapse.js";
-import type {
-    RegularTable,
-    DatagridModel,
-    PerspectiveViewerElement,
-} from "../types.js";
+import type { RegularTable, DatagridModel } from "../types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 export function createMousedownListener(
     model: DatagridModel,
     regularTable: RegularTable,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
 ): EventListener {
     return async (event: Event): Promise<void> => {
         const mouseEvent = event as MouseEvent;
@@ -65,7 +62,7 @@ export function createMousedownListener(
 export function createDblclickListener(
     model: DatagridModel,
     regularTable: RegularTable,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
 ): EventListener {
     return async (event: Event): Promise<void> => {
         const mouseEvent = event as MouseEvent;

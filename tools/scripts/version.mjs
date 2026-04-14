@@ -15,7 +15,6 @@ import { Octokit } from "octokit";
 import { parseReleases } from "auto-changelog/src/releases.js";
 import { fetchTags } from "auto-changelog/src/tags.js";
 import { fetchRemote } from "auto-changelog/src/remote.js";
-import sh from "./sh.mjs";
 import * as toml from "@iarna/toml";
 
 import "zx/globals";
