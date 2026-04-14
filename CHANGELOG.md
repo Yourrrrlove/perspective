@@ -1,6 +1,18 @@
+# [v4.4.1](https://github.com/perspective-dev/perspective/releases/tag/v4.4.1)
+
+_14 April 2026_ ([Full changelog](https://github.com/finos/perspective/compare/v4.4.0...v4.4.1))
+
+Features
+
+- Add `LabelBar` datagrid mode [#3156](https://github.com/finos/perspective/pull/3156)
+
+Misc
+
+- Remove `docusaurus` [#3155](https://github.com/finos/perspective/pull/3155)
+
 # [v4.4.0](https://github.com/perspective-dev/perspective/releases/tag/v4.4.0)
 
-_2 April 2026_ ([Full changelog](https://github.com/finos/perspective/compare/v4.4.0...v4.4.0))
+_2 April 2026_ ([Full changelog](https://github.com/finos/perspective/compare/v4.3.0...v4.4.0))
 
 **Breaking**
 
