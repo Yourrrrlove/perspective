@@ -14,16 +14,16 @@ import { write_cell } from "./click/edit_click.js";
 import type {
     RegularTable,
     DatagridModel,
-    PerspectiveViewerElement,
     SelectedPosition,
     SelectedPositionMap,
 } from "../types.js";
 import { isEditableMode } from "../types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 export function createFocusoutListener(
     model: DatagridModel,
     table: RegularTable,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
     selected_position_map: SelectedPositionMap,
 ): EventListener {
     return (event: Event): void => {
@@ -47,7 +47,7 @@ export function createFocusoutListener(
 export function createFocusinListener(
     _model: DatagridModel,
     table: RegularTable,
-    _viewer: PerspectiveViewerElement,
+    _viewer: HTMLPerspectiveViewerElement,
     selected_position_map: SelectedPositionMap,
 ): EventListener {
     return (event: Event): void => {

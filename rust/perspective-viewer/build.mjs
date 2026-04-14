@@ -123,6 +123,7 @@ export async function build_all() {
         "pro-dark",
         "botanical",
         "monokai",
+        "phosphor",
         "solarized",
         "solarized-dark",
         "vaporwave",

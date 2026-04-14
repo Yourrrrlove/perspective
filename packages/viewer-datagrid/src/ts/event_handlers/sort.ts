@@ -10,14 +10,10 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-import { RegularTableElement } from "regular-table";
-import type {
-    DatagridModel,
-    PerspectiveViewerElement,
-    SortRotationOrder,
-    SortTerm,
-} from "../types.js";
-import { SortDir } from "@perspective-dev/client";
+import type { RegularTableElement } from "regular-table";
+import type { DatagridModel, SortRotationOrder, SortTerm } from "../types.js";
+import type { SortDir } from "@perspective-dev/client";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 const ROW_SORT_ORDER: SortRotationOrder = {
     desc: "asc",
@@ -36,7 +32,7 @@ const ROW_COL_SORT_ORDER: SortRotationOrder = {
 export async function sortHandler(
     model: DatagridModel,
     regularTable: RegularTableElement,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
     event: MouseEvent,
     target: HTMLElement,
 ): Promise<void> {

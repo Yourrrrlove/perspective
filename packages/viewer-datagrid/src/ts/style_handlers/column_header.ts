@@ -11,12 +11,9 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import { RegularTableElement } from "regular-table";
-import {
-    get_psp_type,
-    type DatagridModel,
-    type PerspectiveViewerElement,
-} from "../types.js";
+import { get_psp_type, type DatagridModel } from "../types.js";
 import { CollectedHeaderRow } from "./types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 /**
  * Apply selected column styling in response to column settings toggle events.
@@ -26,7 +23,7 @@ import { CollectedHeaderRow } from "./types.js";
 export function style_selected_column(
     model: DatagridModel,
     regularTable: RegularTableElement,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
     selectedColumn: string | undefined,
 ): void {
     const group_header_trs = Array.from(

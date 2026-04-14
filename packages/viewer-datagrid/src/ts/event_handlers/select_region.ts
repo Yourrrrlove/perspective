@@ -14,11 +14,11 @@ import { RegularTableElement } from "regular-table";
 import type {
     DatagridPluginElement,
     EditMode,
-    PerspectiveViewerElement,
     SelectionArea,
 } from "../types.js";
-import { ViewWindow } from "@perspective-dev/client";
-import { CellMetadataBody } from "regular-table/dist/esm/types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
+import type { ViewWindow } from "@perspective-dev/client";
+import type { CellMetadataBody } from "regular-table/dist/esm/types.js";
 
 const MOUSE_SELECTED_AREA_CLASS = "mouse-selected-area";
 
@@ -328,7 +328,7 @@ function modeIncludesRows(mode: EditMode): boolean {
 }
 
 function set_psp_selection(
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
     datagrid: DatagridPluginElement,
     { x0, x1, y0, y1 }: SelectionArea,
 ): void {
@@ -387,7 +387,7 @@ export const applyMouseAreaSelections = (
 
         if (selected.length > 0) {
             set_psp_selection(
-                datagrid.parentElement as PerspectiveViewerElement,
+                datagrid.parentElement as HTMLPerspectiveViewerElement,
                 datagrid,
                 selected[0],
             );
@@ -399,7 +399,9 @@ export const applyMouseAreaSelections = (
                 applyMouseAreaSelection(datagrid, table, selected, className);
             }
         } else {
-            (datagrid.parentElement as PerspectiveViewerElement).setSelection();
+            (
+                datagrid.parentElement as HTMLPerspectiveViewerElement
+            ).setSelection();
             const tds = table.querySelectorAll("tbody td");
             for (const td of tds) {
                 td.classList.remove(className);

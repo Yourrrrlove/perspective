@@ -14,9 +14,10 @@ import { CellMetadataBody } from "regular-table/dist/esm/types.js";
 import {
     type RegularTable,
     type DatagridModel,
-    type PerspectiveViewerElement,
     get_psp_type,
 } from "../../types.js";
+
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 export function write_cell(
     table: RegularTable,
@@ -58,7 +59,7 @@ export function write_cell(
 export function clickListener(
     model: DatagridModel,
     table: RegularTable,
-    _viewer: PerspectiveViewerElement,
+    _viewer: HTMLPerspectiveViewerElement,
     event: MouseEvent,
 ): void {
     const meta = table.getMeta(event.target as HTMLElement);

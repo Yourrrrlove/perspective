@@ -12,7 +12,7 @@
 
 import { FormatterCache, Formatter } from "./formatter_cache.js";
 import type { DatagridModel, ColumnsConfig, ColumnConfig } from "../types.js";
-import { ColumnType } from "@perspective-dev/client";
+import type { ColumnType } from "@perspective-dev/client";
 
 const FORMAT_CACHE = new FormatterCache();
 const MAX_BAR_WIDTH_PCT = 1;

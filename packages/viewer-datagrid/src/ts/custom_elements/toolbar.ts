@@ -10,12 +10,10 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 import TOOLBAR_STYLE from "../../../dist/css/perspective-viewer-datagrid-toolbar.css";
 import { toggle_edit_mode, toggle_scroll_lock } from "../model/toolbar.js";
-import type {
-    DatagridPluginElement,
-    PerspectiveViewerElement,
-} from "../types.js";
+import type { DatagridPluginElement } from "../types.js";
 
 const stylesheet = new CSSStyleSheet();
 stylesheet.replaceSync(TOOLBAR_STYLE);
@@ -53,7 +51,7 @@ export class HTMLPerspectiveViewerDatagridToolbarElement extends HTMLElement {
             </div>
         `;
 
-        const viewer = this.parentElement as PerspectiveViewerElement;
+        const viewer = this.parentElement as HTMLPerspectiveViewerElement;
         const plugin = this.previousElementSibling as DatagridPluginElement;
 
         plugin._scroll_lock = this.shadowRoot!.querySelector(

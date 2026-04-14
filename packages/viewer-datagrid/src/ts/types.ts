@@ -19,8 +19,12 @@ import type {
     ViewWindow,
     ViewConfigUpdate,
 } from "@perspective-dev/client";
-import { RegularTableElement } from "regular-table";
-import { CellMetadata, DataResponse } from "regular-table/dist/esm/types";
+import type {
+    HTMLPerspectiveViewerElement,
+    ViewerConfig,
+} from "@perspective-dev/viewer";
+import type { RegularTableElement } from "regular-table";
+import type { CellMetadata, DataResponse } from "regular-table/dist/esm/types";
 
 // Re-export types from regular-table for use throughout the codebase
 export type { RegularTableElement as RegularTable };
@@ -163,10 +167,11 @@ export interface DatagridModel {
     _view: View;
     _table: Table;
     _table_schema: Schema;
-    _config: ViewConfig;
+    _config: ViewerConfig;
     _num_rows: number;
     _num_columns?: number;
     _schema: Schema;
+    _theme: string;
     _ids: unknown[][];
     _plugin_background: number[];
     _color: ColorRecord;
@@ -214,20 +219,6 @@ export type DataListener = (
 
 // Style listener function type
 export type StyleListener = () => void;
-
-// Perspective viewer element interface (subset)
-export interface PerspectiveViewerElement extends HTMLElement {
-    getView(): Promise<View>;
-    getTable(): Promise<Table>;
-    getEditPort(): Promise<number>;
-    restore(config: Partial<ViewConfig>): Promise<void>;
-    toggleColumnSettings(columnName?: string): Promise<void>;
-    hasAttribute(name: string): boolean;
-    setSelection(viewport?: ViewWindow): void;
-    getSelection(): ViewWindow | undefined;
-    dispatchEvent(event: Event): boolean;
-    children: HTMLCollectionOf<HTMLElement>;
-}
 
 // Toolbar element interface
 export interface DatagridToolbarElement extends HTMLElement {
@@ -294,7 +285,7 @@ export type SelectedPositionMap = WeakMap<
 // Centralized editable mode check - used by style handlers and event handlers
 export function isEditableMode(
     model: DatagridModel,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
     allowed: boolean = false,
 ): boolean {
     const has_pivots =

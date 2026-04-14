@@ -12,7 +12,8 @@
 
 import { RegularTableElement } from "regular-table";
 
-import type { DatagridModel, PerspectiveViewerElement } from "../types.js";
+import type { DatagridModel } from "../types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 import { styleColumnHeaderRow } from "./column_header.js";
 
 import { CollectedHeaderRow } from "./types.js";
@@ -24,7 +25,7 @@ export function applyColumnHeaderStyles(
     model: DatagridModel,
     headerRows: CollectedHeaderRow[],
     regularTable: RegularTableElement,
-    viewer: PerspectiveViewerElement,
+    viewer: HTMLPerspectiveViewerElement,
 ): void {
     if (headerRows.length === 0) return;
 

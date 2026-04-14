@@ -35,14 +35,12 @@
     "dependencies": {
         "@perspective-dev/client": "workspace:",
         "@perspective-dev/viewer": "workspace:",
-        "chroma-js": "catalog:",
         "regular-table": "catalog:"
     },
     "devDependencies": {
         "lightningcss": "catalog:",
         "@perspective-dev/esbuild-plugin": "workspace:",
         "@perspective-dev/test": "workspace:",
-        "@types/chroma-js": "catalog:",
         "prettier": "catalog:",
         "typescript": "catalog:",
         "zx": "catalog:"

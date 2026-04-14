@@ -14,9 +14,9 @@ import { focusSelectedCell } from "../../style_handlers/focus.js";
 import type {
     RegularTable,
     DatagridModel,
-    PerspectiveViewerElement,
     SelectedPositionMap,
 } from "../../types.js";
+import type { HTMLPerspectiveViewerElement } from "@perspective-dev/viewer";
 
 type AsyncMoveFunction = (
     model: DatagridModel,
@@ -135,7 +135,7 @@ function isLastCell(
 export function keydownListener(
     model: DatagridModel,
     table: RegularTable,
-    _viewer: PerspectiveViewerElement,
+    _viewer: HTMLPerspectiveViewerElement,
     selected_position_map: SelectedPositionMap,
     event: KeyboardEvent,
 ): void {
