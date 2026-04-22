@@ -67,7 +67,7 @@ function tests(context, compare) {
             });
 
             document
-                .querySelector("perspective-viewer-d3fc-treemap")
+                .querySelector("perspective-viewer-charts-treemap")
                 .shadowRoot.querySelector("g.treemap > g")
                 .dispatchEvent(new Event("click"));
 
