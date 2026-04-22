@@ -66,6 +66,7 @@ import type {
     TableInitOptions, 
     ColumnWindow,
     ViewWindow, 
+    TypedArrayWindow,
     OnUpdateOptions,
     JoinOptions,
     UpdateOptions,

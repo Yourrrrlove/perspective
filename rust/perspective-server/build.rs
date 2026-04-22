@@ -111,9 +111,10 @@ fn cmake_build() -> Result<Option<PathBuf>, std::io::Error> {
         dst.define("PSP_WASM_EXCEPTIONS", "0");
     }
 
-    if !cfg!(windows) {
-        dst.build_arg(format!("-j{}", num_cpus::get()));
-    }
+    // Propagates to nested `cmake --build` invocations (e.g. the per-dep
+    // fetch builds in FindInstallDependency.cmake), unlike `-j` via `build_arg`
+    // which only reaches the top-level native tool.
+    dst.env("CMAKE_BUILD_PARALLEL_LEVEL", num_cpus::get().to_string());
 
     // Conda sets CMAKE_ARGS for e.g. cross-compiling toolchain in the environment -
     // normally they are passed directly to a cmake invocation in the recipe,
