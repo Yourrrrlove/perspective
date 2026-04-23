@@ -10,41 +10,56 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-/**
- * Module for the `<perspective-viewer>` custom element.  This module has no
- * (real) exports, but importing it has a side effect: the
- * `PerspectiveViewerElement` class is registered as a custom element, after
- * which it can be used as a standard DOM element.
- *
- * Though `<perspective-viewer>` is written mostly in Rust, the nature
- * of WebAssembly's compilation makes it a dynamic module;  in order to
- * guarantee that the Custom Elements extension methods are registered
- * synchronously with this package's import, we need perform said registration
- * within this wrapper module.  As a result, the API methods of the Custom
- * Elements are all `async` (as they must await the wasm module instance).
- *
- * The documentation in this module defines the instance structure of a
- * `<perspective-viewer>` DOM object instantiated typically, through HTML or any
- * relevent DOM method e.g. `document.createElement("perspective-viewer")` or
- * `document.getElementsByTagName("perspective-viewer")`.
- *
- * @module perspective-viewer
- */
+export interface ChartTypeConfig {
+    name: string;
+    tag: string;
+    category: string;
+    selectMode: "select" | "toggle";
+    initial: {
+        count: number;
+        names: string[];
+    };
+    max_cells: number;
+    max_columns: number;
+}
 
-export { IPerspectiveViewerPlugin } from "./plugin";
-export { HTMLPerspectiveViewerPluginElement } from "./plugin";
-export type { StreamingRenderHandle, RenderChunk } from "./plugin";
+const CHARTS = [
+    {
+        name: "GPU Scatter",
+        tag: "scatter",
+        category: "GPU Charts",
+        selectMode: "toggle",
+        initial: {
+            count: 2,
+            names: ["X Axis", "Y Axis", "Color", "Size", "Tooltip"],
+        },
+        max_cells: 10_000_000,
+        max_columns: 50,
+    },
+    {
+        name: "GPU Line",
+        tag: "line",
+        category: "GPU Charts",
+        selectMode: "select",
+        initial: {
+            count: 2,
+            names: ["X Axis", "Y Axis"],
+        },
+        max_cells: 10_000_000,
+        max_columns: 50,
+    },
+    {
+        name: "GPU Treemap",
+        tag: "treemap",
+        category: "GPU Charts",
+        selectMode: "toggle",
+        initial: {
+            count: 1,
+            names: ["Size", "Color", "Tooltip"],
+        },
+        max_cells: 50_000,
+        max_columns: 10,
+    },
+] as const satisfies readonly ChartTypeConfig[];
 
-export type * from "./extensions.ts";
-export { PerspectiveSelectDetail } from "./extensions.ts";
-export type * from "./ts-rs/ViewerConfigUpdate.d.ts";
-export type * from "./ts-rs/ViewerConfig.d.ts";
-export type * from "./ts-rs/ColumnConfigValues.d.ts";
-export type * from "./ts-rs/Filter.d.ts";
-export type * from "./ts-rs/FilterTerm.d.ts";
-export type * from "./ts-rs/FilterReducer.d.ts";
-
-export { init_client } from "./bootstrap";
-import { init_client } from "./bootstrap";
-
-export default { init_client };
+export default CHARTS;

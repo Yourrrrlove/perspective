@@ -15,6 +15,29 @@ import type { View } from "@perspective-dev/client";
 // import type * as perspective from "@perspective-dev/client";
 
 /**
+ * Metadata returned by each iteration of a streaming render.
+ */
+export interface RenderChunk {
+    /** True when this is the first chunk (axes/layout are ready to show). */
+    isFirst: boolean;
+    /** True when all chunks have been rendered. */
+    isComplete: boolean;
+    /** Progress as a value between 0.0 and 1.0. */
+    progress: number;
+}
+
+/**
+ * A handle returned by `drawStreaming()` / `updateStreaming()` that the
+ * renderer uses to drive chunk-by-chunk rendering and cancel in-flight work.
+ */
+export interface StreamingRenderHandle {
+    /** Render the next chunk. Resolves with chunk metadata, or null when done. */
+    next(): Promise<RenderChunk | null>;
+    /** Cancel all in-flight work and clean up partial state. */
+    cancel(): void;
+}
+
+/**
  * The `IPerspectiveViewerPlugin` interface defines the necessary API for a
  * `<perspective-viewer>` plugin, which also must be an `HTMLElement` via the
  * Custom Elements API or otherwise.  Rather than implement this API from
@@ -186,7 +209,38 @@ export interface IPerspectiveViewerPlugin {
     /**
      * Free any resources acquired by this plugin and prepare to be deleted.
      */
-    delete(): void;
+    delete(): Promise<void>;
+
+    /**
+     * Whether this plugin supports the streaming render protocol.
+     * When true, the renderer will call `drawStreaming()` / `updateStreaming()`
+     * instead of `draw()` / `update()`.
+     */
+    get supports_streaming(): boolean;
+
+    /**
+     * Optional streaming draw. Returns a handle that the renderer uses to
+     * drive chunk iteration and cancel in-flight work.  The renderer calls
+     * `next()` repeatedly; after the first chunk resolves the plugin becomes
+     * visible (opacity transition).  If not implemented, the renderer falls
+     * back to `draw()`.
+     */
+    draw_streaming?(
+        view: View,
+        end_col?: number,
+        end_row?: number,
+    ): StreamingRenderHandle;
+
+    /**
+     * Streaming variant of `update()`.  Same semantics as `draw_streaming()`
+     * but called when only the underlying data has changed (not the
+     * `ViewConfig`).
+     */
+    update_streaming?(
+        view: View,
+        end_col?: number,
+        end_row?: number,
+    ): StreamingRenderHandle;
 }
 
 /**
@@ -275,5 +329,9 @@ export class HTMLPerspectiveViewerPluginElement
 
     async delete(): Promise<void> {
         // Not Implemented
+    }
+
+    get supports_streaming(): boolean {
+        return false;
     }
 }

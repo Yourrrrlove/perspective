@@ -10,41 +10,25 @@
 // ┃ of the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). ┃
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-/**
- * Module for the `<perspective-viewer>` custom element.  This module has no
- * (real) exports, but importing it has a side effect: the
- * `PerspectiveViewerElement` class is registered as a custom element, after
- * which it can be used as a standard DOM element.
- *
- * Though `<perspective-viewer>` is written mostly in Rust, the nature
- * of WebAssembly's compilation makes it a dynamic module;  in order to
- * guarantee that the Custom Elements extension methods are registered
- * synchronously with this package's import, we need perform said registration
- * within this wrapper module.  As a result, the API methods of the Custom
- * Elements are all `async` (as they must await the wasm module instance).
- *
- * The documentation in this module defines the instance structure of a
- * `<perspective-viewer>` DOM object instantiated typically, through HTML or any
- * relevent DOM method e.g. `document.createElement("perspective-viewer")` or
- * `document.getElementsByTagName("perspective-viewer")`.
- *
- * @module perspective-viewer
- */
+export function parseCSSColorToVec3(
+    colorStr: string,
+): [number, number, number] {
+    const s = colorStr.trim();
+    if (s.startsWith("#")) {
+        let hex = s.slice(1);
+        if (hex.length === 3)
+            hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+        return [
+            parseInt(hex.slice(0, 2), 16) / 255,
+            parseInt(hex.slice(2, 4), 16) / 255,
+            parseInt(hex.slice(4, 6), 16) / 255,
+        ];
+    }
+    const m = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (m) return [+m[1] / 255, +m[2] / 255, +m[3] / 255];
+    return [0.5, 0.5, 0.5];
+}
 
-export { IPerspectiveViewerPlugin } from "./plugin";
-export { HTMLPerspectiveViewerPluginElement } from "./plugin";
-export type { StreamingRenderHandle, RenderChunk } from "./plugin";
-
-export type * from "./extensions.ts";
-export { PerspectiveSelectDetail } from "./extensions.ts";
-export type * from "./ts-rs/ViewerConfigUpdate.d.ts";
-export type * from "./ts-rs/ViewerConfig.d.ts";
-export type * from "./ts-rs/ColumnConfigValues.d.ts";
-export type * from "./ts-rs/Filter.d.ts";
-export type * from "./ts-rs/FilterTerm.d.ts";
-export type * from "./ts-rs/FilterReducer.d.ts";
-
-export { init_client } from "./bootstrap";
-import { init_client } from "./bootstrap";
-
-export default { init_client };
+export function getCSSVar(el: Element, prop: string, fallback: string): string {
+    return getComputedStyle(el).getPropertyValue(prop).trim() || fallback;
+}
