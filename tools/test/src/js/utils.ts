@@ -11,7 +11,7 @@
 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 import type { ViewerConfigUpdate } from "@perspective-dev/viewer";
-import test, { expect, Locator, Page } from "@playwright/test";
+import { test, expect, Locator, Page } from "@playwright/test";
 import * as fs from "node:fs";
 import path from "node:path";
 import url from "node:url";
@@ -206,12 +206,12 @@ export function getWorkspaceShadowDOMContents(page: Page): Promise<string> {
     });
 }
 
-export async function compareLightDOMContents(page) {
+export async function compareLightDOMContents(page: Page) {
     const contents = await getWorkspaceLightDOMContents(page);
     await compareContentsToSnapshot(contents);
 }
 
-export async function compareShadowDOMContents(page) {
+export async function compareShadowDOMContents(page: Page) {
     const contents = await getWorkspaceShadowDOMContents(page);
     await compareContentsToSnapshot(contents);
 }
@@ -222,30 +222,35 @@ export async function compareShadowDOMContents(page) {
  * @param page
  * @param path
  */
-export async function shadow_click(page, ...path): Promise<void> {
+export async function shadow_click(
+    page: Page,
+    ...path: string[]
+): Promise<void> {
     await page.evaluate(
         ({ path }) => {
             let elem: ShadowRoot | Element | Document | null | undefined =
                 document;
             while (path.length > 0) {
-                let elem2 = elem;
-                if (elem2 instanceof Element && elem2.shadowRoot !== null) {
-                    elem = elem2.shadowRoot;
+                if (
+                    elem instanceof Element &&
+                    (elem as Element).shadowRoot !== null
+                ) {
+                    elem = (elem as Element).shadowRoot;
                 }
 
-                elem = elem?.querySelector(path.shift());
+                elem = elem?.querySelector(path.shift()!);
             }
 
-            function triggerMouseEvent(node, eventType) {
+            function triggerMouseEvent(node: EventTarget, eventType: string) {
                 var clickEvent = document.createEvent("MouseEvent");
                 clickEvent.initEvent(eventType, true, true);
                 node.dispatchEvent(clickEvent);
             }
 
-            triggerMouseEvent(elem, "mouseover");
-            triggerMouseEvent(elem, "mousedown");
-            triggerMouseEvent(elem, "mouseup");
-            triggerMouseEvent(elem, "click");
+            triggerMouseEvent(elem as EventTarget, "mouseover");
+            triggerMouseEvent(elem as EventTarget, "mousedown");
+            triggerMouseEvent(elem as EventTarget, "mouseup");
+            triggerMouseEvent(elem as EventTarget, "click");
         },
         { path },
     );
@@ -260,10 +265,10 @@ export async function shadow_click(page, ...path): Promise<void> {
  * @param path
  */
 export async function shadow_type(
-    page,
-    content,
-    is_incremental,
-    ...path
+    page: Page,
+    content: string,
+    is_incremental: boolean | string,
+    ...path: string[]
 ): Promise<void> {
     if (typeof is_incremental !== "boolean") {
         path.unshift(is_incremental);
@@ -275,19 +280,24 @@ export async function shadow_type(
             let elem: ShadowRoot | Element | Document | null | undefined =
                 document;
             while (path.length > 0) {
-                let elem2 = elem;
-                if (elem2 instanceof Element && elem2.shadowRoot !== null) {
-                    elem = elem2.shadowRoot;
+                if (
+                    elem instanceof Element &&
+                    (elem as Element).shadowRoot !== null
+                ) {
+                    elem = (elem as Element).shadowRoot;
                 }
 
-                elem = elem?.querySelector(path.shift());
+                elem = elem?.querySelector(path.shift()!);
             }
 
             if (elem instanceof HTMLElement) {
                 elem.focus();
             }
 
-            function triggerInputEvent(element) {
+            function triggerInputEvent(
+                element: EventTarget | null | undefined,
+            ) {
+                if (!element) return;
                 const event = new Event("input", {
                     bubbles: true,
                     cancelable: true,
@@ -347,7 +357,7 @@ export async function shadow_type(
  * TODO: Playwright already does this with locators.
  * @param page
  */
-export async function shadow_blur(page): Promise<void> {
+export async function shadow_blur(page: Page): Promise<void> {
     await page.evaluate(() => {
         let elem = document.activeElement;
         while (elem) {
