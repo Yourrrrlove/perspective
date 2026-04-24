@@ -42,6 +42,14 @@ export class NodeStore {
     size!: Float32Array;
     value!: Float32Array;
     colorValue!: Float32Array;
+    /**
+     * Sign of the leaf's raw size column value: `-1` when the source row
+     * was negative, `1` otherwise. `size` itself always stores the
+     * magnitude so layout code continues to treat negatives as positive
+     * area; render code uses `sizeSign` to apply a lower alpha on
+     * negative leaves. Always `1` for branches.
+     */
+    sizeSign!: Int8Array;
 
     // Rectangular layout (treemap).
     x0!: Float32Array;
@@ -81,10 +89,29 @@ export class NodeStore {
     }
 
     reset(): void {
+        // Zero the layout typed arrays for slots that were occupied
+        // before. `squarify` / `partitionSunburst` overwrite visited
+        // nodes before any read, but early-bail branches (node area
+        // below `MIN_VISIBLE_AREA`) skip the recursion and leave
+        // descendants untouched. Re-using those slots in the next
+        // render with stale `x0/y0/x1/y1/a0/a1/r0/r1` leaks the
+        // previous render's rectangles / arcs through `collectVisible`
+        // into the new scene — the "leftover hoverable cells" bug.
+        //
+        // Fill only up to the prior `count` (the tree's logical size)
+        // — capacity can be much larger after growth and filling it
+        // whole is O(capacity) unnecessary work.
+        if (this.count > 0) {
+            this.x0.fill(0, 0, this.count);
+            this.y0.fill(0, 0, this.count);
+            this.x1.fill(0, 0, this.count);
+            this.y1.fill(0, 0, this.count);
+            this.a0.fill(0, 0, this.count);
+            this.a1.fill(0, 0, this.count);
+            this.r0.fill(0, 0, this.count);
+            this.r1.fill(0, 0, this.count);
+        }
         this.count = 0;
-        // Typed-array content doesn't need clearing — valid slots are
-        // always written before read. `name` / `colorLabel` get stale
-        // entries but `allocate()` clears them per-slot as reused.
     }
 
     /**
@@ -105,6 +132,7 @@ export class NodeStore {
         this.size[id] = 0;
         this.value[id] = 0;
         this.colorValue[id] = NaN;
+        this.sizeSign[id] = 1;
         this.name[id] = "";
         this.colorLabel[id] = "";
         return id;
@@ -133,7 +161,7 @@ export class NodeStore {
     private _allocate(newCapacity: number): void {
         const cap = Math.max(newCapacity, 1024);
 
-        const grow = <T extends Float32Array | Int32Array>(
+        const grow = <T extends Float32Array | Int32Array | Int8Array>(
             old: T | undefined,
             ctor: { new (n: number): T },
         ): T => {
@@ -145,6 +173,7 @@ export class NodeStore {
         this.size = grow(this.size, Float32Array);
         this.value = grow(this.value, Float32Array);
         this.colorValue = grow(this.colorValue, Float32Array);
+        this.sizeSign = grow(this.sizeSign, Int8Array);
         this.x0 = grow(this.x0, Float32Array);
         this.y0 = grow(this.y0, Float32Array);
         this.x1 = grow(this.x1, Float32Array);
