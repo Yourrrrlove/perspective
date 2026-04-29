@@ -113,10 +113,12 @@ export class TooltipController {
             if (this._clickHandler)
                 this._canvas.removeEventListener("click", this._clickHandler);
         }
+
         if (this._hoverRAFId) {
             cancelAnimationFrame(this._hoverRAFId);
             this._hoverRAFId = 0;
         }
+
         this._moveHandler = null;
         this._leaveHandler = null;
         this._clickHandler = null;
@@ -128,35 +130,34 @@ export class TooltipController {
         lines: string[],
         pos: { px: number; py: number },
         bounds: CssBounds,
-        theme: Theme,
     ): void {
         this.dismissPinned();
         if (lines.length === 0) return;
-
         const div = document.createElement("div");
-        div.style.cssText = [
-            "position:absolute",
-            "pointer-events:auto",
-            `font:11px ${theme.fontFamily}`,
-            `background:${theme.tooltipBg}`,
-            `color:${theme.tooltipText}`,
-            `border:1px solid ${theme.tooltipBorder}`,
-            "border-radius:4px",
-            "padding:8px",
-            "overflow-y:auto",
-            `max-height:${Math.round(bounds.cssHeight * 0.6)}px`,
-            "white-space:pre",
-            "z-index:10",
-            "line-height:16px",
-        ].join(";");
+        // Styling lives in the package's adopted stylesheet under
+        // `.webgl-tooltip` — keeps theme wiring in CSS (via
+        // `--psp-webgl--tooltip--*` custom properties) and reserves
+        // this path for the truly dynamic bits: the bounds-derived
+        // max-height and the post-measurement position.
+        div.className = "webgl-tooltip";
+        div.style.maxHeight = `${Math.round(bounds.cssHeight * 0.6)}px`;
+
         div.textContent = lines.join("\n");
 
-        parent.style.position = "relative";
+        // The pinned div uses `position: absolute` and anchors to the
+        // nearest positioned ancestor. Force a positioned parent only
+        // when it's still `static` — flipping an already-positioned
+        // parent (e.g. `.webgl-container` which relies on
+        // `position: absolute` + four-edge insets for sizing) would
+        // collapse its box.
+        if (getComputedStyle(parent).position === "static") {
+            parent.style.position = "relative";
+        }
+
         div.style.left = "-9999px";
         div.style.top = "0px";
         parent.appendChild(div);
         this._pinnedDiv = div;
-
         const divW = div.getBoundingClientRect().width;
         const divH = div.getBoundingClientRect().height;
         let tx = pos.px + 12;
@@ -165,7 +166,6 @@ export class TooltipController {
         if (tx < 0) tx = 4;
         if (ty < 0) ty = pos.py + 12;
         if (ty + divH > bounds.cssHeight) ty = bounds.cssHeight - divH - 4;
-
         div.style.left = `${tx}px`;
         div.style.top = `${ty}px`;
     }
@@ -201,7 +201,6 @@ export function renderCanvasTooltip(
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
-
     ctx.font = `11px ${theme.fontFamily}`;
     const lineHeight = 16;
     const padding = 8;
@@ -210,14 +209,16 @@ export function renderCanvasTooltip(
         const w = ctx.measureText(line).width;
         if (w > maxWidth) maxWidth = w;
     }
+
     const boxW = maxWidth + padding * 2;
     const boxH = lines.length * lineHeight + padding * 2 - 4;
-
     let tx = pos.px + 12;
     let ty = pos.py - boxH - 8;
     if (tx + boxW > layout.cssWidth) tx = pos.px - boxW - 12;
     if (ty < 0) ty = pos.py + 12;
     if (ty + boxH > layout.cssHeight) ty = layout.cssHeight - boxH - 4;
+
+    const hasLines = lines.length > 0;
 
     // Crosshair
     if (options.crosshair) {
@@ -246,21 +247,25 @@ export function renderCanvasTooltip(
         ctx.globalAlpha = 1.0;
     }
 
-    // Box
-    ctx.fillStyle = theme.tooltipBg;
-    ctx.strokeStyle = theme.tooltipBorder;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(tx, ty, boxW, boxH, 4);
-    ctx.fill();
-    ctx.stroke();
+    // Box + text are only drawn when we have content. Callers pass an
+    // empty `lines` array while a lazy row fetch is still in flight —
+    // the crosshair / highlight ring above paint immediately so the
+    // hover remains visible, but the tooltip chrome waits for data.
+    if (hasLines) {
+        ctx.fillStyle = theme.tooltipBg;
+        ctx.strokeStyle = theme.tooltipBorder;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(tx, ty, boxW, boxH, 4);
+        ctx.fill();
+        ctx.stroke();
 
-    // Text
-    ctx.fillStyle = theme.tooltipText;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], tx + padding, ty + padding + i * lineHeight);
+        ctx.fillStyle = theme.tooltipText;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        for (let i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], tx + padding, ty + padding + i * lineHeight);
+        }
     }
 
     ctx.restore();

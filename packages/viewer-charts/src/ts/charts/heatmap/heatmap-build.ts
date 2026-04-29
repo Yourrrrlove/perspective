@@ -12,6 +12,7 @@
 
 import type { ColumnDataMap } from "../../data/view-reader";
 import type { CategoricalLevel } from "../../chrome/categorical-axis";
+import { buildGroupRuns } from "../../chrome/categorical-axis-core";
 
 export interface HeatmapCell {
     xIdx: number;
@@ -70,7 +71,8 @@ export function buildHeatmapPipeline(
     };
 
     // Resolve group_by row-paths + grand-total offset (same as bar pipeline).
-    const rawRowPaths: CategoricalLevel[] = [];
+    type RawLevel = { indices: Int32Array; dictionary: string[] };
+    const rawRowPaths: RawLevel[] = [];
     for (let n = 0; ; n++) {
         const rp = columns.get(`__ROW_PATH_${n}__`);
         if (!rp || rp.type !== "string" || !rp.indices || !rp.dictionary) break;
@@ -94,15 +96,32 @@ export function buildHeatmapPipeline(
     }
     const numX = Math.max(0, numRows - rowOffset);
 
+    const L = rawRowPaths.length;
     const xLevels: CategoricalLevel[] =
-        groupBy.length > 0 && rawRowPaths.length > 0
-            ? rawRowPaths.map((rp) => ({
-                  indices:
-                      rowOffset === 0
-                          ? rp.indices
-                          : rp.indices.subarray(rowOffset),
-                  dictionary: rp.dictionary,
-              }))
+        groupBy.length > 0 && L > 0
+            ? rawRowPaths.map((rp, levelIdx) => {
+                  const labels = new Array<string>(numX);
+                  let maxLabelChars = 0;
+                  for (let r = 0; r < numX; r++) {
+                      const s = rp.dictionary[rp.indices[r + rowOffset]] ?? "";
+                      labels[r] = s;
+                      if (s.length > maxLabelChars) maxLabelChars = s.length;
+                  }
+                  const runs =
+                      levelIdx === L - 1
+                          ? []
+                          : buildGroupRuns(
+                                rp.indices,
+                                rp.dictionary,
+                                rowOffset,
+                                rowOffset + numX,
+                            ).map((run) => ({
+                                startIdx: run.startIdx - rowOffset,
+                                endIdx: run.endIdx - rowOffset,
+                                label: run.label,
+                            }));
+                  return { labels, runs, maxLabelChars };
+              })
             : [];
 
     // Enumerate Y columns in arrow iteration order, skipping metadata.
@@ -174,6 +193,35 @@ export function buildHeatmapPipeline(
 }
 
 /**
+ * Partition a `ColumnDataMap` into one sub-map per user column. Every
+ * arrow value column is assigned to the partition whose user column name
+ * matches its terminal segment (everything after the last `|`, which
+ * equals the whole name when there's no `split_by`). `__ROW_PATH_N__`
+ * and `__GROUPING_ID__` metadata columns are copied into every partition
+ * since they describe the shared X axis.
+ *
+ * Used to render one heatmap per user column in a facet grid.
+ */
+export function partitionColumnsPerFacet(
+    columns: ColumnDataMap,
+    userColumns: string[],
+): Array<{ label: string; columns: ColumnDataMap }> {
+    return userColumns.map((userCol) => {
+        const partition: ColumnDataMap = new Map();
+        for (const [name, col] of columns) {
+            if (name.startsWith("__ROW_PATH_") || name === "__GROUPING_ID__") {
+                partition.set(name, col);
+                continue;
+            }
+            const pipeIdx = name.lastIndexOf("|");
+            const leaf = pipeIdx === -1 ? name : name.slice(pipeIdx + 1);
+            if (leaf === userCol) partition.set(name, col);
+        }
+        return { label: userCol, columns: partition };
+    });
+}
+
+/**
  * Split each column name on `|` → hierarchical levels. Outermost segment
  * is index 0; leaf (terminal) segment is `levels.length - 1`. Runs of
  * identical consecutive outer tokens naturally coalesce later during
@@ -195,6 +243,8 @@ function buildYLevelsFromNames(names: string[]): CategoricalLevel[] {
         const dictionary: string[] = [];
         const dictIndex = new Map<string, number>();
         const indices = new Int32Array(names.length);
+        const labels = new Array<string>(names.length);
+        let maxLabelChars = 0;
         for (let i = 0; i < names.length; i++) {
             const seg = segments[i][d] ?? "";
             let idx = dictIndex.get(seg);
@@ -204,8 +254,14 @@ function buildYLevelsFromNames(names: string[]): CategoricalLevel[] {
                 dictIndex.set(seg, idx);
             }
             indices[i] = idx;
+            labels[i] = seg;
+            if (seg.length > maxLabelChars) maxLabelChars = seg.length;
         }
-        levels.push({ indices, dictionary });
+        const isLeaf = d === maxDepth - 1;
+        const runs = isLeaf
+            ? []
+            : buildGroupRuns(indices, dictionary, 0, names.length);
+        levels.push({ labels, runs, maxLabelChars });
     }
     return levels;
 }
