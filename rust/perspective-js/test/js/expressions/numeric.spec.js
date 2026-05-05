@@ -1262,6 +1262,112 @@ function validate_binary_operations(output, expressions, operator) {
                 await table.delete();
             });
 
+            test("coalesce returns first non-null arg", async function () {
+                const table = await perspective.table({
+                    a: "integer",
+                    b: "integer",
+                });
+
+                const view = await table.view({
+                    expressions: {
+                        coalesce_ab: 'coalesce("a", "b")',
+                        coalesce_ab_default: 'coalesce("a", "b", 99)',
+                    },
+                });
+
+                await table.update({
+                    a: [1, null, null, 4],
+                    b: [10, 20, null, 40],
+                });
+
+                const result = await view.to_columns();
+                expect(result["coalesce_ab"]).toEqual([1, 20, null, 4]);
+                expect(result["coalesce_ab_default"]).toEqual([1, 20, 99, 4]);
+                await view.delete();
+                await table.delete();
+            });
+
+            test("coalesce promotes mixed numeric inputs to float", async function () {
+                const table = await perspective.table({
+                    i: "integer",
+                    f: "float",
+                });
+
+                const view = await table.view({
+                    expressions: {
+                        coalesce_if: 'coalesce("i", "f")',
+                        coalesce_if_default: 'coalesce("i", "f", 0.5)',
+                    },
+                });
+
+                await table.update({
+                    i: [1, null, null, 4],
+                    f: [null, 2.5, null, 4.5],
+                });
+
+                const result = await view.to_columns();
+                const schema = await view.expression_schema();
+                expect(schema["coalesce_if"]).toEqual("float");
+                expect(schema["coalesce_if_default"]).toEqual("float");
+                expect(result["coalesce_if"]).toEqual([1, 2.5, null, 4]);
+                expect(result["coalesce_if_default"]).toEqual([1, 2.5, 0.5, 4]);
+
+                await view.delete();
+                await table.delete();
+            });
+
+            test("coalesce with all-null inputs returns null", async function () {
+                const table = await perspective.table({
+                    a: "integer",
+                    b: "integer",
+                });
+
+                const view = await table.view({
+                    expressions: { coalesce_nulls: 'coalesce("a", "b")' },
+                });
+
+                await table.update({
+                    a: [null, null, null],
+                    b: [null, null, null],
+                });
+
+                const result = await view.to_columns();
+                expect(result["coalesce_nulls"]).toEqual([null, null, null]);
+                await view.delete();
+                await table.delete();
+            });
+
+            test("coalesce fails validation for incompatible types", async function () {
+                const table = await perspective.table({
+                    a: "integer",
+                    b: "string",
+                });
+
+                const validated = await table.validate_expressions([
+                    'coalesce("a", "b")',
+                    "coalesce(\"a\", 'fallback')",
+                ]);
+
+                expect(validated.expression_schema).toEqual({});
+                expect(validated.errors['coalesce("a", "b")']).toEqual({
+                    column: 0,
+                    line: 0,
+                    error_message:
+                        "Type Error - inputs do not resolve to a valid expression.",
+                });
+
+                expect(validated.errors["coalesce(\"a\", 'fallback')"]).toEqual(
+                    {
+                        column: 0,
+                        line: 0,
+                        error_message:
+                            "Type Error - inputs do not resolve to a valid expression.",
+                    },
+                );
+
+                await table.delete();
+            });
+
             test("null", async function () {
                 const table = await perspective.table({
                     a: "integer",

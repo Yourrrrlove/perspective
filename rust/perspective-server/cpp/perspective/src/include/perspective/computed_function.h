@@ -324,6 +324,13 @@ namespace computed_function {
     FUNCTION_HEADER(max_fn)
 
     /**
+     * @brief Return the first non-null argument. Variadic; all numeric
+     * inputs are promoted to FLOAT64. Non-numeric inputs must share an
+     * exact dtype.
+     */
+    FUNCTION_HEADER(coalesce)
+
+    /**
      * @brief Get the cross product of two vec3s
      */
     FUNCTION_HEADER(diff3)

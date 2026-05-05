@@ -371,6 +371,30 @@ const random_string = (
             table.delete();
         });
 
+        test("Coalesce strings", async function () {
+            const table = await perspective.table({
+                a: ["ABC", null, null, "HIjK", null],
+                b: ["xyz", "DEF", null, "stu", null],
+            });
+            const view = await table.view({
+                expressions: {
+                    coalesce_str: 'coalesce("a", "b", \'N/A\')',
+                },
+            });
+            const result = await view.to_columns();
+            const schema = await view.expression_schema();
+            expect(schema["coalesce_str"]).toEqual("string");
+            expect(result["coalesce_str"]).toEqual([
+                "ABC",
+                "DEF",
+                "N/A",
+                "HIjK",
+                "N/A",
+            ]);
+            view.delete();
+            table.delete();
+        });
+
         test("Concat", async function () {
             const table = await perspective.table({
                 a: ["abc", "deeeeef", "fg", "hhs", "abcdefghijk"],

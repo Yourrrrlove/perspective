@@ -1769,6 +1769,78 @@ max_fn::operator()(t_parameter_list parameters) {
     return rval;
 }
 
+coalesce::coalesce() = default;
+
+coalesce::~coalesce() = default;
+
+t_tscalar
+coalesce::operator()(t_parameter_list parameters) {
+    t_tscalar rval;
+    rval.clear();
+
+    if (parameters.size() == 0) {
+        rval.m_status = STATUS_CLEAR;
+        return rval;
+    }
+
+    std::vector<t_tscalar> inputs;
+    inputs.resize(parameters.size());
+
+    // Pass 1: type-check all parameters and resolve the output dtype.
+    // Loose matching: any combination of numeric types promotes to FLOAT64,
+    // matching the precedent set by min_fn / max_fn. Non-numeric types
+    // must share an exact dtype.
+    bool all_numeric = true;
+    t_dtype first_dtype = DTYPE_NONE;
+
+    for (auto i = 0; i < parameters.size(); ++i) {
+        t_generic_type& gt = parameters[i];
+        if (gt.type != t_generic_type::e_scalar) {
+            rval.m_status = STATUS_CLEAR;
+            return rval;
+        }
+
+        t_scalar_view _temp(gt);
+        t_tscalar temp = _temp();
+        inputs[i] = temp;
+
+        auto dt = static_cast<t_dtype>(temp.m_type);
+        bool numeric = is_numeric_type(dt);
+
+        if (i == 0) {
+            first_dtype = dt;
+            all_numeric = numeric;
+        } else if (all_numeric && numeric) {
+            // both numeric so far - stays in promotion path
+        } else if (!all_numeric && dt == first_dtype) {
+            // exact-match path for non-numeric types
+        } else {
+            rval.m_status = STATUS_CLEAR;
+            return rval;
+        }
+    }
+
+    rval.m_type = all_numeric ? DTYPE_FLOAT64 : first_dtype;
+
+    // Pass 2: return the first valid, non-none scalar. During the type-
+    // validation pass all inputs are STATUS_INVALID sentinels, so this
+    // loop falls through and returns rval with the resolved dtype and
+    // STATUS_INVALID, which the validator accepts.
+    for (auto i = 0; i < inputs.size(); ++i) {
+        const t_tscalar& val = inputs[i];
+        if (val.is_valid() && !val.is_none()) {
+            if (all_numeric) {
+                rval.set(val.to_double());
+            } else {
+                rval.set(val);
+            }
+            return rval;
+        }
+    }
+
+    return rval;
+}
+
 diff3::diff3() : exprtk::igeneric_function<t_tscalar>("VVV") {}
 
 diff3::~diff3() = default;
