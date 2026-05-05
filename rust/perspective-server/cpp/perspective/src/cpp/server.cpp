@@ -334,7 +334,7 @@ re_intern_strings(std::string&& expression) {
 static auto
 re_unintern_some_exprs(std::string&& expression) {
     static const RE2 interned_param(
-        "(?:match|match_all|search|indexof|replace|replace_all)\\("
+        "(?:match|match_all|search|indexof|replace|replace_all|contains)\\("
         "(?:.*?,\\s*(intern\\(('.*?')\\)))"
     );
     static const RE2 intern_match("intern\\(('.*?')\\)");

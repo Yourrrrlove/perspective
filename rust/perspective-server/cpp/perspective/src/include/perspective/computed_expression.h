@@ -118,6 +118,7 @@ public:
     static computed_function::min_fn MIN_FN;
     static computed_function::max_fn MAX_FN;
     static computed_function::coalesce COALESCE_FN;
+    static computed_function::contains CONTAINS_FN;
     static computed_function::diff3 diff3;
     static computed_function::norm3 norm3;
     static computed_function::cross_product3 cross_product3;

@@ -485,6 +485,36 @@ match_all::operator()(t_parameter_list parameters) {
     return rval;
 }
 
+contains::contains() : exprtk::igeneric_function<t_tscalar>("TS") {}
+
+contains::~contains() = default;
+
+t_tscalar
+contains::operator()(t_parameter_list parameters) {
+    t_tscalar rval;
+    rval.clear();
+    rval.m_type = DTYPE_BOOL;
+
+    t_scalar_view str_view(parameters[0]);
+    t_string_view needle_view(parameters[1]);
+
+    t_tscalar str = str_view();
+    std::string needle =
+        std::string(needle_view.begin(), needle_view.end());
+
+    if (str.get_dtype() != DTYPE_STR || str.m_status == STATUS_CLEAR) {
+        rval.m_status = STATUS_CLEAR;
+        return rval;
+    }
+
+    if (!str.is_valid()) {
+        return rval;
+    }
+
+    rval.set(str.to_string().find(needle) != std::string::npos);
+    return rval;
+}
+
 search::search(
     t_expression_vocab& expression_vocab,
     t_regex_mapping& regex_mapping,
