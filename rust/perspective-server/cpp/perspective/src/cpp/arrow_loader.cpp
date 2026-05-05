@@ -907,19 +907,30 @@ ArrowLoader::fill_column(
             copy_array(col, array, offset, len);
         }
 
-        // Fill validity bitmap
+        // Fill validity bitmap. Operate only on the current chunk's
+        // range [offset, offset+len); a whole-column fill here would
+        // clobber validity bits set by other chunks in a multi-batch
+        // ChunkedArray.
         std::int64_t null_count = array->null_count();
 
         if (null_count == 0) {
-            col->valid_raw_fill();
+            for (uint32_t i = 0; i < len; ++i) {
+                col->set_valid(offset + i, true);
+            }
         } else {
             const uint8_t* null_bitmap = array->null_bitmap_data();
 
             // If the arrow column is of null type, the null
-            // bitmap is a nullptr - so just mark everything as
-            // invalid and move on.
+            // bitmap is a nullptr - so just mark this chunk's rows
+            // as invalid and move on.
             if (null_bitmap == nullptr) {
-                col->invalid_raw_fill();
+                for (uint32_t i = 0; i < len; ++i) {
+                    if (is_update) {
+                        col->unset(offset + i);
+                    } else {
+                        col->clear(offset + i);
+                    }
+                }
             } else {
                 // Read the null bitmap and set the correct rows
                 // as valid
