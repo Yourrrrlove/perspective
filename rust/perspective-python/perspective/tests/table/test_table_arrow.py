@@ -15,10 +15,8 @@ import numpy as np
 import pandas as pd
 from perspective.tests.conftest import Util
 import pyarrow as pa
-import pyarrow.ipc as ipc
 from datetime import date, datetime
 import perspective as psp
-import io
 
 
 client = psp.Server().new_local_client()
@@ -49,14 +47,23 @@ ALL_INTEGERS_DATA = {
 
 ALL_INTEGERS_TABLE = pa.Table.from_pydict(ALL_INTEGERS_DATA)
 
-bytes_io = io.BytesIO()
-with ipc.new_stream(bytes_io, ALL_INTEGERS_TABLE.schema) as stream:
-    stream.write_table(ALL_INTEGERS_TABLE)
-ALL_INTEGERS_ARROW = bytes_io.getvalue()
 
 class TestTableArrow(object):
     def test_table_with_integer_types(self):
-        tbl = Table(ALL_INTEGERS_ARROW)
+        tbl = Table(ALL_INTEGERS_TABLE)
+        assert tbl.size() == 3
+        assert tbl.schema() == {
+            "int8": "integer",
+            "int16": "integer",
+            "int32": "integer",
+            "int64": "integer",
+            "uint8": "integer",
+            "uint16": "integer",
+            "uint32": "integer",
+            "uint64": "integer",
+            "float32": "float",
+            "float64": "float",
+        }
         for k, values in ALL_INTEGERS_DATA.items():
             v = tbl.view(filter=[[k, "==", values[0].as_py()]])
             assert len(v.to_json()) == 1
@@ -481,17 +488,7 @@ class TestTableArrow(object):
 
         assert arrow_table["a"].null_count == 4
 
-        # write arrow to stream
-        stream = pa.BufferOutputStream()
-        writer = pa.RecordBatchStreamWriter(
-            stream, arrow_table.schema
-        )
-        writer.write_table(arrow_table)
-        writer.close()
-        arrow = stream.getvalue().to_pybytes()
-
-        # load
-        tbl = Table(arrow)
+        tbl = Table(arrow_table)
         assert tbl.size() == 8
 
         # check types

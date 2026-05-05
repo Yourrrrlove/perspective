@@ -109,26 +109,17 @@ class Util:
 
     @staticmethod
     def make_arrow_from_pandas(df, schema=None, legacy=False):
-        """Create an arrow binary from a Pandas dataframe.
+        """Create a pyarrow Table from a Pandas dataframe.
 
         Args:
             df (:obj:`pandas.DataFrame`)
             schema (:obj:`pyarrow.Schema`)
-            legacy (bool): if True, use legacy IPC format (pre-pyarrow 0.15). Defaults to False.
+            legacy (bool): unused; retained for backwards compatibility.
 
         Returns:
-            bytes : a bytes object containing the arrow-serialized output.
+            pyarrow.Table
         """
-        stream = pa.BufferOutputStream()
-        table = pa.Table.from_pandas(df, schema=schema)
-
-        writer = pa.RecordBatchStreamWriter(
-            stream, table.schema
-        )
-
-        writer.write_table(table)
-        writer.close()
-        return stream.getvalue().to_pybytes()
+        return pa.Table.from_pandas(df, schema=schema)
 
     @staticmethod
     def make_dictionary_arrow(names, data, types=None, legacy=False):

@@ -54,6 +54,7 @@
 - [Overview](./explanation/python.md)
 - [Installation](./how_to/python/installation.md)
 - [Loading data into a `Table`](./how_to/python/table.md)
+    - [`pandas`, `polars` and `pyarrow` integration](./how_to/python/table_data.md)
 - [Callbacks and events](./how_to/python/callbacks.md)
 - [Multithreading](./how_to/python/multithreading.md)
 - [Hosting a WebSocket server](./how_to/python/websocket.md)
