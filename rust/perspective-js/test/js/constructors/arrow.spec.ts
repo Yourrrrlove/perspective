@@ -75,6 +75,48 @@ test.describe("Arrow", function () {
     });
 
     test.describe("regressions", () => {
+        // https://github.com/perspective-dev/perspective/issues/3169
+        test("null values are preserved across multi-batch Arrow IPC streams", async function () {
+            function row(
+                identifier: string,
+                value: number | null,
+                date: Date | null,
+            ) {
+                return arrow.tableFromArrays({
+                    Identifier: arrow.vectorFromArray(
+                        [identifier],
+                        new arrow.Utf8(),
+                    ),
+                    Value: arrow.vectorFromArray([value], new arrow.Float64()),
+                    Date: arrow.vectorFromArray([date], new arrow.DateDay()),
+                });
+            }
+
+            const t1 = row("A", null, null);
+            const t2 = row("B", 5, null);
+            const t3 = row("C", null, new Date(Date.UTC(2025, 5, 15)));
+
+            const multiBatchTable = new arrow.Table([
+                ...t1.batches,
+                ...t2.batches,
+                ...t3.batches,
+            ]);
+            expect(multiBatchTable.batches.length).toEqual(3);
+
+            const ipc = arrow.tableToIPC(multiBatchTable, "stream");
+            const table = await perspective.table(ipc.buffer as ArrayBuffer);
+            const view = await table.view();
+            const json = await view.to_json();
+            await view.delete();
+            await table.delete();
+
+            expect(json).toStrictEqual([
+                { Identifier: "A", Value: null, Date: null },
+                { Identifier: "B", Value: 5, Date: null },
+                { Identifier: "C", Value: null, Date: 1749945600000 },
+            ]);
+        });
+
         test("null equality works correctly in updates", async function () {
             async function write_to_json(
                 buffer: ArrayBuffer,
