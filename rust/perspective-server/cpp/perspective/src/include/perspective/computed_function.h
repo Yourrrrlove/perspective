@@ -128,7 +128,11 @@ namespace computed_function {
      * @brief Given a string column and a non-regex string literal, check
      * whether each row in the string column contains the string literal.
      */
-    STRING_FUNCTION_HEADER(contains)
+    struct contains final : public exprtk::igeneric_function<t_tscalar> {
+        contains();
+        ~contains();
+        t_tscalar operator()(t_parameter_list parameters) override;
+    };
 
     /**
      * @brief match(string, pattern) => True if the string or a substring
@@ -322,6 +326,13 @@ namespace computed_function {
      * @brief Get the maximum of all the inputs.
      */
     FUNCTION_HEADER(max_fn)
+
+    /**
+     * @brief Return the first non-null argument. Variadic; all numeric
+     * inputs are promoted to FLOAT64. Non-numeric inputs must share an
+     * exact dtype.
+     */
+    FUNCTION_HEADER(coalesce)
 
     /**
      * @brief Get the cross product of two vec3s

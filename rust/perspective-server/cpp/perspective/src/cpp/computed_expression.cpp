@@ -34,6 +34,12 @@ computed_function::min_fn t_computed_expression_parser::MIN_FN =
 computed_function::max_fn t_computed_expression_parser::MAX_FN =
     computed_function::max_fn();
 
+computed_function::coalesce t_computed_expression_parser::COALESCE_FN =
+    computed_function::coalesce();
+
+computed_function::contains t_computed_expression_parser::CONTAINS_FN =
+    computed_function::contains();
+
 computed_function::diff3 t_computed_expression_parser::diff3 =
     computed_function::diff3();
 
@@ -533,6 +539,12 @@ t_computed_function_store::register_computed_functions(
     );
     sym_table.add_reserved_function(
         "max", t_computed_expression_parser::MAX_FN
+    );
+    sym_table.add_function(
+        "coalesce", t_computed_expression_parser::COALESCE_FN
+    );
+    sym_table.add_function(
+        "contains", t_computed_expression_parser::CONTAINS_FN
     );
     sym_table.add_reserved_function(
         "diff3", t_computed_expression_parser::diff3

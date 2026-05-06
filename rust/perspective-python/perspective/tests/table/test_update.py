@@ -32,16 +32,7 @@ class TestUpdate(object):
 
         arrow_table = pa.Table.from_pandas(data, preserve_index=False)
 
-        # write arrow to stream
-        stream = pa.BufferOutputStream()
-        writer = pa.RecordBatchStreamWriter(
-            stream, arrow_table.schema
-        )
-        writer.write_table(arrow_table)
-        writer.close()
-        arrow = stream.getvalue().to_pybytes()
-
-        tbl.update(arrow)
+        tbl.update(arrow_table)
         assert tbl.size() == 2
         assert tbl.view().to_records() == [{"a": "1", "b": ""}, {"a": "3", "b": "4"}]
 
