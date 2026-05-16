@@ -193,6 +193,18 @@ function buffer_to_arraybuffer(
     }
 }
 
+/**
+ * A simple Node `http`-based WebSocket adapter that exposes a
+ * `PerspectiveServer` over the wire.
+ *
+ * @remarks
+ *
+ * **Security.** `WebSocketServer` is a reference integration with no
+ * authentication, authorization, origin enforcement, or rate limiting, and
+ * is not safe to expose to untrusted networks — see
+ * [`SECURITY.md`](https://github.com/perspective-dev/perspective/blob/master/SECURITY.md)
+ * for the full threat model.
+ */
 export class WebSocketServer {
     _server: http.Server | any; // stoppable has no type ...
     _wss: HttpWebSocketServer;

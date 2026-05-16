@@ -17,6 +17,14 @@ import perspective
 class PerspectiveStarletteHandler(object):
     """`PerspectiveStarletteHandler` is a drop-in implementation of Perspective.
 
+    # Security
+
+    `PerspectiveStarletteHandler` is a reference integration with no
+    authentication, authorization, origin enforcement, or rate limiting,
+    and is not safe to expose to untrusted networks — see
+    [`SECURITY.md`](https://github.com/perspective-dev/perspective/blob/master/SECURITY.md)
+    for the full threat model.
+
     # Examples
 
     >>> server = Server()
