@@ -122,6 +122,14 @@ class PerspectiveTornadoHandler(WebSocketHandler):
     to the `tornado.web.Application` constructor, as well as provide the
     `max_buffer_size` optional arg, for large datasets.
 
+    # Security
+
+    `PerspectiveTornadoHandler` is a reference integration with no
+    authentication, authorization, origin enforcement, or rate limiting,
+    and is not safe to expose to untrusted networks — see
+    [`SECURITY.md`](https://github.com/perspective-dev/perspective/blob/master/SECURITY.md)
+    for the full threat model.
+
     # Arguments
 
     -   `loop`: An optional `IOLoop` instance to use for scheduling IO calls,

@@ -328,6 +328,38 @@ of each mode.
 <!-- _Related:
 [#2916](https://github.com/perspective-dev/perspective/discussions/2916)_ -->
 
+### Is the WebSocket Perspective `Server` safe to expose to untrusted clients?
+
+No. The WebSocket `Server` is not a security boundary. Every connected `Client`
+is treated as the author of the queries it submits, and is permitted to create
+and delete `Table`/`View` resources, author arbitrary
+[expression columns](./explanation/view/config/expressions.md), and — for
+[Virtual Server](./explanation/virtual_servers.md) backends like DuckDB or
+ClickHouse — author SQL fragments executed under the configured database
+role. The bundled WebSocket adapters
+(`tornado.py`/`aiohttp.py`/`starlette.py`/`WebSocketServer`) are reference
+integrations and do not authenticate, authorize, or enforce origin policy.
+
+WebSocket Deployments that need per-user isolation must put an authenticating
+proxy in front of the `Server`, run a least-privileged database role for any
+`Virtual Server` backend, and/or isolate users into separate `Server`
+instances. See [`SECURITY.md`](../../SECURITY.md) for the full threat model
+and deployment guidance.
+
+Obviously, none of this applies to WASM DBs like Perspective and DuckDB.
+
+### Does Perspective sanitize SQL `Virtual Server`s?
+
+No, by design. [Virtual Server](./explanation/virtual_servers.md) backends
+interpolate client-supplied `view_id`, `table_id`, `column_name`, expression
+strings, and filter operators directly into SQL templates without
+parameterization or whitelist validation. The `Client` is the author of the
+queries — there is no privilege boundary inside the engine for sanitization
+to enforce. If your deployment needs to restrict the SQL surface area exposed
+to a `Client`, the supported boundary is the database role the `Virtual Server`
+is configured with (read-only etc), or better complete isolation via WASM
+backend.
+
 ### How do I set up WebSocket authentication?
 
 The [`WebSocketServer`](./how_to/javascript/nodejs_server.md) does not include
